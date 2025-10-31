@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FincashPro - Digital Investment & Forex Trading</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+     <link rel="stylesheet" href="{{url_for('static', filename='main.css')}}">
+       
+   
+
+   <style>
+       
+    </style>
+</head>
+<body>
+    <div class="profile-container"></div>
+    <!-- Hero Section -->
+    <section id="hero-section">
+        <!-- Dynamic Background -->
+
+
+        <div id="hero-background">
+            <div class="background-slide active" id="slide-1"></div>
+            <div class="background-slide" id="slide-2"></div>
+            <div class="background-slide" id="slide-3"></div>
+            <div class="background-slide" id="slide-4"></div>
+            <div class="background-slide" id="slide-5"></div>
+            <div class="background-overlay"></div>
+        </div>
+
+        <!-- Floating Elements -->
+        <div class="floating-element floating-1">
+            <div class="feature-icon">📈</div>
+            <span>Real-time Fin-Intel</span>
+        </div>
+        <div class="floating-element floating-2">
+            <div class="feature-icon">💳</div>
+            <span>Instant Deposits & Withdrawals</span>
+        </div>
+        <div class="floating-element floating-3">
+            <div class="feature-icon">🛡️</div>
+            <span>Bank-Level Security</span>
+        </div>
+
+        <!-- Hero Content -->
+        <div id="hero-content">
+            <!-- Hero Text -->
+            <div id="hero-text-container">
+                <div class="hero-badge">TRUSTED BY 250,000+ TRADERS WORLDWIDE</div>
+                <h1 id="hero-main-headline">MASTER DIGITAL INVESTMENT WITH FINCASHI</h1>
+                <p id="hero-subheading">Join FincashPro today and unlock professional trading tools, real-time analytics, and personalized investment strategies.</p>
+                
+                <div id="hero-features">
+                    <div class="hero-feature">
+                        <div class="feature-icon">⚡</div>
+                        <span class="feature-text">Instant Bonus</span>
+                    </div>
+                    <div class="hero-feature">
+                        <div class="feature-icon">🔒</div>
+                        <span class="feature-text">Secure & Regulated</span>
+                    </div>
+                    <div class="hero-feature">
+                        <div class="feature-icon">📱</div>
+                        <span class="feature-text">Mobile Kashi</span>
+                    </div>
+                </div>
+                
+                <div id="hero-cta-buttons">
+                    <button class="cta-button cta-primary" id="hero-watch-demo">
+                        <span>🎬</span>
+                        Our Packages
+                    </button>
+                    <button class="cta-button cta-secondary" id="hero-learn-more">
+                        <span>📚</span>
+                        Referral code
+                    </button>
+                </div>
+                
+                <div id="hero-stats">
+                    <div class="hero-stat">
+                        <div class="stat-value">UGX2.4B+</div>
+                        <div class="stat-label">Monthly Trading Volume</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="stat-value">98.7%</div>
+                        <div class="stat-label">Withdrawal Success Rate</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="stat-value">24/7</div>
+                        <div class="stat-label">Customer Support</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Login Modal -->
+    <div class="login-modal-overlay" id="loginModalOverlay">
+        <div class="login-modal" id="loginModal">
+            <div class="login-header">
+                <button class="login-close" onclick="FincashProLogin.closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="login-logo">FincashPro</div>
+                <div>Welcome back to your account</div>
+            </div>
+            
+            <div class="login-body">
+                <form id="loginForm" onsubmit="FincashProLogin.handleLogin(event)">
+                    <div class="login-form-group">
+                        <input type="text" id="phone" class="login-input" placeholder="Phone or Email" required>
+                    </div>
+                    
+                    <div class="login-form-group">
+                        <input type="password" id="password" class="login-input" placeholder="Password" required>
+                    </div>
+                    
+                    <button type="submit"  class="login-button">Sign In to Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+            <!-- Registration Form -->
+            <div id="hero-registration-container">
+                <form id="hero-registration-form">
+                    <div class="form-header">
+                        <h2 class="form-title">Start Investing Today</h2>
+                        <p class="form-subtitle">Join thousands of successful investors</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="hero-full-name">User Name</label>
+                        <input type="text" id="hero-full-name" class="form-input" placeholder="Enter your Username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="hero-email">Email Address</label>
+                        <input type="email" id="hero-email" class="form-input" placeholder="Enter your email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="hero-phone">Phone Number</label>
+                        <input type="tel" id="hero-phone" class="form-input" placeholder="Enter your phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="hero-password">Password</label>
+                        <input type="password" id="hero-password" class="form-input" placeholder="Create a password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="hero-password">confirm Password</label>
+                        <input type="confirm password" id="hero-password" class="form-input" placeholder="Confirm password" required>
+                    </div>
+
+                     <button type="submit" class="form-button">Create Free Account</button>
+                     <button class="form-button" onclick="FincashProLogin.openModal()">Login</button>
+                     
+                    
+                    <div class="form-footer">
+                        By registering, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+   <!-- Package Modals Container -->
+    <div id="package-modals-container">
+        <!-- Package modals will be dynamically rendered here -->
+    </div>
+
+
+<script>
+      window.FincashProLogin = {
+  openModal: function() {
+    console.log("Opening modal...");
+    const overlay = document.getElementById("loginModalOverlay");
+    const modal = document.getElementById("loginModal");
+    overlay.style.display = "flex";
+    setTimeout(() => modal.classList.add("active"), 10);
+  },
+
+  closeModal: function() {
+    const overlay = document.getElementById("loginModalOverlay");
+    const modal = document.getElementById("loginModal");
+    modal.classList.remove("active");
+    setTimeout(() => overlay.style.display = "none", 300);
+  },
+
+  handleLogin: function(event) {
+    event.preventDefault();
+    console.log("handleLogin() triggered ✅");
+
+    // 1️⃣ Get input values
+    const emailOrPhone = document.getElementById("phone").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    // 2️⃣ Validate inputs
+    if (!emailOrPhone || !password) {
+      alert("Please enter both email/phone and password.");
+      return;
+    }
+
+    // Basic phone validation (digits only, length 10–15) OR email format
+    const phoneRegex = /^[0-9]{10,15}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!phoneRegex.test(emailOrPhone) && !emailRegex.test(emailOrPhone)) {
+      alert("Please enter a valid phone number (10–15 digits) or a valid email.");
+      return;
+    }
+
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return;
+    }
+
+    // 3️⃣ Prepare payload
+    const loginData = {
+      email_or_phone: emailOrPhone,
+      password: password
+    };
+
+    // 4️⃣ Send fetch request to Flask backend
+    fetch("/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(loginData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Server response:", data);
+
+        if (data.user) {
+          alert("Login successful!");
+          window.location.href = `/profile/${data.user.id}`; // redirect example
+        } else {
+          alert(data.error || "Invalid email/phone or password.");
+        }
+      })
+      .catch(error => {
+        console.error("Login request failed:", error);
+        alert("An error occurred. Please try again.");
+      });
+  }
+};
+
+// 5️⃣ Attach form submit event dynamically
+document.addEventListener("DOMContentLoaded", function() {
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", window.FincashProLogin.handleLogin);
+  }
+});
+
+</script>
+
+<script src="{{url_for('static', filename='main.js')}}"></script>
+</body>
+</html>
+

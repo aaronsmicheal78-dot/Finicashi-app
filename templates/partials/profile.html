@@ -1,0 +1,642 @@
+
+  <link rel="stylesheet" href="{{url_for('static', filename='css/profile.css')}}">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+       <div class="dashboard-container"></div>
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="logo">
+                <div class="logo-icon" >FP</div>
+                <div class="logo-text">FinCash Pro</div>
+
+                          <div class="crypto-ticker ms-3 d-flex align-items-center">
+  <div class="ticker-wrapper">
+    <span>USD ▲</span>
+    <span>ETH $3,214 ▼</span>
+    <span>ADA $1.32 ▲</span>
+    <span>DOT $28.45 ▼</span>
+    <span>SOL $110.12 ▲</span>
+  </div>
+</div>
+  
+            </div>
+           
+            <div class="user-controls">
+                <div class="notification-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="settings-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="user-avatar" id="avatar-initials" ></div>
+     <button id="logout-btn" class="btn-outline">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+
+
+            </div>
+        </header>
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Column 1: User Profile -->
+            <section class="profile-column">
+                <div class="profile-header">
+                    <div class="profile-avatar" ></div>
+                    <h2 class="username" >Username</h2>
+                    <p class="profile-username" id="username"></p>
+                </div>
+                
+                <div class="profile-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value" id="email"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Phone:</span>
+                        <span class="detail-value" id="phone"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Balance: UGX. </span>
+                        <span class="detail-value" id="balance"></span>
+                    </div>
+                    <div class="detail-item">
+                <span class="detaiabel">Bonus: UGX. </span>
+                        <span class="detail-value" id="bonus"></span>
+                    </div>
+                    <div class="detail-item">
+                <span class="detaiabel">Package:  </span>
+                        <span class="detail-value" id="package"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Joined:</span>
+                        <span class="detail-value" id="memberSince"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value" id="status"><span>
+                            <span class="status-badge status-verified" id="isVerified">Verified</span>
+                            <span class="status-badge status-active" id="isActive">Active</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="referral-section">
+                    <h3 class="referral-title">Referral Program</h3>
+                    <div class="referral-item">
+                        <span class="detail-label">Total Referrals:</span>
+                        <span class="detail-value"></span>
+                    </div>
+                    <div class="referral-item">
+                        <span class="detail-label">Referral Code:</span>
+                        <span class="detail-value" id="referral_code"></span>
+                    </div>
+                    <div class="referral-link">
+                        <span id="referralLink"></span>
+                        <button class="copy-btn" id="copy-link">Copy</button>
+                    </div>
+                </div>
+            </section></div>
+
+
+    <section class="dashboard-container">
+        <!-- Header -->
+       <!---- <header class="dashboard-header"> -->
+            <div class="logo">
+            
+
+        <!-- Main Content -->
+      <!--  main class="dashboard-main">--->
+            <!-- Column 1: User Profile -->
+            <!--section class="profile-column">
+                <div class="profile-header">
+               
+
+            <---------------- Columns 2 & 3: Investment Packages ----->
+            <!-- <section class="packages-container">
+                <section class="packages-header">
+                    <h2 class="packages-title">Investment Packages</h2>
+                    <p class="packages-subtitle">Choose from our premium investment options</p>
+                </div> -->
+                
+                <div class="packages-grid">
+                    <!-- Package 1 -->
+                    <div class="package-card" data-modal="modal-1">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Bronze</h3>
+                                <div class="package-rate">5% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">UGX.10,000</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 30-day term</li>
+                                <li><i class="fas fa-check"></i> Daily returns</li>
+                                <li><i class="fas fa-check"></i> Basic support</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 2 -->
+                    <div class="package-card" data-modal="modal-2">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Silver</h3>
+                                <div class="package-rate">6% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">UGX. 20,000</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 60-day term</li>
+                                <li><i class="fas fa-check"></i> Weekly returns</li>
+                                <li><i class="fas fa-check"></i> Priority support</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 3 -->
+                    <div class="package-card" data-modal="modal-3">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Gold</h3>
+                                <div class="package-rate">7% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">UGX. 50,000</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 90-day term</li>
+                                <li><i class="fas fa-check"></i> Bi-weekly returns</li>
+                                <li><i class="fas fa-check"></i> Dedicated manager</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 4 -->
+                    <div class="package-card" data-modal="modal-4">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Premium</h3>
+                                <div class="package-rate">8% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">UGX. 100,000</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 120-day term</li>
+                                <li><i class="fas fa-check"></i> Monthly returns</li>
+                                <li><i class="fas fa-check"></i> VIP support</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 5 -->
+                    <div class="package-card" data-modal="modal-5">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Platinum</h3>
+                                <div class="package-rate">10% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">UGX. 200,000</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 180-day term</li>
+                                <li><i class="fas fa-check"></i> Quarterly returns</li>
+                                <li><i class="fas fa-check"></i> Personal advisor</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 6 -->
+                    <div class="package-card" data-modal="modal-6">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Ultimate</h3>
+                                <div class="package-rate">15% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">UGX. 300,000+</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 365-day term</li>
+                                <li><i class="fas fa-check"></i> Custom returns</li>
+                                <li><i class="fas fa-check"></i> Exclusive benefits</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+                
+         
+    
+
+    <!-- Package Modals -->
+    <!-- Modal 1 -->
+    <div class="modal" id="modal-1">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Bronze</h2>
+                <p class="modal-description">Perfect for beginners looking to start their investment journey with steady returns.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">5%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 10,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">60 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">UGX. 30,000-50,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Daily returns deposited to your account</li>
+                    <li><i class="fas fa-check"></i> Basic customer support</li>
+                    <li><i class="fas fa-check"></i> Access to investment tutorials</li>
+                    <li><i class="fas fa-check"></i> Low minimum investment</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-1">Investment Amount (UGX)</label>
+                    <input type="number" class="form-input" id="amount-1" placeholder="Enter amount between 500 and 2499" min="500" max="2499">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-1">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-1" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-1">package name</label>
+                    <textarea class="form-input" id="notes-1" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-1">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2 -->
+    <div class="modal" id="modal-2">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Silver</h2>
+                <p class="modal-description">Designed for investors ready to grow their portfolio with higher returns and extended terms.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">6%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 20,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">60 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">UGX. 40,000 - 60,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Weekly returns with compounding interest</li>
+                    <li><i class="fas fa-check"></i> Priority customer support</li>
+                    <li><i class="fas fa-check"></i> Access to market analysis reports</li>
+                    <li><i class="fas fa-check"></i> Medium risk level</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-2">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-2" placeholder="Enter amount between 2500 and 9999" min="2500" max="9999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-2">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-2" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-2">Package name</label>
+                    <textarea class="form-input" id="notes-2" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-2">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3 -->
+    <div class="modal" id="modal-3">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Gold</h2>
+                <p class="modal-description">Our premium offering for serious investors seeking substantial returns with professional management.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">7%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 50,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">90 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">UGX. 100,000-200,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Bi-weekly returns with premium interest</li>
+                    <li><i class="fas fa-check"></i> Dedicated account manager</li>
+                    <li><i class="fas fa-check"></i> Exclusive investment opportunities</li>
+                    <li><i class="fas fa-check"></i> Customized portfolio strategy</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-3">Investment Amount (UGX)</label>
+                    <input type="number" class="form-input" id="amount-3" placeholder="Enter amount between 10000 and 24999" min="10000" max="24999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-3">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-3" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-3">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-3" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-3">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4 -->
+    <div class="modal" id="modal-4">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Premium</h2>
+                <p class="modal-description">For sophisticated investors looking for premium returns with VIP treatment and exclusive benefits.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">8%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 200,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">120 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">UGX. 300,000 - 400,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Monthly returns with elite interest rates</li>
+                    <li><i class="fas fa-check"></i> VIP customer support with 24/7 access</li>
+                    <li><i class="fas fa-check"></i> Advanced portfolio diversification</li>
+                    <li><i class="fas fa-check"></i> Priority access to new investment products</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-4">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-4" placeholder="Enter amount between 25000 and 49999" min="25000" max="49999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-4">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-4" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-4">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-4" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-4">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5 -->
+    <div class="modal" id="modal-5">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Platinum</h2>
+                <p class="modal-description">Our executive tier for high-net-worth individuals seeking premium returns with personalized service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">10%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 200,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">180 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">UGX. 300,000 - 400,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Quarterly returns with executive-level interest</li>
+                    <li><i class="fas fa-check"></i> Personal financial advisor</li>
+                    <li><i class="fas fa-check"></i> Custom investment strategies</li>
+                    <li><i class="fas fa-check"></i> Exclusive networking events</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-5">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-5" placeholder="Enter amount between 50000 and 99999" min="50000" max="99999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-5">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-5" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-5">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-5" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-5">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 6 -->
+    <div class="modal" id="modal-6">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Ultimate</h2>
+                <p class="modal-description">The ultimate investment package for wealth preservation and maximum returns with bespoke service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">15%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 300,000+</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">365 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">UGX. 500,000+</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Custom return schedule tailored to your needs</li>
+                    <li><i class="fas fa-check"></i> Dedicated wealth management team</li>
+                    <li><i class="fas fa-check"></i> Exclusive investment opportunities</li>
+                    <li><i class="fas fa-check"></i> Global portfolio diversification</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-6">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-6" placeholder="Enter amount (minimum 100000)" min="100000">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-6">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-6" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-6">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-6" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-6">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script src="{{url_for('static', filename='js/profile.js')}}"></script>
+<script>
+  
+document.addEventListener("DOMContentLoaded", () => {
+  // Fetch logged-in user data from API
+  fetch("/user/profile")
+    .then(res => {
+      if (!res.ok) throw new Error("Unauthorized or error");
+      return res.json();
+      const userData = res
+    })
+    .then(user => {
+      document.getElementById("memberSince").textContent = user.memberSince;
+      document.getElementById("isVerified").textContent = user.isVerified;
+      document.getElementById("isActive").textContent = user.isActive;
+      document.getElementById("referralLink").textContent = user.referralLink;
+      document.getElementById("username").textContent = user.username;
+      document.getElementById("email").textContent = user.email;
+      document.getElementById("phone").textContent = user.phone;
+      document.getElementById("referral_code").textContent = user.referralCode;
+      document.getElementById("balance").textContent = user.balance;
+      document.getElementById("bonus").textContent = user.bonus;
+    })
+    .catch(err => {
+      console.error("Error fetching profile:", err);
+      document.getElementById("username").textContent = "Error loading profile";
+    });
+});
+</script>

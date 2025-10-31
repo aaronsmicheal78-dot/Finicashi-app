@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FincashPro - Admin Dashboard</title>
+    <style>
+        :root {
+            --admin-primary: #2c3e50;
+            --admin-secondary: #34495e;
+            --admin-accent: #e74c3c;
+            --admin-success: #27ae60;
+            --admin-warning: #f39c12;
+            --admin-info: #3498db;
+            --admin-light: #ecf0f1;
+            --admin-dark: #2c3e50;
+            --admin-border: #bdc3c7;
+            --admin-text: #2c3e50;
+            --admin-text-light: #7f8c8d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--admin-light);
+            color: var(--admin-text);
+            overflow-x: hidden;
+        }
+
+        /* Admin Layout */
+        #admin-dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        #admin-sidebar {
+            width: 280px;
+            background: var(--admin-primary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .admin-sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .admin-sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .admin-nav-item:hover,
+        .admin-nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--admin-accent);
+        }
+
+        .admin-nav-badge {
+            background: var(--admin-accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        /* Main Content */
+        #admin-main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        #admin-top-header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--admin-border);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .admin-header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--admin-text);
+        }
+
+        .admin-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .admin-user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .admin-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--admin-info);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Dashboard Content */
+        #admin-content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Stats Grid */
+        #admin-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .admin-stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--admin-info);
+        }
+
+        .admin-stat-card.warning { border-left-color: var(--admin-warning); }
+        .admin-stat-card.success { border-left-color: var(--admin-success); }
+        .admin-stat-card.danger { border-left-color: var(--admin-accent); }
+
+        .admin-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .admin-stat-label {
+            color: var(--admin-text-light);
+            font-size: 14px;
+        }
+
+        .admin-stat-change {
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .admin-stat-change.positive { color: var(--admin-success); }
+        .admin-stat-change.negative { color: var(--admin-accent); }
+
+        /* Content Sections */
+        .admin-content-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .admin-section-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--admin-border);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .admin-section-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .admin-section-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .admin-section-body {
+            padding: 25px;
+        }
+
+        /* Tables */
+        .admin-data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-data-table th,
+        .admin-data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--admin-border);
+        }
+
+        .admin-data-table th {
+            background: var(--admin-light);
+            font-weight: 600;
+            color: var(--admin-text-light);
+            font-size: 14px;
+        }
+
+        .admin-data-table tr:hover {
+            background: var(--admin-light);
+        }
+
+        /* Status Badges */
+        .admin-status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .admin-status-pending { background: #fff3cd; color: #856404; }
+        .admin-status-approved { background: #d4edda; color: #155724; }
+        .admin-status-declined { background: #f8d7da; color: #721c24; }
+        .admin-status-processing { background: #cce7ff; color: #004085; }
+
+        /* Action Buttons */
+        .admin-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .admin-action-btn.approve { background: var(--admin-success); color: white; }
+        .admin-action-btn.decline { background: var(--admin-accent); color: white; }
+        .admin-action-btn.view { background: var(--admin-info); color: white; }
+        .admin-action-btn.edit { background: var(--admin-warning); color: white; }
+
+        .admin-action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Modals */
+        .admin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .admin-modal-overlay.show {
+            display: flex;
+        }
+
+        .admin-modal-container {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--admin-border);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .admin-modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .admin-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--admin-text-light);
+        }
+
+        .admin-modal-body {
+            padding: 25px;
+        }
+
+        .admin-modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid var(--admin-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Forms in Modals */
+        .admin-form-group {
+            margin-bottom: 20px;
+        }
+
+        .admin-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--admin-text);
+        }
+
+        .admin-form-input,
+        .admin-form-select,
+        .admin-form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--admin-border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .admin-form-input:focus,
+        .admin-form-select:focus,
+        .admin-form-textarea:focus {
+            outline: none;
+            border-color: var(--admin-primary);
+        }
+
+        .admin-form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Loading States */
+        .admin-loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #admin-sidebar {
+                width: 80px;
+            }
+
+            .admin-sidebar-logo span:last-child,
+            .admin-nav-item span:last-child {
+                display: none;
+            }
+
+            #admin-stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Dashboard Container -->
+    <div id="admin-dashboard-container">
+        <!-- Sidebar -->
+        <aside id="admin-sidebar">
+            <div class="admin-sidebar-header">
+                <div class="admin-sidebar-logo">
+                    <span>A$</span>
+                    <span>FincashPro</span>
+                </div>
+            </div>
+
+            <nav class="admin-sidebar-nav">
+                <a href="#" class="admin-nav-item active" data-section="dashboard">
+                    <span>📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="admin-nav-item" data-section="payment-requests">
+                    <span>💰</span>
+                    <span>Payment Requests</span>
+                    <span class="admin-nav-badge" id="pending-payments-count">0</span>
+                </a>
+                <a href="#" class="admin-nav-item" data-section="bonus-requests">
+                    <span>🎁</span>
+                    <span>Bonus Requests</span>
+                    <span class="admin-nav-badge" id="pending-bonuses-count">0</span>
+                </a>
+                <a href="#" class="admin-nav-item" data-section="user-management">
+                    <span>👥</span>
+                    <span>User Management</span>
+                </a>
+                <a href="#" class="admin-nav-item" data-section="messages">
+                    <span>💬</span>
+                    <span>Messages</span>
+                    <span class="admin-nav-badge" id="unread-messages-count">0</span>
+                </a>
+                <a href="#" class="admin-nav-item" data-section="reports">
+                    <span>📈</span>
+                    <span>Reports</span>
+                </a>
+                <a href="#" class="admin-nav-item" data-section="system">
+                    <span>⚙️</span>
+                    <span>System Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="admin-main-content">
+            <!-- Top Header -->
+            <header id="admin-top-header">
+                <h1 class="admin-header-title" id="admin-current-section">Dashboard Overview</h1>
+                <div class="admin-header-actions">
+                    <button id="admin-refresh-data" class="admin-action-btn view">Refresh Data</button>
+                    <div class="admin-user-menu" id="admin-user-menu">
+                        <div class="admin-user-avatar" id="admin-user-avatar">A</div>
+                        <span id="admin-username">Admin User</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <section id="admin-content-area">
+                <!-- Stats Grid -->
+                <div id="admin-stats-grid">
+                    <!-- Stats will be dynamically populated -->
+                </div>
+
+                <!-- Dynamic Content Sections -->
+                <div id="admin-dynamic-content">
+                    <!-- Content will be dynamically rendered based on section -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Payment Request Modal -->
+    <div id="admin-payment-modal" class="admin-modal-overlay">
+        <div class="admin-modal-container">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-payment-modal-title">Payment Request Details</h3>
+                <button class="admin-modal-close" id="admin-close-payment-modal">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="admin-payment-modal-body">
+                <!-- Dynamic content -->
+            </div>
+            <div class="admin-modal-footer" id="admin-payment-modal-footer">
+                <!-- Dynamic actions -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bonus Request Modal -->
+    <div id="admin-bonus-modal" class="admin-modal-overlay">
+        <div class="admin-modal-container">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-bonus-modal-title">Bonus Request Details</h3>
+                <button class="admin-modal-close" id="admin-close-bonus-modal">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="admin-bonus-modal-body">
+                <!-- Dynamic content -->
+            </div>
+            <div class="admin-modal-footer" id="admin-bonus-modal-footer">
+                <!-- Dynamic actions -->
+            </div>
+        </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div id="admin-user-modal" class="admin-modal-overlay">
+        <div class="admin-modal-container">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-user-modal-title">User Details</h3>
+                <button class="admin-modal-close" id="admin-close-user-modal">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="admin-user-modal-body">
+                <!-- Dynamic content -->
+            </div>
+            <div class="admin-modal-footer" id="admin-user-modal-footer">
+                <!-- Dynamic actions -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="admin-message-modal" class="admin-modal-overlay">
+        <div class="admin-modal-container">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-message-modal-title">User Message</h3>
+                <button class="admin-modal-close" id="admin-close-message-modal">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="admin-message-modal-body">
+                <!-- Dynamic content -->
+            </div>
+            <div class="admin-modal-footer" id="admin-message-modal-footer">
+                <!-- Dynamic actions -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="admin-confirm-modal" class="admin-modal-overlay">
+        <div class="admin-modal-container">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-confirm-modal-title">Confirm Action</h3>
+                <button class="admin-modal-close" id="admin-close-confirm-modal">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="admin-confirm-modal-body">
+                <!-- Dynamic content -->
+            </div>
+            <div class="admin-modal-footer" id="admin-confirm-modal-footer">
+                <!-- Dynamic actions -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AdminDashboard {
+            constructor() {
+                this.currentSection = 'dashboard';
+                this.adminData = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadAdminData();
+                this.initializeEventListeners();
+                this.renderDashboard();
+                this.startLiveUpdates();
+            }
+
+            async loadAdminData() {
+                // Load admin data from localStorage or API
+                const adminData = localStorage.getItem('fincashpro_admin_data');
+                if (adminData) {
+                    this.adminData = JSON.parse(adminData);
+                    this.updateUserInfo();
+                }
+
+                // Load initial dashboard data
+                await this.refreshAllData();
+            }
+
+            initializeEventListeners() {
+                // Navigation
+                document.querySelectorAll('.admin-nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.switchSection(item.dataset.section);
+                    });
+                });
+
+                // Refresh button
+                document.getElementById('admin-refresh-data').addEventListener('click', () => {
+                    this.refreshAllData();
+                });
+
+                // Modal close buttons
+                document.getElementById('admin-close-payment-modal').addEventListener('click', () => this.closeModal('payment'));
+                document.getElementById('admin-close-bonus-modal').addEventListener('click', () => this.closeModal('bonus'));
+                document.getElementById('admin-close-user-modal').addEventListener('click', () => this.closeModal('user'));
+                document.getElementById('admin-close-message-modal').addEventListener('click', () => this.closeModal('message'));
+                document.getElementById('admin-close-confirm-modal').addEventListener('click', () => this.closeModal('confirm'));
+
+                // User menu
+                document.getElementById('admin-user-menu').addEventListener('click', () => {
+                    this.showUserMenu();
+                });
+            }
+
+            switchSection(section) {
+                this.currentSection = section;
+                
+                // Update active nav item
+                document.querySelectorAll('.admin-nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`[data-section="${section}"]`).classList.add('active');
+
+                // Update header title
+                const titles = {
+                    'dashboard': 'Dashboard Overview',
+                    'payment-requests': 'Payment Requests',
+                    'bonus-requests': 'Bonus Requests',
+                    'user-management': 'User Management',
+                    'messages': 'User Messages',
+                    'reports': 'System Reports',
+                    'system': 'System Settings'
+                };
+                document.getElementById('admin-current-section').textContent = titles[section] || 'Admin Panel';
+
+                // Render section content
+                this.renderSection(section);
+            }
+
+            renderSection(section) {
+                const contentArea = document.getElementById('admin-dynamic-content');
+                
+                switch(section) {
+                    case 'dashboard':
+                        contentArea.innerHTML = this.renderDashboardContent();
+                        break;
+                    case 'payment-requests':
+                        contentArea.innerHTML = this.renderPaymentRequests();
+                        break;
+                    case 'bonus-requests':
+                        contentArea.innerHTML = this.renderBonusRequests();
+                        break;
+                    case 'user-management':
+                        contentArea.innerHTML = this.renderUserManagement();
+                        break;
+                    case 'messages':
+                        contentArea.innerHTML = this.renderMessages();
+                        break;
+                    case 'reports':
+                        contentArea.innerHTML = this.renderReports();
+                        break;
+                    case 'system':
+                        contentArea.innerHTML = this.renderSystemSettings();
+                        break;
+                }
+            }
+
+            renderDashboard() {
+                this.renderStatsGrid();
+                this.renderSection('dashboard');
+            }
+
+            renderStatsGrid() {
+                const statsGrid = document.getElementById('admin-stats-grid');
+                
+                // This would be dynamically populated from API
+                const stats = [
+                    { label: 'Total Users', value: '12,458', change: '+2.5%', type: 'success' },
+                    { label: 'Pending Payments', value: '47', change: '+5', type: 'warning' },
+                    { label: 'Pending Bonuses', value: '23', change: '-3', type: 'danger' },
+                    { label: 'Total Volume', value: '$2.4M', change: '+12.8%', type: 'success' },
+                    { label: 'Active Sessions', value: '1,247', change: '+34', type: 'info' },
+                    { label: 'System Health', value: '99.9%', change: '0%', type: 'success' }
+                ];
+
+                statsGrid.innerHTML = stats.map(stat => `
+                    <div class="admin-stat-card ${stat.type}">
+                        <div class="admin-stat-value">${stat.value}</div>
+                        <div class="admin-stat-label">${stat.label}</div>
+                        <div class="admin-stat-change ${stat.change.startsWith('+') ? 'positive' : 'negative'}">
+                            ${stat.change}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderDashboardContent() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">Recent Activity</h3>
+                            <div class="admin-section-actions">
+                                <button class="admin-action-btn view" id="view-all-activity">View All</button>
+                            </div>
+                        </div>
+                        <div class="admin-section-body">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-activity-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">Quick Actions</h3>
+                        </div>
+                        <div class="admin-section-body">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <button class="admin-action-btn view" id="quick-view-payments">Review Payments</button>
+                                <button class="admin-action-btn approve" id="quick-process-bonuses">Process Bonuses</button>
+                                <button class="admin-action-btn edit" id="quick-user-search">Search Users</button>
+                                <button class="admin-action-btn view" id="quick-generate-report">Generate Report</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderPaymentRequests() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">Pending Payment Requests</h3>
+                            <div class="admin-section-actions">
+                                <button class="admin-action-btn view" id="export-payments">Export</button>
+                                <button class="admin-action-btn approve" id="bulk-approve-payments">Bulk Approve</button>
+                            </div>
+                        </div>
+                        <div class="admin-section-body">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="select-all-payments"></th>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Amount</th>
+                                        <th>Type</th>
+                                        <th>Requested</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payment-requests-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderBonusRequests() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">Pending Bonus Requests</h3>
+                            <div class="admin-section-actions">
+                                <button class="admin-action-btn view" id="export-bonuses">Export</button>
+                                <button class="admin-action-btn approve" id="bulk-approve-bonuses">Bulk Approve</button>
+                            </div>
+                        </div>
+                        <div class="admin-section-body">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="select-all-bonuses"></th>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Bonus Type</th>
+                                        <th>Amount</th>
+                                        <th>Requested</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bonus-requests-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderUserManagement() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">User Management</h3>
+                            <div class="admin-section-actions">
+                                <input type="text" id="user-search-input" placeholder="Search users..." class="admin-form-input" style="width: 300px;">
+                                <button class="admin-action-btn view" id="search-users">Search</button>
+                            </div>
+                        </div>
+                        <div class="admin-section-body">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>User ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Balance</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-management-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderMessages() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">User Messages</h3>
+                            <div class="admin-section-actions">
+                                <button class="admin-action-btn view" id="mark-all-read">Mark All Read</button>
+                            </div>
+                        </div>
+                        <div class="admin-section-body">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>From</th>
+                                        <th>Subject</th>
+                                        <th>Message</th>
+                                        <th>Received</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-messages-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderReports() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">System Reports</h3>
+                            <div class="admin-section-actions">
+                                <button class="admin-action-btn view" id="generate-financial-report">Financial Report</button>
+                                <button class="admin-action-btn view" id="generate-user-report">User Report</button>
+                            </div>
+                        </div>
+                        <div class="admin-section-body">
+                            <div id="reports-container">
+                                <!-- Reports will be generated here -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderSystemSettings() {
+                return `
+                    <div class="admin-content-section">
+                        <div class="admin-section-header">
+                            <h3 class="admin-section-title">System Configuration</h3>
+                        </div>
+                        <div class="admin-section-body">
+                            <form id="system-settings-form">
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label">System Maintenance Mode</label>
+                                    <select class="admin-form-select" id="maintenance-mode">
+                                        <option value="false">Disabled</option>
+                                        <option value="true">Enabled</option>
+                                    </select>
+                                </div>
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label">Auto-approve Payments Under</label>
+                                    <input type="number" class="admin-form-input" id="auto-approve-limit" placeholder="0.00">
+                                </div>
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label">System Notification Email</label>
+                                    <input type="email" class="admin-form-input" id="notification-email" placeholder="admin@fincashpro.com">
+                                </div>
+                                <button type="submit" class="admin-action-btn approve">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async refreshAllData() {
+                // Simulate API calls to refresh all data
+                await this.updatePaymentRequests();
+                await this.updateBonusRequests();
+                await this.updateUserMessages();
+                await this.updateStats();
+            }
+
+            async updatePaymentRequests() {
+                // Simulate API call
+                const payments = await this.fetchPaymentRequests();
+                document.getElementById('pending-payments-count').textContent = payments.filter(p => p.status === 'pending').length;
+                
+                // Update table if on payment requests page
+                if (this.currentSection === 'payment-requests') {
+                    this.renderPaymentRequestsTable(payments);
+                }
+            }
+
+            async updateBonusRequests() {
+                // Simulate API call
+                const bonuses = await this.fetchBonusRequests();
+                document.getElementById('pending-bonuses-count').textContent = bonuses.filter(b => b.status === 'pending').length;
+                
+                // Update table if on bonus requests page
+                if (this.currentSection === 'bonus-requests') {
+                    this.renderBonusRequestsTable(bonuses);
+                }
+            }
+
+            async updateUserMessages() {
+                // Simulate API call
+                const messages = await this.fetchUserMessages();
+                document.getElementById('unread-messages-count').textContent = messages.filter(m => !m.read).length;
+                
+                // Update table if on messages page
+                if (this.currentSection === 'messages') {
+                    this.renderMessagesTable(messages);
+                }
+            }
+
+            async updateStats() {
+                // Refresh stats grid
+                this.renderStatsGrid();
+            }
+
+            // Mock API methods - replace with actual API calls
+            async fetchPaymentRequests() {
+                return [
+                    { id: 'PAY001', user: 'john_doe', amount: 150.00, type: 'withdrawal', requested: '2024-01-15', status: 'pending' },
+                    { id: 'PAY002', user: 'jane_smith', amount: 75.50, type: 'deposit', requested: '2024-01-15', status: 'pending' },
+                    { id: 'PAY003', user: 'bob_wilson', amount: 200.00, type: 'withdrawal', requested: '2024-01-14', status: 'approved' }
+                ];
+            }
+
+            async fetchBonusRequests() {
+                return [
+                    { id: 'BON001', user: 'alice_brown', type: 'referral', amount: 25.00, requested: '2024-01-15', status: 'pending' },
+                    { id: 'BON002', user: 'charlie_green', type: 'welcome', amount: 10.00, requested: '2024-01-15', status: 'pending' }
+                ];
+            }
+
+            async fetchUserMessages() {
+                return [
+                    { id: 'MSG001', from: 'john_doe', subject: 'Account Issue', message: 'Having trouble with...', received: '2024-01-15', read: false },
+                    { id: 'MSG002', from: 'jane_smith', subject: 'Payment Question', message: 'When will my...', received: '2024-01-14', read: true }
+                ];
+            }
+
+            showModal(type, data = null) {
+                const modal = document.getElementById(`admin-${type}-modal`);
+                modal.classList.add('show');
+                
+                if (data) {
+                    this.populateModal(type, data);
+                }
+            }
+
+            closeModal(type) {
+                const modal = document.getElementById(`admin-${type}-modal`);
+                modal.classList.remove('show');
+            }
+
+            populateModal(type, data) {
+                // This would populate modal with specific data
+                // Implementation depends on modal type and data structure
+            }
+
+            updateUserInfo() {
+                if (this.adminData) {
+                    document.getElementById('admin-username').textContent = this.adminData.username;
+                    document.getElementById('admin-user-avatar').textContent = this.adminData.username.charAt(0).toUpperCase();
+                }
+            }
+
+            showUserMenu() {
+                // Implement user menu dropdown
+                console.log('Show user menu');
+            }
+
+            startLiveUpdates() {
+                // Start WebSocket or polling for live updates
+                setInterval(() => {
+                    this.refreshAllData();
+                }, 30000); // Refresh every 30 seconds
+            }
+        }
+
+        // Initialize admin dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            new AdminDashboard();
+        });
+    </script>
+</body>
+</html>

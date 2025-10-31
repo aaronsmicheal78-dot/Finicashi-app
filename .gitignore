@@ -1,0 +1,7 @@
+# Ignore local SQLite database
+
+instance/
+*.db
+.env
+__pycache__/
+*.pyc

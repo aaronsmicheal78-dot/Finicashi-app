@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinCash Pro - User Profile Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Color Palette */
+            --primary: #2962ff;
+            --primary-dark: #0039cb;
+            --primary-light: #768fff;
+            --secondary: #00c853;
+            --secondary-dark: #009624;
+            --secondary-light: #5efc82;
+            --accent: #ff6d00;
+            --accent-light: #ff9e40;
+            --neutral-dark: #263238;
+            --neutral: #455a64;
+            --neutral-light: #cfd8dc;
+            --neutral-bg: #f5f7fa;
+            --white: #ffffff;
+            
+            /* Typography */
+            --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-heading: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-xxl: 3rem;
+            
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-md: 0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.1);
+            
+            /* Transitions */
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--neutral-bg);
+            color: var(--neutral-dark);
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xl);
+            padding: var(--space-lg);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            color: var(--white);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .notification-icon, .settings-icon {
+            background: var(--neutral-bg);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .notification-icon:hover, .settings-icon:hover {
+            background: var(--neutral-light);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* Main Layout */
+        .dashboard-main {
+            display: flex;
+            gap: var(--space-lg);
+        }
+
+        /* Column 1: User Profile */
+        .profile-column {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+            width: 320px;
+            flex-shrink: 0;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto var(--space-md);
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .profile-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: var(--space-xs);
+        }
+
+        .profile-username {
+            color: var(--neutral);
+            font-size: 1rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .profile-details {
+            margin-bottom: var(--space-lg);
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--space-sm) 0;
+            border-bottom: 1px solid var(--neutral-light);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--neutral);
+            font-size: 0.9rem;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-verified {
+            background: var(--secondary-light);
+            color: var(--secondary-dark);
+        }
+
+        .status-active {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .referral-section {
+            margin-top: var(--space-lg);
+            padding-top: var(--space-lg);
+            border-top: 1px solid var(--neutral-light);
+        }
+
+        .referral-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--space-md);
+        }
+
+        .referral-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-sm);
+        }
+
+        .referral-link {
+            background: var(--neutral-bg);
+            padding: var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .copy-btn {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: var(--transition-fast);
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Columns 2 & 3: Investment Packages */
+        .packages-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .packages-header {
+            margin-bottom: var(--space-lg);
+        }
+
+        .packages-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .packages-subtitle {
+            color: var(--neutral);
+        }
+
+        .packages-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-lg);
+        }
+
+        .package-card {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 250px;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            box-shadow: var(--shadow-md);
+            flex: 1 1 calc(33.333% - var(--space-lg));
+            min-width: 280px;
+        }
+
+        .package-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .package-card:nth-child(2) {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+        }
+
+        .package-card:nth-child(3) {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1642790595397-7043e3b05663?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+        }
+
+        .package-card:nth-child(4) {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1640622308238-70e5b54547c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+        }
+
+        .package-card:nth-child(5) {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+        }
+
+        .package-card:nth-child(6) {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1642790595397-7043e3b05663?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');
+        }
+
+        .package-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .package-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: var(--space-xs);
+        }
+
+        .package-rate {
+            background: var(--secondary);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .package-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .package-features {
+            list-style: none;
+            margin-bottom: var(--space-md);
+        }
+
+        .package-features li {
+            margin-bottom: var(--space-xs);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .package-features li i {
+            color: var(--secondary);
+        }
+
+        .package-btn {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            width: 100%;
+        }
+
+        .package-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-lg);
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: var(--space-xl);
+            position: relative;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: var(--space-lg);
+            right: var(--space-lg);
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--neutral);
+        }
+
+        .modal-header {
+            margin-bottom: var(--space-lg);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .modal-description {
+            color: var(--neutral);
+            margin-bottom: var(--space-lg);
+        }
+
+        .modal-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .modal-detail {
+            background: var(--neutral-bg);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+        }
+
+        .modal-detail-label {
+            font-size: 0.9rem;
+            color: var(--neutral);
+            margin-bottom: var(--space-xs);
+        }
+
+        .modal-detail-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .benefits-list {
+            margin-bottom: var(--space-lg);
+        }
+
+        .benefits-list li {
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+        }
+
+        .benefits-list li i {
+            color: var(--secondary);
+            margin-top: var(--space-xs);
+        }
+
+        .investment-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            padding: var(--space-md);
+            border: 1px solid var(--neutral-light);
+            border-radius: var(--radius-md);
+            font-family: var(--font-primary);
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        .btn {
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--neutral-bg);
+            color: var(--neutral-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--neutral-light);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .package-card {
+                flex: 1 1 calc(50% - var(--space-lg));
+            }
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-main {
+                flex-direction: column;
+            }
+            
+            .profile-column {
+                width: 100%;
+            }
+            
+            .package-card {
+                flex: 1 1 calc(50% - var(--space-lg));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .package-card {
+                flex: 1 1 100%;
+            }
+            
+            .modal-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .dashboard-header {
+                flex-direction: column;
+                gap: var(--space-md);
+                text-align: center;
+            }
+            
+            .modal-content {
+                padding: var(--space-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="logo">
+                <div class="logo-icon">FP</div>
+                <div class="logo-text">FinCash Pro</div>
+            </div>
+            <div class="user-controls">
+                <div class="notification-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="settings-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="user-avatar" id="header-avatar">JD</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Column 1: User Profile -->
+            <section class="profile-column">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="avatar">JD</div>
+                    <h2 class="profile-name" id="name">John Davidson</h2>
+                    <p class="profile-username" id="username">@johnd</p>
+                </div>
+                
+                <div class="profile-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value" id="email">john.davidson@example.com</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Phone:</span>
+                        <span class="detail-value" id="phone">+1 (555) 123-4567</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Balance:</span>
+                        <span class="detail-value" id="balance">$42,580.00</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Joined:</span>
+                        <span class="detail-value" id="joined">Jan 15, 2022</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value">
+                            <span class="status-badge status-verified" id="verified">Verified</span>
+                            <span class="status-badge status-active" id="active">Active</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="referral-section">
+                    <h3 class="referral-title">Referral Program</h3>
+                    <div class="referral-item">
+                        <span class="detail-label">Total Referrals:</span>
+                        <span class="detail-value" id="total-referrals">24</span>
+                    </div>
+                    <div class="referral-item">
+                        <span class="detail-label">Referral Code:</span>
+                        <span class="detail-value" id="referral-code">FINPRO24</span>
+                    </div>
+                    <div class="referral-link">
+                        <span id="referral-link">https://fincash.pro/ref/FINPRO24</span>
+                        <button class="copy-btn" id="copy-link">Copy</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Columns 2 & 3: Investment Packages -->
+            <section class="packages-container">
+                <div class="packages-header">
+                    <h2 class="packages-title">Investment Packages</h2>
+                    <p class="packages-subtitle">Choose from our premium investment options</p>
+                </div>
+                
+                <div class="packages-grid">
+                    <!-- Package 1 -->
+                    <div class="package-card" data-modal="modal-1">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Starter Package</h3>
+                                <div class="package-rate">8.5% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">$500 - $2,499</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 30-day term</li>
+                                <li><i class="fas fa-check"></i> Daily returns</li>
+                                <li><i class="fas fa-check"></i> Basic support</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 2 -->
+                    <div class="package-card" data-modal="modal-2">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Growth Package</h3>
+                                <div class="package-rate">12% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">$2,500 - $9,999</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 60-day term</li>
+                                <li><i class="fas fa-check"></i> Weekly returns</li>
+                                <li><i class="fas fa-check"></i> Priority support</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 3 -->
+                    <div class="package-card" data-modal="modal-3">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Premium Package</h3>
+                                <div class="package-rate">15.5% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">$10,000 - $24,999</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 90-day term</li>
+                                <li><i class="fas fa-check"></i> Bi-weekly returns</li>
+                                <li><i class="fas fa-check"></i> Dedicated manager</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 4 -->
+                    <div class="package-card" data-modal="modal-4">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Elite Package</h3>
+                                <div class="package-rate">18% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">$25,000 - $49,999</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 120-day term</li>
+                                <li><i class="fas fa-check"></i> Monthly returns</li>
+                                <li><i class="fas fa-check"></i> VIP support</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 5 -->
+                    <div class="package-card" data-modal="modal-5">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Executive Package</h3>
+                                <div class="package-rate">21% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">$50,000 - $99,999</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 180-day term</li>
+                                <li><i class="fas fa-check"></i> Quarterly returns</li>
+                                <li><i class="fas fa-check"></i> Personal advisor</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Package 6 -->
+                    <div class="package-card" data-modal="modal-6">
+                        <div class="package-header">
+                            <div>
+                                <h3 class="package-name">Wealth Package</h3>
+                                <div class="package-rate">25% ROI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="package-price">$100,000+</div>
+                            <ul class="package-features">
+                                <li><i class="fas fa-check"></i> 365-day term</li>
+                                <li><i class="fas fa-check"></i> Custom returns</li>
+                                <li><i class="fas fa-check"></i> Exclusive benefits</li>
+                            </ul>
+                            <button class="package-btn">Invest Now</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Package Modals -->
+    <!-- Modal 1 -->
+    <div class="modal" id="modal-1">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Starter Package</h2>
+                <p class="modal-description">Perfect for beginners looking to start their investment journey with minimal risk and steady returns.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">8.5%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">$500 - $2,499</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">30 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">$542.50 on $500</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Daily returns deposited to your account</li>
+                    <li><i class="fas fa-check"></i> Basic customer support</li>
+                    <li><i class="fas fa-check"></i> Access to investment tutorials</li>
+                    <li><i class="fas fa-check"></i> Low minimum investment</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-1">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-1" placeholder="Enter amount between 500 and 2499" min="500" max="2499">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-1">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-1" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-1">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-1" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-1">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2 -->
+    <div class="modal" id="modal-2">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Growth Package</h2>
+                <p class="modal-description">Designed for investors ready to grow their portfolio with higher returns and extended terms.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">12%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">$2,500 - $9,999</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">60 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">$2,800 on $2,500</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Weekly returns with compounding interest</li>
+                    <li><i class="fas fa-check"></i> Priority customer support</li>
+                    <li><i class="fas fa-check"></i> Access to market analysis reports</li>
+                    <li><i class="fas fa-check"></i> Medium risk level</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-2">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-2" placeholder="Enter amount between 2500 and 9999" min="2500" max="9999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-2">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-2" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-2">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-2" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-2">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3 -->
+    <div class="modal" id="modal-3">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Premium Package</h2>
+                <p class="modal-description">Our premium offering for serious investors seeking substantial returns with professional management.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">15.5%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">$10,000 - $24,999</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">90 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">$11,550 on $10,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Bi-weekly returns with premium interest</li>
+                    <li><i class="fas fa-check"></i> Dedicated account manager</li>
+                    <li><i class="fas fa-check"></i> Exclusive investment opportunities</li>
+                    <li><i class="fas fa-check"></i> Customized portfolio strategy</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-3">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-3" placeholder="Enter amount between 10000 and 24999" min="10000" max="24999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-3">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-3" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-3">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-3" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-3">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4 -->
+    <div class="modal" id="modal-4">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Elite Package</h2>
+                <p class="modal-description">For sophisticated investors looking for premium returns with VIP treatment and exclusive benefits.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">18%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">$25,000 - $49,999</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">120 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">$29,500 on $25,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Monthly returns with elite interest rates</li>
+                    <li><i class="fas fa-check"></i> VIP customer support with 24/7 access</li>
+                    <li><i class="fas fa-check"></i> Advanced portfolio diversification</li>
+                    <li><i class="fas fa-check"></i> Priority access to new investment products</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-4">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-4" placeholder="Enter amount between 25000 and 49999" min="25000" max="49999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-4">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-4" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-4">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-4" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-4">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5 -->
+    <div class="modal" id="modal-5">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Executive Package</h2>
+                <p class="modal-description">Our executive tier for high-net-worth individuals seeking premium returns with personalized service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">21%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">$50,000 - $99,999</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">180 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">$60,500 on $50,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Quarterly returns with executive-level interest</li>
+                    <li><i class="fas fa-check"></i> Personal financial advisor</li>
+                    <li><i class="fas fa-check"></i> Custom investment strategies</li>
+                    <li><i class="fas fa-check"></i> Exclusive networking events</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-5">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-5" placeholder="Enter amount between 50000 and 99999" min="50000" max="99999">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-5">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-5" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-5">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-5" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-5">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 6 -->
+    <div class="modal" id="modal-6">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Wealth Package</h2>
+                <p class="modal-description">The ultimate investment package for wealth preservation and maximum returns with bespoke service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">25%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">$100,000+</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">365 days</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Estimated Returns</div>
+                    <div class="modal-detail-value">$125,000 on $100,000</div>
+                </div>
+            </div>
+            
+            <div class="benefits-list">
+                <h3>Benefits</h3>
+                <ul>
+                    <li><i class="fas fa-check"></i> Custom return schedule tailored to your needs</li>
+                    <li><i class="fas fa-check"></i> Dedicated wealth management team</li>
+                    <li><i class="fas fa-check"></i> Exclusive investment opportunities</li>
+                    <li><i class="fas fa-check"></i> Global portfolio diversification</li>
+                </ul>
+            </div>
+            
+            <form class="investment-form">
+                <div class="form-group">
+                    <label class="form-label" for="amount-6">Investment Amount ($)</label>
+                    <input type="number" class="form-input" id="amount-6" placeholder="Enter amount (minimum 100000)" min="100000">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone-6">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone-6" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes-6">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes-6" placeholder="Any special instructions or questions"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="pay-6">Invest Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const profileData = {
+            username: "johnd",
+            name: "John Davidson",
+            email: "john.davidson@example.com",
+            phone: "+1 (555) 123-4567",
+            balance: 42580.00,
+            referralCode: "FINPRO24",
+            referralLink: "https://fincash.pro/ref/FINPRO24",
+            joined: "Jan 15, 2022",
+            verified: true,
+            active: true,
+            totalReferrals: 24,
+            avatarInitials: "JD"
+        };
+
+        // Populate profile data
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profile data
+            document.getElementById('username').textContent = `@${profileData.username}`;
+            document.getElementById('name').textContent = profileData.name;
+            document.getElementById('email').textContent = profileData.email;
+            document.getElementById('phone').textContent = profileData.phone;
+            document.getElementById('balance').textContent = `$${profileData.balance.toLocaleString()}`;
+            document.getElementById('referral-code').textContent = profileData.referralCode;
+            document.getElementById('referral-link').textContent = profileData.referralLink;
+            document.getElementById('joined').textContent = profileData.joined;
+            document.getElementById('total-referrals').textContent = profileData.totalReferrals;
+            document.getElementById('avatar').textContent = profileData.avatarInitials;
+            document.getElementById('header-avatar').textContent = profileData.avatarInitials;
+            
+            // Status badges
+            if (!profileData.verified) {
+                document.getElementById('verified').textContent = "Not Verified";
+                document.getElementById('verified').classList.remove('status-verified');
+                document.getElementById('verified').classList.add('status-inactive');
+            }
+            
+            if (!profileData.active) {
+                document.getElementById('active').textContent = "Inactive";
+                document.getElementById('active').classList.remove('status-active');
+                document.getElementById('active').classList.add('status-inactive');
+            }
+
+            // Copy referral link functionality
+            document.getElementById('copy-link').addEventListener('click', function() {
+                const referralLink = document.getElementById('referral-link').textContent;
+                navigator.clipboard.writeText(referralLink).then(() => {
+                    const originalText = this.textContent;
+                    this.textContent = 'Copied!';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                    }, 2000);
+                });
+            });
+
+            // Modal functionality
+            const packageCards = document.querySelectorAll('.package-card');
+            const modals = document.querySelectorAll('.modal');
+            const closeButtons = document.querySelectorAll('.close-modal, .close-form');
+
+            packageCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const modalId = this.getAttribute('data-modal');
+                    document.getElementById(modalId).style.display = 'flex';
+                });
+            });
+
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+
+            // Close modal when clicking outside content
+            modals.forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                    }
+                });
+            });
+
+            // Invest Now buttons
+            const investButtons = document.querySelectorAll('[id^="pay-"]');
+            investButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modalId = this.closest('.modal').id;
+                    const amountInput = document.querySelector(`#${modalId} input[type="number"]`);
+                    const phoneInput = document.querySelector(`#${modalId} input[type="tel"]`);
+                    
+                    if (!amountInput.value || !phoneInput.value) {
+                        alert('Please fill in all required fields');
+                        return;
+                    }
+                    
+                    const amount = parseFloat(amountInput.value);
+                    const min = parseFloat(amountInput.min);
+                    const max = parseFloat(amountInput.max);
+                    
+                    if (amount < min || (max && amount > max)) {
+                        if (max) {
+                            alert(`Please enter an amount between $${min} and $${max}`);
+                        } else {
+                            alert(`Please enter an amount of at least $${min}`);
+                        }
+                        return;
+                    }
+                    
+                    // In a real app, this would process the payment
+                    alert(`Investment of $${amount} submitted successfully!`);
+                    this.closest('.modal').style.display = 'none';
+                    
+                    // Reset form
+                    amountInput.value = '';
+                    phoneInput.value = '';
+                    if (document.querySelector(`#${modalId} textarea`)) {
+                        document.querySelector(`#${modalId} textarea`).value = '';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
