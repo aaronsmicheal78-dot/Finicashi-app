@@ -66,6 +66,7 @@ def initiate_payment():
         amount = int(amount)
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid amount"}), 400
+    
     if amount not in PACKAGE_MAP:
         return jsonify({"error": "Amount does not match any package"}), 400
 

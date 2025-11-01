@@ -173,13 +173,13 @@ function showMessage(message, type) {
         });
 
         // Add some interactive effects
-        //document.addEventListener('mousemove', (e) => {
-           // const heroSection = document.getElementById('hero-section');
-          //  const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-         //   const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+    //     document.addEventListener('mousemove', (e) => {
+    //        const heroSection = document.getElementById('hero-section');
+    //        const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+    //        const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
             
-        //    heroSection.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-       // });
+    //        heroSection.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+    //    });
 
        
 

@@ -262,9 +262,6 @@ def process_referral_bonuses(payer_id: int, amount: Decimal, payment_id: int):
     return True
 
 
-
-
-
 # blueprints/referrals/bonus_processor.py
 
 """

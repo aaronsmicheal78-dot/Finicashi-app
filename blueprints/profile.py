@@ -20,31 +20,27 @@ def get_user_profile():
 
     return jsonify(user.to_dict()), 200
 
-#====================================================================================
-# @bp.route("/profile/<int:user_id>")
-# def profile(user_id):
-#         if not g.user:
-#             return redirect(url_for("auth.login"))  # Use blueprint route name
-
-#         if g.user.id != user_id:
-#             return "Access denied", 403
-
-#         return render_template("partials/profile.html", user=g.user)
-
-# -----------------------------------------------------------------------------
-#       Endpoint: Get User Profile
-# -------------------------------------------------------------------------------
-# @bp.route('/api/user/profile/<int:user_id>', methods=['GET'])
-# def get_profile(user_id):
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
-#     return jsonify(user.to_dict()), 200
-
 #==========================================================================
 
 @bp.route("/profile/<int:user_id>")
 def profile_page(user_id):
     if "user_id" not in session:
         return redirect(url_for("index.login"))
+     
+          # admin login access
+    if "user_id" == "admin_user":
+        return redirect(url_for("partials/admin.html"))
+      
+               
     return render_template("partials/profile.html", user_id=user_id)
+
+#===================================================================================
+
+
+
+
+
+
+
+
+

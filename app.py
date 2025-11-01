@@ -29,10 +29,14 @@ def create_app():
 
     # ----------------------
     # Basic routes
-    # ----------------------
+   # ----------------------
     @app.route("/")
     def home():
         return render_template("index.html")
+
+    # @app.route("/")
+    # def home():
+    #     return render_template("partials/admin.html")
 
     @app.route("/healthz")
     def healthz():
