@@ -15,5 +15,5 @@ class Config:
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
 
     # Final URI
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL or f"sqlite:///{os.path.join(basedir, 'instance', 'fincash.db')}"
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL or f"sqlite:///{os.path.join(basedir, 'instance', 'fincash.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
