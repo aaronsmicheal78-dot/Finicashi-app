@@ -11,8 +11,8 @@ class Config:
     DATABASE_URL = os.getenv("DATABASE_URL")
 
     # Render Postgres fix for pg8000
-    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
+    #if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+      #  DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
 
     # Final URI
        # SQLALCHEMY_DATABASE_URI = DATABASE_URL or f"sqlite:///{os.path.join(basedir, 'instance', 'fincash.db')}"
