@@ -6,14 +6,14 @@ load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 instance_dir = os.path.join(basedir, "instance")
-os.makedirs(instance_dir, exist_ok=True)  # ensure instance folder exists
+os.makedirs(instance_dir, exist_ok=True) 
 
 class Config:
-    # General environment
+  
     FLASK_ENV = os.getenv("FLASK_ENV", "production")
     DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
 
-    # Secret key
+ 
     SECRET_KEY = os.getenv("SECRET_KEY", "dev_key_change_me")
 
     # Marz API configuration
@@ -37,3 +37,12 @@ class Config:
 
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+
+
+
+
+
+
+
+

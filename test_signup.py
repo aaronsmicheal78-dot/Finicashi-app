@@ -1,38 +1,21 @@
-import requests
+# manage.py
+import os
+from extensions import db
+from flask_migrate import Migrate
+from app import create_app
 
-BASE_URL = "http://127.0.0.1:5000"
+# Create Flask app
+app = create_app()
 
-def test_signup():
-    url = f"{BASE_URL}/api/signup"
-    data = {
-        "fullName": "Test User",
-        "email": "testuser@example.com",
-        "phone": "+256700000001",
-        "password": "TestPass123"
-    }
-    response = requests.post(url, json=data)
-    print("Signup:", response.status_code, response.text)
+# Initialize Flask-Migrate
+migrate = Migrate(app, db)
 
-def test_login():
-    url = f"{BASE_URL}/api/login"
-    data = {
-        "email_or_phone": "testuser@example.com",
-        "password": "TestPass123"
-    }
-    session = requests.Session()
-    response = session.post(url, json=data)
-    print("Login:", response.status_code, response.text)
-    return session
-
-def test_profile(session):
-    url = f"{BASE_URL}/api/user/profile"
-    response = session.get(url)
-    print("Profile:", response.status_code, response.text)
-
-def main():
-    test_signup()
-    session = test_login()
-    test_profile(session)
+# Optional: for shell context
+@app.shell_context_processor
+def make_shell_context():
+    from models import User  # import your models here
+    return {"db": db, "User": User}
 
 if __name__ == "__main__":
-    main()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)

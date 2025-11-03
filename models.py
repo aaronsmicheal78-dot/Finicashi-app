@@ -135,17 +135,28 @@ class Transaction(db.Model, BaseMixin):
 # PAYMENTS & WITHDRAWALS
 # ===========================================================
 
-class Payment(db.Model, BaseMixin):
+class Payment(db.Model):
     __tablename__ = 'payments'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=True)
-    reference = db.Column(db.String(128), unique=True, nullable=False)
-    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id', ondelete='SET NULL'), nullable=True, index=True)
+    
+    # Allow multiple payments per user, unique constraint removed
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete='SET NULL'), nullable=True)
+    
+    reference = db.Column(db.String(128), nullable=False)
+    
+    transaction_id = db.Column(
+        db.Integer,
+        db.ForeignKey('transactions.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True
+    )
+    
     provider = db.Column(db.String(50))
     method = db.Column(db.String(50))
     external_ref = db.Column(db.String(128), index=True)
     idempotency_key = db.Column(db.String(128), index=True)
+    
     verified = db.Column(db.Boolean, default=False)
     status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
@@ -154,9 +165,19 @@ class Payment(db.Model, BaseMixin):
     phone_number = db.Column(db.String(32))
 
     __table_args__ = (
+        # Unique constraints with explicit names to prevent Alembic batch errors
+        UniqueConstraint('reference', name='uq_payments_reference'),
         UniqueConstraint('idempotency_key', 'external_ref', name='uq_payments_idempotency_external'),
-        Index('ix_payments_reference', 'external_ref'),
+        Index('ix_payments_external_ref', 'external_ref'),
     )
+
+
+
+
+
+
+
+
 
 class Withdrawal(db.Model, BaseMixin):
     __tablename__ = 'withdrawals'
@@ -272,7 +293,7 @@ class LoginSession(db.Model, BaseMixin):
 
 class LoginAttempt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     ip_address = db.Column(db.String(45))
     success = db.Column(db.Boolean, default=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
