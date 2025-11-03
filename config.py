@@ -28,7 +28,7 @@ class Config:
 
     # 🔧 Fix for Render’s postgres:// URLs
     if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
 
     if DATABASE_URL:
         SQLALCHEMY_DATABASE_URI = DATABASE_URL

@@ -10,8 +10,7 @@ requests==2.32.3
 Click==8.1.7
 Flask-Login==0.6.3
 Flask-Migrate==4.1.0
-psycopg[binary]==3.2.2
-
+pg8000==1.31.5
 
 
 
