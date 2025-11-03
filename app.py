@@ -15,7 +15,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     migrate = Migrate(app, db)
-    print("ACTIVE DATABASE URI →", app.config["SQLALCHEMY_DATABASE_URI"])
+    print("Using DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
 
 
     # Initialize extensions
@@ -63,7 +63,7 @@ app = create_app()  # THIS is the fully configured app
 
 # for rule in app.url_map.iter_rules():
 #     print("🛣️ Route:", rule)
-
+  
 # ======================
 # Local dev
 # ======================

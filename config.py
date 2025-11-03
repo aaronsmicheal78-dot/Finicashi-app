@@ -30,12 +30,8 @@ class Config:
     if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
 
-    if DATABASE_URL:
-        SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    else:
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
-
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Logging
+    # Optional: logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
