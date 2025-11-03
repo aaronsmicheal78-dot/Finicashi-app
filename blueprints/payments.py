@@ -15,10 +15,14 @@ import hashlib
 import json
 import requests 
 from blueprints.payment_webhooks import SessionLocal 
+import os
   
 
 
-bp = Blueprint("payments", __name__, url_prefix="/api")  
+bp = Blueprint("payments", __name__, url_prefix="")  
+
+
+
 
 PACKAGE_MAP = {
     10000: "Bronze",
@@ -45,9 +49,9 @@ def generate_hmac_signature(payload: dict, secret: str) -> str:
     return signature, body_json
 
 
-@bp.route("/initiate", methods=["POST"])
+@bp.route("/payment/initiate", methods=["POST"])
 def initiate_payment():
-    # 1️⃣ Validate logged-in user
+    # 1️⃣ Ensure user is authenticated FIRST (best practice)
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
@@ -55,27 +59,30 @@ def initiate_payment():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # 2️⃣ Parse payload
-    payload = request.get_json(force=True)
-    amount = payload.get("amount")
-    phone = payload.get("phone_number")
-    description = payload.get("description", "")
+    # 2️⃣ Parse and validate request data
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
 
-    # 3️⃣ Validate amount
-    try:
-        amount = int(amount)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid amount"}), 400
-    
-    if amount not in PACKAGE_MAP:
-        return jsonify({"error": "Amount does not match any package"}), 400
+    amount = data.get('amount')
+    phone = data.get('phone')
 
-    # 4️⃣ Validate phone
-    if not phone or not isinstance(phone, str):
-        return jsonify({"error": "Missing phone number"}), 400
-    phone = phone.strip()
-    if not re.fullmatch(r"(?:\+256|0)\d{9}", phone):
-        return jsonify({"error": "Invalid phone number"}), 400
+    # 3️⃣ Validate phone (Ugandan format)
+    if not phone or not re.match(r'^(?:\+256|0)?7\d{8}$', phone.replace(' ', '')):
+        return jsonify({'error': 'Invalid phone number'}), 400
+
+    # 4️⃣ Enforce allowed amounts
+    allowed_amounts = {10000, 20000, 30000, 40000, 50000}
+    if amount not in allowed_amounts:
+        return jsonify({'error': 'Invalid investment amount'}), 400  # ❗ was 40 → should be 400
+
+    # return jsonify({
+    #     'status': 'success',
+    #     'amount': amount,
+    #     'phone': phone,
+    #     'user_id': user.id
+    # })
+
 
     # 5️⃣ Generate merchant reference
     merchant_reference = str(uuid.uuid4())
@@ -88,7 +95,6 @@ def initiate_payment():
             amount=amount,
             currency="UGX",
             phone_number=phone,
-            description=description,
             status=PaymentStatus.PENDING
         )
         db.session.add(payment)
@@ -112,8 +118,7 @@ def initiate_payment():
         "amount": str(amount),
         "country": "UG",
         "reference": merchant_reference,
-        "description": description,
-        "callback_url": payload.get("callback_url") or f"{current_app.config.get('APP_BASE_URL')}/api/payments/webhook",
+        "callback_url": marz_payload.get("callback_url") or f"{current_app.config.get('APP_BASE_URL')}/api/payments/webhook",
         "metadata": {
             "user_id": user.id,
             "package": PACKAGE_MAP[amount]

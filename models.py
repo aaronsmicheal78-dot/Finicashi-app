@@ -43,9 +43,10 @@ class User(db.Model, BaseMixin):
     __tablename__ = 'users'
     __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    email = db.Column(db.String(120), unique=True, nullable=True, index=True)
-    phone = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    phone = db.Column(db.String(20), unique=True, nullable=False)
+    role = db.Column(db.String(20), nullable=True, default="user", index=True)
 
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
@@ -73,6 +74,7 @@ class User(db.Model, BaseMixin):
 
         return {
             "id": self.id,
+            "role": self.role,
             "username": self.username,
             "email": self.email,
             "phone": self.phone,
@@ -179,6 +181,16 @@ class Bonus(db.Model, BaseMixin):
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
     type = db.Column(db.String(50))  # e.g. 'referral', 'signup', etc.
     status = db.Column(db.String(20), default='active')
+#==========================================================================
+#for temporary testing the dynamic admin dashboard
+class ReferralBonus(db.Model, BaseMixin):
+    __tablename__ = 'Referralbonuses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
+    type = db.Column(db.String(50))  # e.g. 'referral', 'signup', etc.
+    status = db.Column(db.String(20), default='active')
 
     # optional metadata for auditability
     payment_id = db.Column(db.Integer, db.ForeignKey('payments.id'), nullable=True, index=True)
@@ -193,7 +205,7 @@ class Referral(db.Model, BaseMixin):
     referred_email = db.Column(db.String(120))
     referred_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     reward_issued = db.Column(db.Boolean, default=False)
-
+    ReferralBonus = db.Column(db.Integer, default=False)
     referrer = db.relationship('User', back_populates='referrals', foreign_keys=[referrer_id])
 
 # ===========================================================
@@ -257,6 +269,13 @@ class LoginSession(db.Model, BaseMixin):
     def end_session(self):
         self.is_active = False
         self.logout_time = datetime.utcnow()
+
+class LoginAttempt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    ip_address = db.Column(db.String(45))
+    success = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ===========================================================
 # IDEMPOTENCY KEY TRACKING

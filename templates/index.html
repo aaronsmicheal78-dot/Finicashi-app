@@ -236,11 +236,24 @@
         console.log("Server response:", data);
 
         if (data.user) {
-          alert("Login successful!");
-          window.location.href = `/profile/${data.user.id}`; // redirect example
-        } else {
-          alert(data.error || "Invalid email/phone or password.");
-        }
+  alert("Login successful!");
+  
+  // 🔑 Redirect based on role
+  if (data.user.role === "admin") {
+    window.location.href = "/admin/dashboard"; // main admin route
+  } else {
+    window.location.href = `/profile`;
+  }
+} else {
+  alert(data.error || "Invalid email/phone or password.");
+}
+
+        // if (data.user) {
+        //   alert("Login successful!");
+        //   window.location.href = `/profile/${data.user.id}`; // redirect example
+        // } else {
+        //   alert(data.error || "Invalid email/phone or password.");
+        // }
       })
       .catch(error => {
         console.error("Login request failed:", error);

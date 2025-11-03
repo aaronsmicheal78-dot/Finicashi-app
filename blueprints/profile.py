@@ -5,11 +5,11 @@ from models import User
 bp = Blueprint('profile',__name__, url_prefix="")
 
 # ----------------------------------------------------------------------------------
-# 1️⃣ Get user profile (used by JS loadUserData)
+# 1️⃣ JAVASCRIPT GETS THIS DATA TO DYNAMICALLY UPDATE/ LOAD USER DATA
 # ----------------------------------------------------------------------------------
 @bp.route("/user/profile", methods=["GET"])
 def get_user_profile():
-    # Assuming user_id is stored in session after login
+  
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
@@ -21,18 +21,16 @@ def get_user_profile():
     return jsonify(user.to_dict()), 200
 
 #==========================================================================
+# THIS IS THE PROFILE PAGE FOR USERS
 
-@bp.route("/profile/<int:user_id>")
-def profile_page(user_id):
+@bp.route("/profile")
+def my_profile():
     if "user_id" not in session:
-        return redirect(url_for("index.login"))
-     
-          # admin login access
-    if "user_id" == "admin_user":
-        return redirect(url_for("partials/admin.html"))
-      
-               
-    return render_template("partials/profile.html", user_id=user_id)
+        return redirect(url_for("auth.login"))
+    user = User.query.get_or_404(session["user_id"])
+    return render_template("partials/profile.html", user=user, is_admin_view=False)
+
+
 
 #===================================================================================
 

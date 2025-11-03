@@ -29,10 +29,10 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev_key_change_me")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "sqlite:///fincashitoday.db"
-    )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+# class Config:
+#     SECRET_KEY = os.environ.get("SECRET_KEY", "dev_key_change_me")
+#     SQLALCHEMY_DATABASE_URI = os.environ.get(
+#         "DATABASE_URL", "sqlite:///fincashitoday.db"
+#     )
+#SQLALCHEMY_TRACK_MODIFICATIONS = False
 

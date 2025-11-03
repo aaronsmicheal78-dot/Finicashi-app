@@ -189,3 +189,31 @@ def handle_payment_webhook():
 
     return jsonify({"status": "ok"}), 200
 
+from flask import request, current_app
+import hmac
+import hashlib
+import time
+
+def verify_webhook_signature():
+    # Get the headers Marz sent
+    signature_header = request.headers.get(current_app.config['WEBHOOK_SIGNATURE_HEADER'])
+    timestamp_header = request.headers.get(current_app.config['WEBHOOK_TIMESTAMP_HEADER'])
+    
+    # Verify timestamp (prevent replay attacks)
+    current_time = int(time.time())
+    if current_time - int(timestamp_header) > 300:  # 5 minutes
+        return False, "Timestamp too old"
+    
+    # Verify signature
+    payload = timestamp_header + '.' + request.get_data(as_text=True)
+    expected_signature = hmac.new(
+        current_app.config['WEBHOOK_SECRET'].encode(),
+        payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Compare signatures
+    if not hmac.compare_digest(signature_header, expected_signature):
+        return False, "Invalid signature"
+    
+    return True, "Valid"

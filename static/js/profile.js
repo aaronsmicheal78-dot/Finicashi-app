@@ -167,4 +167,50 @@ async function logoutUser() {
     }
 }
 
+document.querySelectorAll('.investment-form .invest-now-btn').forEach(button => {
+  button.addEventListener('click', async (event) => {
+    // Find the form that contains this button
+    const form = button.closest('.investment-form');
+    const amount = parseInt(form.getAttribute('data-amount'), 10);
+    const phoneInput = form.querySelector('input[name="phone"]');
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+
+    // Basic validation
+    if (!phone) {
+      alert('Please enter your phone number.');
+      return;
+    }
+
+    // Optional: validate phone format (e.g., Ugandan number)
+    const phoneRegex = /^(?:\+256|0)?[7][0-9]{8}$/;
+    if (!phoneRegex.test(phone)) {
+      alert('Please enter a valid Ugandan phone number (e.g., 07XXXXXXXX or +2567XXXXXXXX).');
+      return;
+    }
+
+    // Send to Flask
+    try {
+      const response = await fetch('/payment/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount, phone })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Success: maybe redirect or show success message
+        alert('Payment initiated! Check your phone for confirmation.');
+        console.log('Success:', result);
+      } else {
+        alert('Payment failed: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      alert('Failed to connect. Please try again.');
+    }
+  });
+});
    

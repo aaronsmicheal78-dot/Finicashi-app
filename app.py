@@ -5,17 +5,28 @@ from extensions import db
 from models import User
 from blueprints.auth import bp as auth_bp
 from blueprints.profile import bp as profile_bp
+from blueprints.admin import admin_bp as admin_bp
+from flask_login import LoginManager
 
+
+
+login_manager = LoginManager()  # create a global instance
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    print("ACTIVE DATABASE URI →", app.config["SQLALCHEMY_DATABASE_URI"])
+
 
     # Initialize extensions
     db.init_app(app)
-
+   
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(admin_bp)
+
+    login_manager.init_app(app)
+    login_manager.login_view = "auth.login" 
 
     # ----------------------
     # Global before_request
@@ -34,16 +45,16 @@ def create_app():
     def home():
         return render_template("index.html")
 
-    # @app.route("/")
-    # def home():
-    #     return render_template("partials/admin.html")
 
     @app.route("/healthz")
     def healthz():
         return {"status": "ok"}, 200
+    
 
     return app
-
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 # ======================
 # Create app for Gunicorn / WSGI
 # ======================
