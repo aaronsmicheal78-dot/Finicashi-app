@@ -1,7 +1,12 @@
 # Ignore local SQLite database
 
+# Environment variables
+.env
+
+# Local SQLite database
 instance/
 *.db
-.env
+
+# Python cache
 __pycache__/
 *.pyc
