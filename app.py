@@ -26,13 +26,13 @@ def create_app():
     # ----------------------
     # Ensure DATABASE_URL exists
     database_url = app.config.get("SQLALCHEMY_DATABASE_URI")
-    # if database_url is None:
-    #     # Fallback to SQLite locally
-    #     basedir = os.path.abspath(os.path.dirname(__file__))
-    #     instance_dir = os.path.join(basedir, "instance")
-    #     os.makedirs(instance_dir, exist_ok=True)
-    #     database_url = f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
-    #     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    if database_url is None:
+        # Fallback to SQLite locally
+        basedir = os.path.abspath(os.path.dirname(__file__))
+        instance_dir = os.path.join(basedir, "instance")
+        os.makedirs(instance_dir, exist_ok=True)
+        database_url = f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
     # Render PostgreSQL fix: pg8000 instead of psycopg2
     if database_url.startswith("postgres://"):
