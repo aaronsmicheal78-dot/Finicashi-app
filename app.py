@@ -24,12 +24,13 @@ def create_app():
     # ----------------------
 
     DATABASE_URI = app.config.get("SQLALCHEMY_DATABASE_URI")
-    if DATABASE_URI is None:
+    
+    if not DATABASE_URI:
         basedir = os.path.abspath(os.path.dirname(__file__))
         instance_dir = os.path.join(basedir, "instance")
         os.makedirs(instance_dir, exist_ok=True)
-        database_url = f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
-        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        DATABASE_URI = f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
+        app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI 
 
     
     if DATABASE_URI.startswith("postgres://"):
@@ -42,6 +43,8 @@ def create_app():
     # Initialize extensions
     # ----------------------
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
     migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
