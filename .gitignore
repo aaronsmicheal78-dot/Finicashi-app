@@ -1,4 +1,4 @@
-# Ignore local SQLite database
+
 
 # Environment variables
 .env
