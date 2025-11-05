@@ -69,7 +69,7 @@ class User(db.Model, BaseMixin):
     
     def to_dict(self):
         """Serialize user for JSON responses."""
-        base_url = "https://finicashi.com/referral"
+        base_url = "https://finicashi-app.onrender.com/"
         referral_link = f"{base_url}/{self.username}/{self.referral_code}" if self.referral_code else None
 
         return {
@@ -168,17 +168,8 @@ class Payment(db.Model):
         # Unique constraints with explicit names to prevent Alembic batch errors
         UniqueConstraint('reference', name='uq_payments_reference'),
         UniqueConstraint('idempotency_key', 'external_ref', name='uq_payments_idempotency_external'),
-        Index('ix_payments_external_ref', 'external_ref'),
+       # Index('ix_payments_external_ref', 'external_ref'),
     )
-
-
-
-
-
-
-
-
-
 class Withdrawal(db.Model, BaseMixin):
     __tablename__ = 'withdrawals'
 
@@ -199,7 +190,7 @@ class Bonus(db.Model, BaseMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
-    amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
+    amount = db.Column(db.Numeric(precision=18, scale=2),  nullable=True)
     type = db.Column(db.String(50))  # e.g. 'referral', 'signup', etc.
     status = db.Column(db.String(20), default='active')
 #==========================================================================

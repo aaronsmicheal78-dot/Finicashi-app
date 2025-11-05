@@ -1,165 +1,314 @@
-    <link rel="stylesheet" href="{{url_for('static', filename='css/admin.css')}}">
-    <!-- Admin Dashboard Container -->
-    <div id="admin-dashboard-container">
-        <!-- Sidebar -->
-        <aside id="admin-sidebar">
-            <div class="admin-sidebar-header">
-                <div class="admin-sidebar-logo">
-                    <span>FincashPro</span>
+
+   
+   
+   
+   
+   
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Admin Header -->
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="admin-logo">
+                <div class="admin-logo-icon">ADMIN</div>
+                <div class="admin-logo-text">Admin Dashboard</div>
+            </div>
+            
+            <div class="admin-search">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="admin-search-input" placeholder="Search users, transactions...">
+            </div>
+            
+            <div class="admin-controls">
+                <div class="admin-user" id="admin-user-menu">
+                    <div class="admin-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <span class="admin-name" id="admin-name">Administrator</span>
                 </div>
             </div>
+        </header>
 
-            <nav class="admin-sidebar-nav">
-                <a href="#" class="admin-nav-item active" data-section="dashboard">
-                    <span>📊</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#" class="admin-nav-item" data-section="payment-requests">
-                    <span>💰</span>
-                    <span>Payment Requests</span>
-                    <span class="admin-nav-badge" id="pending-payments-count">0</span>
-                </a>
-                <a href="#" class="admin-nav-item" data-section="bonus-requests">
-                    <span>🎁</span>
-                    <span>Bonus Requests</span>
-                    <span class="admin-nav-badge" id="pending-bonuses-count">0</span>
-                </a>
-                <a href="#" class="admin-nav-item" data-section="user-management">
-                    <span>👥</span>
-                    <span>User Management</span>
-                </a>
-                <a href="#" class="admin-nav-item" data-section="messages">
-                    <span>💬</span>
-                    <span>Messages</span>
-                    <span class="admin-nav-badge" id="unread-messages-count">0</span>
-                </a>
-                <a href="#" class="admin-nav-item" data-section="reports">
-                    <span>📈</span>
-                    <span>Reports</span>
-                </a>
-                <a href="#" class="admin-nav-item" data-section="system">
-                    <span>⚙️</span>
-                    <span>System Settings</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main id="admin-main-content">
-            <!-- Top Header -->
-            <header id="admin-top-header">
-                <h1 class="admin-header-title" id="admin-current-section">Dashboard Overview</h1>
-                <div class="admin-header-actions">
-                    <button id="admin-refresh-data" class="admin-action-btn view">Refresh Data</button>
-                    <div class="admin-user-menu" id="admin-user-menu">
-                        <div class="admin-user-avatar" id="admin-user-avatar">A</div>
-                        <span id="admin-username">Admin User</span>
-                    </div>
-                </div>
-            </header>
+        <!-- Main Admin Content -->
+        <main class="admin-main">
+            <!-- Sidebar -->
+            <aside class="admin-sidebar">
+                <nav class="sidebar-nav">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" id="nav-dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="nav-users">
+                            <i class="fas fa-users"></i>
+                            Users Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="nav-payments">
+                            <i class="fas fa-credit-card"></i>
+                            Payments
+                            <span class="alert-badge" id="pending-payments-badge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="nav-bonuses">
+                            <i class="fas fa-gift"></i>
+                            Bonuses
+                            <span class="alert-badge" id="pending-bonuses-badge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="nav-reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Reports & Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="nav-settings">
+                            <i class="fas fa-cog"></i>
+                            System Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="nav-logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </li>
+                </nav>
+            </aside>
 
             <!-- Content Area -->
-            <section id="admin-content-area">
-                <!-- Stats Grid -->
-                <div id="admin-stats-grid">
-                    <!-- Stats will be dynamically populated -->
-                </div>
-<div class="admin-stat-card users">
-    <div class="admin-stat-value" id="total-users-value">—</div>
-    <div class="admin-stat-label">Total Users</div>  
-</div>
-<div class="admin-stat-card users">
-    <div class="admin-stat-value" id="total-users-active">—</div>
-    <div class="admin-stat-label">Total Active Users</div>
-</div>
-        
-<!-- Dynamic Content Sections -->
-                <div id="admin-dynamic-content">
-                    <!-- Content will be dynamically rendered based on section -->
-                </div>
-            </section>
+            <div class="admin-content">
+                <!-- Stats Overview -->
+                <section class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-payments">0</div>
+                        <div class="stat-label">Total Payments</div>
+                        <div class="stat-change change-positive" id="payments-change">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>0%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-users"></div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-change change-positive" id="users-change">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>0%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card success">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="active-users"></div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+
+                    <div class="stat-card warning">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-bonus"></div>
+                        <div class="stat-label">Total Bonus</div>
+                    </div>
+
+                    <div class="stat-card warning">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="pending-bonus">0</div>
+                        <div class="stat-label">Pending Bonus</div>
+                    </div>
+
+                    <div class="stat-card danger">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="pending-payments">0</div>
+                        <div class="stat-label">Pending Payments</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="daily-investments">0</div>
+                        <div class="stat-label">Daily Investments</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="daily-payouts">0</div>
+                        <div class="stat-label">Daily Payouts</div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-section">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Total Users Growth</h3>
+                        </div>
+                        <div class="chart-container" id="users-chart">
+                            <div class="chart-placeholder">
+                                Users Growth Chart - Dynamic data will be loaded
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Investment Trends</h3>
+                        </div>
+                        <div class="chart-container" id="investments-chart">
+                            <div class="chart-placeholder">
+                                Investment Trends Chart - Dynamic data will be loaded
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tables Section -->
+                <section class="tables-section">
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3 class="table-title">Recent Payments</h3>
+                            <a href="#" class="view-all" id="view-all-payments">View All</a>
+                        </div>
+                        <table class="admin-table" id="recent-payments-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-table-body">
+                                <!-- Dynamic content will be loaded -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3 class="table-title">Payment Status Overview</h3>
+                        </div>
+                        <table class="admin-table" id="payments-status-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-status-body">
+                                <tr>
+                                    <td><span class="status-badge status-success">Successful</span></td>
+                                    <td id="successful-payments">0</td>
+                                    <td id="successful-amount">0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status-badge status-warning">Pending</span></td>
+                                    <td id="pending-payments-count">0</td>
+                                    <td id="pending-amount">0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status-badge status-danger">Failed</span></td>
+                                    <td id="failed-payments">0</td>
+                                    <td id="failed-amount">0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status-badge status-info">Declined</span></td>
+                                    <td id="declined-payments">0</td>
+                                    <td id="declined-amount">0</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status-badge status-warning">Cancelled</span></td>
+                                    <td id="cancelled-payments">0</td>
+                                    <td id="cancelled-amount">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Quick Actions -->
+                <section class="quick-actions">
+                    <h3 class="table-title" style="margin-bottom: var(--space-lg);">Quick Actions</h3>
+                    <div class="actions-grid">
+                        <a href="#" class="action-btn" id="action-add-user">
+                            <div class="action-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <span class="action-label">Add New User</span>
+                        </a>
+                        <a href="#" class="action-btn" id="action-process-bonus">
+                            <div class="action-icon">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                            <span class="action-label">Process Bonus</span>
+                        </a>
+                        <a href="#" class="action-btn" id="action-manual-payment">
+                            <div class="action-icon">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <span class="action-label">Manual Payment</span>
+                        </a>
+                        <a href="#" class="action-btn" id="action-generate-report">
+                            <div class="action-icon">
+                                <i class="fas fa-file-export"></i>
+                            </div>
+                            <span class="action-label">Generate Report</span>
+                        </a>
+                        <a href="#" class="action-btn" id="action-system-backup">
+                            <div class="action-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <span class="action-label">System Backup</span>
+                        </a>
+                        <a href="#" class="action-btn" id="action-bulk-actions">
+                            <div class="action-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <span class="action-label">Bulk Actions</span>
+                        </a>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
-
-    <!-- Modals -->
-    <!-- Payment Request Modal -->
-    <div id="admin-payment-modal" class="admin-modal-overlay">
-        <div class="admin-modal-container">
-            <div class="admin-modal-header">
-                <h3 class="admin-modal-title" id="admin-payment-modal-title">Payment Request Details</h3>
-                <button class="admin-modal-close" id="admin-close-payment-modal">&times;</button>
-            </div>
-            <div class="admin-modal-body" id="admin-payment-modal-body">
-                <!-- Dynamic content -->
-            </div>
-            <div class="admin-modal-footer" id="admin-payment-modal-footer">
-                <!-- Dynamic actions -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Bonus Request Modal -->
-    <div id="admin-bonus-modal" class="admin-modal-overlay">
-        <div class="admin-modal-container">
-            <div class="admin-modal-header">
-                <h3 class="admin-modal-title" id="admin-bonus-modal-title">Bonus Request Details</h3>
-                <button class="admin-modal-close" id="admin-close-bonus-modal">&times;</button>
-            </div>
-            <div class="admin-modal-body" id="admin-bonus-modal-body">
-                <!-- Dynamic content -->
-            </div>
-            <div class="admin-modal-footer" id="admin-bonus-modal-footer">
-                <!-- Dynamic actions -->
-            </div>
-        </div>
-    </div>
-
-    <!-- User Details Modal -->
-    <div id="admin-user-modal" class="admin-modal-overlay">
-        <div class="admin-modal-container">
-            <div class="admin-modal-header">
-                <h3 class="admin-modal-title" id="admin-user-modal-title">User Details</h3>
-                <button class="admin-modal-close" id="admin-close-user-modal">&times;</button>
-            </div>
-            <div class="admin-modal-body" id="admin-user-modal-body">
-                <!-- Dynamic content -->
-            </div>
-            <div class="admin-modal-footer" id="admin-user-modal-footer">
-                <!-- Dynamic actions -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Message Modal -->
-    <div id="admin-message-modal" class="admin-modal-overlay">
-        <div class="admin-modal-container">
-            <div class="admin-modal-header">
-                <h3 class="admin-modal-title" id="admin-message-modal-title">User Message</h3>
-                <button class="admin-modal-close" id="admin-close-message-modal">&times;</button>
-            </div>
-            <div class="admin-modal-body" id="admin-message-modal-body">
-                <!-- Dynamic content -->
-            </div>
-            <div class="admin-modal-footer" id="admin-message-modal-footer">
-                <!-- Dynamic actions -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div id="admin-confirm-modal" class="admin-modal-overlay">
-        <div class="admin-modal-container">
-            <div class="admin-modal-header">
-                <h3 class="admin-modal-title" id="admin-confirm-modal-title">Confirm Action</h3>
-                <button class="admin-modal-close" id="admin-close-confirm-modal">&times;</button>
-            </div>
-            <div class="admin-modal-body" id="admin-confirm-modal-body">
-                <!-- Dynamic content -->
-            </div>
-            <div class="admin-modal-footer" id="admin-confirm-modal-footer">
-                <!-- Dynamic actions -->
-            </div>
-        </div>
-    </div>
-
-    <script src="{{url_for('static', filename='js/admin.js')}}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>

@@ -58,87 +58,16 @@ def admin_dashboard():
     return render_template("partials/admin.html")
 
 
-@admin_bp.route("/admin/data")
+@admin_bp.route("/admin/data", methods=["GET"])
 @admin_required
 def admin_data():
     total_users = User.query.count()  # Efficient for most cases; use func.count() for huge tables
     return jsonify({
         "total_users": User.query.count(),
-    "total_active_users": User.query.filter_by(is_active=True).count(),
-    "verified_users": User.query.filter_by(is_verified=True).count()
-
-    })
-# #---------- MAIN DASHBOARD PAGE ----------
-# @bp.route('/admin')
-# @login_required
-# def dashboard():
-#     if not current_user.is_admin:
-#         return "Access denied", 403
-#     if "user_id" not in session:
-#         return "Acess denied", 403
-#     return render_template('admin/dashboard.html')
-
-# # ---------- API: TOTAL STATS ----------
-# @bp.route('/api/overview')
-# @login_required
-# def overview():
-#     if not current_user.is_admin:
-#         return jsonify({"error": "unauthorized"}), 403
-
-#     total_users = User.query.count()
-#     total_balance = db.session.query(db.func.sum(User.balance)).scalar() or 0
-#     total_bonuses = db.session.query(db.func.sum(Bonus.amount)).scalar() or 0
-#     total_revenue = (
-#         db.session.query(db.func.sum(Investment.amount)).scalar() or 0
-#     )
-
-#     return jsonify({
-#         "total_users": total_users,
-#         "total_balance": total_balance,
-#         "total_bonuses": total_bonuses,
-#         "total_revenue": total_revenue
-#     })
+        "active_users": User.query.filter_by(is_active=True).count(),
+        "verified_users": User.query.filter_by(is_verified=True).count()
 
 
-# # ---------- API: DAILY STATS ----------
-# @bp.route('/api/daily')
-# @login_required
-# def daily():
-#     if not current_user.is_admin:
-#         return jsonify({"error": "unauthorized"}), 403
+     })
 
-#     today = date.today()
-#     daily_new_users = User.query.filter(db.func.date(User.created_at) == today).count()
-#     daily_payouts = db.session.query(db.func.sum(Payout.amount)).filter(
-#         db.func.date(Payout.created_at) == today
-#     ).scalar() or 0
-#     daily_investments = db.session.query(db.func.sum(Investment.amount)).filter(
-#         db.func.date(Investment.created_at) == today
-#     ).scalar() or 0
-
-#     return jsonify({
-#         "daily_new_users": daily_new_users,
-#         "daily_payouts": daily_payouts,
-#         "daily_investments": daily_investments
-#     })
-
-
-# # ---------- API: SEARCH USER ----------
-# @bp.route('/api/user/search')
-# @login_required
-# def search_user():
-#     if not current_user.is_admin:
-#         return jsonify({"error": "unauthorized"}), 403
-
-#     query = request.args.get('q', '').strip()
-#     if not query:
-#         return jsonify([])
-
-#     results = User.query.filter(
-#         (User.username.ilike(f'%{query}%')) | (User.email.ilike(f'%{query}%'))
-#     ).all()
-
-#     return jsonify([
-#         {"id": u.id, "username": u.username, "email": u.email, "balance": u.balance}
-#         for u in results
-#     ])
+   

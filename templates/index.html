@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <link rel="stylesheet" href="{{url_for('static', filename='main.css')}}">
+     <link rel="stylesheet" href="{{url_for('static', filename='main.css')}}?v=1.1">
        
    
 
@@ -133,7 +133,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="hero-full-name">User Name</label>
+                        <label class="form-label" for="hero-user-name">User Name</label>
                         <input type="text" id="hero-full-name" class="form-input" placeholder="Enter your Username" required>
                     </div>
                     
@@ -141,18 +141,26 @@
                         <label class="form-label" for="hero-email">Email Address</label>
                         <input type="email" id="hero-email" class="form-input" placeholder="Enter your email" required>
                     </div>
+
+                    <!-- <div class="form-group">
+                        <label class="form-label" for="hero-referral-code">Referral Code (Optional)</label>
+                        <input type="tel" id="hero-referral-code" class="form-input" placeholder="Enter Referral code" required>
+                    </div> -->
                     
                     <div class="form-group">
                         <label class="form-label" for="hero-phone">Phone Number</label>
                         <input type="tel" id="hero-phone" class="form-input" placeholder="Enter your phone number" required>
                     </div>
+                    
+                    
+
                     <div class="form-group">
                         <label class="form-label" for="hero-password">Password</label>
                         <input type="password" id="hero-password" class="form-input" placeholder="Create a password" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="hero-password">confirm Password</label>
-                        <input type="confirm password" id="hero-password" class="form-input" placeholder="Confirm password" required>
+                        <input type="password" id="hero-confirm-password" class="form-input" placeholder="Confirm password" required>
                     </div>
 
                      <button type="submit" class="form-button">Create Free Account</button>
@@ -247,13 +255,6 @@
 } else {
   alert(data.error || "Invalid email/phone or password.");
 }
-
-        // if (data.user) {
-        //   alert("Login successful!");
-        //   window.location.href = `/profile/${data.user.id}`; // redirect example
-        // } else {
-        //   alert(data.error || "Invalid email/phone or password.");
-        // }
       })
       .catch(error => {
         console.error("Login request failed:", error);

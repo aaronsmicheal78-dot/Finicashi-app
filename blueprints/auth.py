@@ -1,7 +1,7 @@
 
 from flask import Flask, request, jsonify, session, render_template, Blueprint
 from werkzeug.security import check_password_hash, generate_password_hash
-from models import User, Transaction
+from models import User, Transaction, Bonus
 import re, secrets, string
 from utils import validate_email, validate_phone 
 from flask import Blueprint, jsonify, request, session
@@ -31,118 +31,311 @@ def validate_phone(phone):
 # =============================================
 # Authentication Blueprint for Signup, Login, Logout
 # =============================================
-
-# --------------------------------------------------
-# 1️⃣ Signup Route
-# --------------------------------------------------
 @bp.route("/api/signup", methods=["POST"])
 def signup():
     """
-    Create a new user account.
-    Expected JSON:
-    {
-        "FullName": "",
-        "email": "",
-        "phone": "",
-        "password": ""
-    }
+    Create a new user account with proper error handling and transactions
     """
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        
+        print(f"✅ Received signup data: {data}")
+        
+        if not data:
+            return jsonify({"error": "No JSON data received"}), 400
 
-    username = data.get("fullName", "").strip()
-    email = data.get("email", "").strip().lower()
-    phone = data.get("phone", "").strip()
-    password = data.get("password", "")
+        # Fix field names to match frontend
+        username = data.get("fullName", "").strip()
+        email = data.get("email", "").strip().lower()
+        phone = data.get("phone", "").strip()
+        password = data.get("password", "")
 
-    # ✅ Validation checks
-    if not all([username, email, phone, password]):
-        return jsonify({"error": "All fields are required"}), 400
+        print(f"✅ Parsed fields - username: '{username}', email: '{email}', phone: '{phone}', password: {'*' * len(password)}")
 
-    if User.query.filter((User.email == email) | (User.phone == phone)).first():
-        return jsonify({"error": "Email or phone already exists"}), 400
+        # Validation
+        if not all([username, email, phone, password]):
+            return jsonify({"error": "All fields are required"}), 400
 
-    # ✅ Create user
-    new_user = User(
-        username=username,
-        email=email,
-        phone=phone,
-    )
-    new_user.set_password(password)
+        if len(password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    #generate a random 8-character alphanumeric referral code
-    def generate_referral_code(length=8):
-        characters = string.ascii_uppercase + string.digits
-        while True:
-            code = ''.join(secrets.choice(characters) for _ in range(length))
-            # Ensure uniqueness
-            if not User.query.filter_by(referral_code=code).first():
-                return code
+        # Check for existing user within transaction
+        existing_user = User.query.filter(
+            (User.email == email) | (User.phone == phone)
+        ).first()
+        
+        if existing_user:
+            print(f"❌ User already exists: {existing_user.email} or {existing_user.phone}")
+            return jsonify({"error": "Email or phone already exists"}), 400
 
-    # Generate a unique referral code
-    referral_code = generate_referral_code()
-    new_user.referral_code = referral_code
+        print("✅ No existing user found, creating new user...")
 
-    # Build a referral link
-    base_url = "https://finicashi.com/referral"
-    referral_link = f"{base_url}/{username}/{referral_code}"
-    # we store referral_link in DB if you have a separate field
-    new_user.referral_link = referral_link
+        # ✅ ADD THESE IMPORTS AT THE TOP OF YOUR FUNCTION
+        import string
+        import secrets
 
-    db.session.add(new_user)
-    db.session.commit()
+        # Generate referral code (complete the function)
+        def generate_referral_code(length=8):
+            characters = string.ascii_uppercase + string.digits
+            for attempt in range(10):  # Safety limit to prevent infinite loops
+                code = ''.join(secrets.choice(characters) for _ in range(length))
+                if not User.query.filter_by(referral_code=code).first():
+                    return code
+            # Fallback if no unique code found after 10 attempts
+            return ''.join(secrets.choice(characters) for _ in range(length))
 
-    session["user_id"] = new_user.id  # auto-login after signup
-     # Include referral link in response
-    user_data = new_user.to_dict()
-    user_data["referralLink"] = referral_link  # dynamic referral link
+        # ✅ Create user with proper session management
+        new_user = User(
+            username=username,
+            email=email,
+            phone=phone,
+            referral_code=generate_referral_code()
+        )
+        new_user.set_password(password)
 
-    return jsonify({
-        "message": "Signup successful!",
-        "user": new_user.to_dict()
-    }), 201
+        print(f"✅ User object created: {new_user}")
 
+        # Add to session and commit
+        db.session.add(new_user)
+        db.session.commit()
 
+        print("✅ User saved to database successfully!")
+
+        return jsonify({
+            "message": "Signup successful!",
+            "user": {
+                "id": new_user.id,
+                "username": new_user.username,
+                "email": new_user.email
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()  # Critical for failed transactions
+        print(f"❌ Signup error: {str(e)}")
+        import traceback
+        traceback.print_exc()  # This will show the full stack trace
+        return jsonify({"error": "Internal server error"}), 500
 # --------------------------------------------------
-# 2️⃣ Login Route
-# --------------------------------------------------
-@bp.route("/api/login", methods=["POST"])
-def login():
+# 1️⃣ Signup Route
+# # --------------------------------------------------
+# @bp.route("/api/signup", methods=["POST"])
+# def signup():
+#     """
+#     Create a new user account.
+#     Expected JSON:
+#     {
+#         "FullName": "",
+#         "email": "",
+#         "phone": "",
+#         "password": ""
+#     }
+#     """
+#     data = request.get_json()
+
+#     username = data.get("fullName", "").strip()
+#     email = data.get("email", "").strip().lower()
+#     phone = data.get("phone", "").strip()
+#     password = data.get("password", "")
+
+#     # ✅ Validation checks
+#     if not all([username, email, phone, password]):
+#         return jsonify({"error": "All fields are required"}), 400
+
+#     if User.query.filter((User.email == email) | (User.phone == phone)).first():
+#         return jsonify({"error": "Email or phone already exists"}), 400
+
+#     # ✅ Create user
+#     new_user = User(
+#         username=username,
+#         email=email,
+#         phone=phone,
+#     )
+#     new_user.set_password(password)
+
+#     #generate a random 8-character alphanumeric referral code
+#     def generate_referral_code(length=8):
+#         characters = string.ascii_uppercase + string.digits
+#         while True:
+#             code = ''.join(secrets.choice(characters) for _ in range(length))
+#             # Ensure uniqueness
+#             if not User.query.filter_by(referral_code=code).first():
+#                 return code
+
+#     # Generate a unique referral code
+#     referral_code = generate_referral_code()
+#     new_user.referral_code = referral_code
+
+#     # Build a referral link
+#     base_url = "https://finicashi.com/referral"
+#     referral_link = f"{base_url}/{username}/{referral_code}"
+#     # we store referral_link in DB if you have a separate field
+#     new_user.referral_link = referral_link
+
+#     db.session.add(new_user)
+#     db.session.commit()
+
+#     # Grant signup bonus
+#     signup_bonus = Bonus(
+#     user_id=new_user.id,
+#     amount=5000,          
+#     type="signup",
+#     status="active"
+
+# )
+#     db.session.add(signup_bonus)
+#     db.session.commit()
+
+#     session["user_id"] = new_user.id  # auto-login after signup
+#      # Include referral link in response
+#     user_data = new_user.to_dict()
+#     user_data["referralLink"] = referral_link  # dynamic referral link
+
+#     return jsonify({
+#         "message": "Signup successful!",
+#         "user": new_user.to_dict()
+#     }), 201
+
+# @bp.route("/api/signup", methods=["POST"])
+# def signup():
+#     try:
+#        data = request.get_json()
+        
+#        print(f"✅ Received signup data: {data}")
+        
+#         # DEBUG: Show all existing users
+#     except:
+#         all_users = User.query.all()
+#         print("📋 ALL EXISTING USERS IN DATABASE:")
+#         for user in all_users:
+#             print(f"   - ID: {user.id}, Email: {user.email}, Phone: {user.phone}")
+        
+#         # Rest of your code...
+# # --------------------------------------------------
+# # 2️⃣ Login Route
+# # --------------------------------------------------
+# @bp.route("/api/login", methods=["POST"])
+# def login():
    
-    """
-    Authenticate a user.
-    Expected JSON:
-    {
-        "email_or_phone": "",
-        "password": ""
-    }
-     """
-    data = request.get_json()
-    email_or_phone = data.get("email_or_phone", "").strip().lower()
-    password = data.get("password", "")
+#     """
+#     Authenticate a user.
+#     Expected JSON:
+#     {
+#         "email_or_phone": "",
+#         "password": ""
+#     }
+#      """
+#     data = request.get_json()
+#     email_or_phone = data.get("email_or_phone", "").strip().lower()
+#     password = data.get("password", "")
 
-    # ✅ Validate input
-    if not email_or_phone or not password:
-        return jsonify({"error": "Email/Phone and password are required"}), 400
+#     # ✅ Validate input
+#     if not email_or_phone or not password:
+#         return jsonify({"error": "Email/Phone and password are required"}), 400
 
-    # ✅ Find user by email or phone
-    user = User.query.filter(
-        (User.email == email_or_phone) | (User.phone == email_or_phone)
-    ).first()
+#     # ✅ Find user by email or phone
+#     user = User.query.filter(
+#         (User.email == email_or_phone) | (User.phone == email_or_phone)
+#     ).first()
 
-    if not user or not user.check_password(password):
-        return jsonify({"error": "Invalid credentials"}), 401
+#     if not user or not user.check_password(password):
+#         return jsonify({"error": "Invalid credentials"}), 401
 
-    # ✅ Set session
-    session["user_id"] = user.id
+#     # ✅ Set session
+#     session["user_id"] = user.id
 
-    return jsonify({
-        "message": "Login successful",
-        "user": user.to_dict()
-    }), 200
+#     return jsonify({
+#         "message": "Login successful",
+#         "user": user.to_dict()
+#     }), 200
 
+# @bp.route("/api/signup", methods=["POST"])
+# def signup():
+#     """
+#     Create a new user account with proper error handling and transactions
+#     """
+#     try:
+#         data = request.get_json()
+        
+#         print(f"✅ Received signup data: {data}")
+        
+#         if not data:
+#             return jsonify({"error": "No JSON data received"}), 400
 
-# --------------------------------------------------
-# 3️⃣------------Logout Route-----------------------
+#         # Fix field names to match frontend
+#         username = data.get("fullName", "").strip()
+#         email = data.get("email", "").strip().lower()
+#         phone = data.get("phone", "").strip()
+#         password = data.get("password", "")
+
+#         print(f"✅ Parsed fields - username: '{username}', email: '{email}', phone: '{phone}', password: {'*' * len(password)}")
+
+#         # Validation
+#         if not all([username, email, phone, password]):
+#             return jsonify({"error": "All fields are required"}), 400
+
+#         if len(password) < 6:
+#             return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+#         # Check for existing user within transaction
+#         existing_user = User.query.filter(
+#             (User.email == email) | (User.phone == phone)
+#         ).first()
+        
+#         if existing_user:
+#             print(f"❌ User already exists: {existing_user.email} or {existing_user.phone}")
+#             return jsonify({"error": "Email or phone already exists"}), 400
+
+#         print("✅ No existing user found, creating new user...")
+
+#         # ✅ ADD THESE IMPORTS AT THE TOP OF YOUR FUNCTION
+#         import string
+#         import secrets
+
+#         # Generate referral code (complete the function)
+#         def generate_referral_code(length=8):
+#             characters = string.ascii_uppercase + string.digits
+#             for attempt in range(10):  # Safety limit to prevent infinite loops
+#                 code = ''.join(secrets.choice(characters) for _ in range(length))
+#                 if not User.query.filter_by(referral_code=code).first():
+#                     return code
+#             # Fallback if no unique code found after 10 attempts
+#             return ''.join(secrets.choice(characters) for _ in range(length))
+
+#         # ✅ Create user with proper session management
+#         new_user = User(
+#             username=username,
+#             email=email,
+#             phone=phone,
+#             referral_code=generate_referral_code()
+#         )
+#         new_user.set_password(password)
+
+#         print(f"✅ User object created: {new_user}")
+
+#         # Add to session and commit
+#         db.session.add(new_user)
+#         db.session.commit()
+
+#         print("✅ User saved to database successfully!")
+
+#         return jsonify({
+#             "message": "Signup successful!",
+#             "user": {
+#                 "id": new_user.id,
+#                 "username": new_user.username,
+#                 "email": new_user.email
+#             }
+#         }), 201
+
+#     except Exception as e:
+#         db.session.rollback()  # Critical for failed transactions
+#         print(f"❌ Signup error: {str(e)}")
+#         import traceback
+#         traceback.print_exc()  # This will show the full stack trace
+#         return jsonify({"error": "Internal server error"}), 500
+# # --------------------------------------------------
+# # 3️⃣------------Logout Route-----------------------
 # --------------------------------------------------
 @bp.route("/api/logout", methods=["POST"])
 def logout():

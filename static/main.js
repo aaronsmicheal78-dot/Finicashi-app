@@ -48,7 +48,7 @@
         }
 
         // Registration Form Handler
-        class HeroRegistration {
+        class HeeroRegistration {
             constructor() {
                 this.init();
             }
@@ -70,135 +70,283 @@
                     this.scrollToFeatures();
                 });
             }}
-              // ---------------------------
-// Registration Form JS
-// ---------------------------
 
-// Grab the form element
-const registrationForm = document.getElementById('hero-registration-form');
+            // ================= HeroRegistration JS =================
+// Fully functional and production-ready
+// Works with Flask /api/signup route
+// =================================================================
 
-// Attach submit handler
-registrationForm.addEventListener('submit', handleRegistration);
+// class HeroRegistration {
+//     constructor() {
+//         this.handleRegistration = this.handleRegistration.bind(this);
+//         this.init();
+//     }
 
-// ==========================================================================
-//
-//    ..............REGISTRATION AND SIGNING UP................................
-//=============================================================================
-async function handleRegistration(event) {
-    event.preventDefault();
+//     // Initialize event listeners
+//     init() {
+//         document.addEventListener('DOMContentLoaded', () => {
+//             const registrationForm = document.getElementById('hero-registration-form');
+//             if (registrationForm) {
+//                 registrationForm.addEventListener('submit', this.handleRegistration);
+//             }
+//         });
+//     }
 
-    const formData = {
-        fullName: document.getElementById('hero-full-name').value.trim(),
-        email: document.getElementById('hero-email').value.trim(),
-        phone: document.getElementById('hero-phone').value.trim(),
-        password: document.getElementById('hero-password').value
-    };
+//     // Handle form submission
+//     async handleRegistration(event) {
+//         event.preventDefault();
+//         const registrationForm = event.target;
 
-    // Validate input
-    if (!validateForm(formData)) return;
+//         // Grab inputs
+//         const fullNameEl = document.getElementById('hero-full-name');
+//         const emailEl = document.getElementById('hero-email');
+//         const phoneEl = document.getElementById('hero-phone');
+//         const passwordEl = document.getElementById('hero-password');
+        
 
-    try {
-        // Send POST request to Flask endpoint
-        const response = await fetch('/api/signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
+//         if (!fullNameEl || !emailEl || !phoneEl || !passwordEl) return;
 
-        if (!response.ok) {
-            throw new Error(`Network response was not ok (${response.status})`);
-        }
+//         const formData = {
+//             fullName: fullNameEl.value.trim(),
+//             email: emailEl.value.trim(),
+//             phone: phoneEl.value.trim(),
+//             password: passwordEl.value
+//         };
 
-        const data = await response.json();
+//         // Client-side validation
+//         if (!this.validateForm(formData)) return;
 
-        if (data.success) {
-            showMessage(data.message || 'Signup successful!', 'success');
-            registrationForm.reset();
-            // Redirect or load dashboard after delay
-            setTimeout(() => {
-                window.location.href = '/login'; // or dashboard
-            }, 1500);
-        } else {
-            showMessage(data.message || 'Signup failed!', 'error');
-        }
+//         try {
+//             const response = await fetch('/api/signup', {
+//                 method: 'POST',
+//                 headers: { 
+//                     'Content-Type': 'application/json',
+//                     'Accept': 'application/json'
+//                 },
+//                 body: JSON.stringify(formData)
+//             });
 
-    } catch (error) {
-        console.error('Error during signup:', error);
-        showMessage('Something went wrong. Please try again.', 'error');
-    }
-}
+//             const data = await response.json();
 
-// Simple input validation
-function validateForm(f) {
-    if (!f.fullName || !f.email || !f.phone || !f.password) {
-        showMessage('Please fill in all fields', 'error');
-        return false;
-    }
+//             if (!response.ok) throw new Error(data.error || 'Signup failed');
 
-    if (f.password.length < 6) {
-        showMessage('Password must be at least 6 characters', 'error');
-        return false;
-    }
+//             // Success
+//             this.showMessage(data.message || 'Signup successful!', 'success');
+//             registrationForm.reset();
 
-    return true;
-}
+//             // Redirect to login/dashboard
+//             setTimeout(() => { window.location.href = '/index'; }, 1500);
 
-// Display temporary messages
-function showMessage(message, type) {
-    const messageEl = document.createElement('div');
-    messageEl.textContent = message;
-    messageEl.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 18px;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 1000;
-        ${type === 'success' ? 'background: #1dd1a1;' : 'background: #ff6b6b;'}
-    `;
-    document.body.appendChild(messageEl);
-    setTimeout(() => messageEl.remove(), 3000);}
+//         } catch (error) {
+//             this.showMessage(error.message || 'Something went wrong.', 'error');
+//         }
+//     }
+
+//     // Client-side validation
+//     validateForm(f) {
+//         if (!f.fullName || !f.email || !f.phone || !f.password) {
+//             this.showMessage('Please fill in all fields', 'error');
+//             return false;
+//         }
+//         if (f.password.length < 6) {
+//             this.showMessage('Password must be at least 6 characters', 'error');
+//             return false;
+//         }
+//         return true;
+//     }
+
+//     // Show feedback message
+//     showMessage(msg, type) {
+//         const msgBox = document.getElementById('registration-message');
+//         if (!msgBox) return;
+
+//         msgBox.textContent = msg;
+//         msgBox.className = type; // 'success' or 'error'
+
+//         setTimeout(() => {
+//             msgBox.textContent = '';
+//             msgBox.className = '';
+//         }, 3000);
+//     }
+// }
+
+// // Initialize
+// new HeroRegistration();
+
+
+ 
+
+// // Display temporary messages
+// function showMessage(message, type) {
+//     const messageEl = document.createElement('div');
+//     messageEl.textContent = message;
+//     messageEl.style.cssText = `
+//         position: fixed;
+//         top: 20px;
+//         right: 20px;
+//         padding: 12px 18px;
+//         border-radius: 8px;
+//         color: white;
+//         font-weight: 500;
+//         z-index: 1000;
+//         ${type === 'success' ? 'background: #1dd1a1;' : 'background: #ff6b6b;'}
+//     `;
+//     document.body.appendChild(messageEl);
+//     setTimeout(() => messageEl.remove(), 3000);}
 
           
 
-        // Initialize everything when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            new HeroBackground();
-            new HeroRegistration();
-        });
+//         // Initialize everything when DOM is loaded
+//         document.addEventListener('DOMContentLoaded', () => {
+//             new HeroBackground();
+//             new HeroRegistration();
+//         });
 
-        // Add some interactive effects
-    //     document.addEventListener('mousemove', (e) => {
-    //        const heroSection = document.getElementById('hero-section');
-    //        const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-    //        const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+//         // Add some interactive effects
+//     //     document.addEventListener('mousemove', (e) => {
+//     //        const heroSection = document.getElementById('hero-section');
+//     //        const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+//     //        const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
             
-    //        heroSection.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-    //    });
+//     //        heroSection.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+//     //    });
 
        
 
-        // Close modal when clicking outside
-        document.getElementById('loginModalOverlay').addEventListener('click', function(e) {
-            if (e.target === this) {
-                FincashProLogin.closeModal();
+//         // Close modal when clicking outside
+//         document.getElementById('loginModalOverlay').addEventListener('click', function(e) {
+//             if (e.target === this) {
+//                 FincashProLogin.closeModal();
+//             }
+//         });
+
+//         // Close modal with Escape key
+//         document.addEventListener('keydown', function(e) {
+//             if (e.key === 'Escape') {
+//                 FincashProLogin.closeModal();
+//             }
+//         });
+
+        // console.log('Login modal script loaded. Use FincashProLogin.openModal() to open the modal.');
+
+  class HeroRegistration {
+    constructor() {
+        this.handleRegistration = this.handleRegistration.bind(this);
+        this.init();
+    }
+
+    init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            const registrationForm = document.getElementById('hero-registration-form');
+            if (registrationForm) {
+                registrationForm.addEventListener('submit', this.handleRegistration);
             }
         });
+    }
 
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                FincashProLogin.closeModal();
+    async handleRegistration(event) {
+        event.preventDefault();
+        const registrationForm = event.target;
+        
+        // Show loading state
+        this.setLoadingState(true);
+
+        const formData = {
+            fullName: document.getElementById('hero-full-name').value.trim(),
+            email: document.getElementById('hero-email').value.trim().toLowerCase(),
+            phone: document.getElementById('hero-phone').value.trim(),
+            password: document.getElementById('hero-password').value
+        };
+
+        // Enhanced validation
+        if (!this.validateForm(formData)) {
+            this.setLoadingState(false);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/signup', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `Signup failed with status ${response.status}`);
             }
-        });
 
-        console.log('Login modal script loaded. Use FincashProLogin.openModal() to open the modal.');
+            this.showMessage(data.message || 'Signup successful!', 'success');
+            registrationForm.reset();
 
+            // Redirect after success
+            setTimeout(() => { 
+                window.location.href = '/'; 
+            }, 1500);
 
+        } catch (error) {
+            console.error('Signup error:', error);
+            this.showMessage(
+                error.message || 'Network error. Please try again.', 
+                'error'
+            );
+        } finally {
+            this.setLoadingState(false);
+        }
+    }
+
+    validateForm(f) {
+        if (!f.fullName || !f.email || !f.phone || !f.password) {
+            this.showMessage('Please fill in all fields', 'error');
+            return false;
+        }
+        
+        if (f.password.length < 6) {
+            this.showMessage('Password must be at least 6 characters', 'error');
+            return false;
+        }
+        
+        if (!this.isValidEmail(f.email)) {
+            this.showMessage('Please enter a valid email address', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    setLoadingState(isLoading) {
+        const submitBtn = document.querySelector('#hero-registration-form button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = isLoading;
+            submitBtn.textContent = isLoading ? 'Creating Account...' : 'Sign Up';
+        }
+    }
+
+    showMessage(msg, type) {
+        const msgBox = document.getElementById('registration-message');
+        if (!msgBox) return;
+
+        msgBox.textContent = msg;
+        msgBox.className = `message ${type}`;
+        msgBox.style.display = 'block';
+
+        setTimeout(() => {
+            msgBox.textContent = '';
+            msgBox.className = '';
+            msgBox.style.display = 'none';
+        }, 5000);
+    }
+}
+
+new HeroRegistration();
 
                 
