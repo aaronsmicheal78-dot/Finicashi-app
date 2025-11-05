@@ -214,40 +214,40 @@ def signup():
 # # --------------------------------------------------
 # # 2️⃣ Login Route
 # # --------------------------------------------------
-# @bp.route("/api/login", methods=["POST"])
-# def login():
+@bp.route("/api/login", methods=["POST"])
+def login():
    
-#     """
-#     Authenticate a user.
-#     Expected JSON:
-#     {
-#         "email_or_phone": "",
-#         "password": ""
-#     }
-#      """
-#     data = request.get_json()
-#     email_or_phone = data.get("email_or_phone", "").strip().lower()
-#     password = data.get("password", "")
+    """
+    Authenticate a user.
+    Expected JSON:
+    {
+        "email_or_phone": "",
+        "password": ""
+    }
+     """
+    data = request.get_json()
+    email_or_phone = data.get("email_or_phone", "").strip().lower()
+    password = data.get("password", "")
 
-#     # ✅ Validate input
-#     if not email_or_phone or not password:
-#         return jsonify({"error": "Email/Phone and password are required"}), 400
+    # ✅ Validate input
+    if not email_or_phone or not password:
+        return jsonify({"error": "Email/Phone and password are required"}), 400
 
-#     # ✅ Find user by email or phone
-#     user = User.query.filter(
-#         (User.email == email_or_phone) | (User.phone == email_or_phone)
-#     ).first()
+    # ✅ Find user by email or phone
+    user = User.query.filter(
+        (User.email == email_or_phone) | (User.phone == email_or_phone)
+    ).first()
 
-#     if not user or not user.check_password(password):
-#         return jsonify({"error": "Invalid credentials"}), 401
+    if not user or not user.check_password(password):
+        return jsonify({"error": "Invalid credentials"}), 401
 
-#     # ✅ Set session
-#     session["user_id"] = user.id
+    # ✅ Set session
+    session["user_id"] = user.id
 
-#     return jsonify({
-#         "message": "Login successful",
-#         "user": user.to_dict()
-#     }), 200
+    return jsonify({
+        "message": "Login successful",
+        "user": user.to_dict()
+    }), 200
 
 # @bp.route("/api/signup", methods=["POST"])
 # def signup():
