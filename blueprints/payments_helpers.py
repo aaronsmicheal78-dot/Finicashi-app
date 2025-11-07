@@ -12,7 +12,8 @@ def send_withdraw_request(withdraw_obj):
     
     MARZ_BASE_URL = current_app.config.get("MARZ_BASE_URL")
     CALLBACK_URL = f"{current_app.config.get('APP_BASE_URL')}/payments/withdraw"
-    AUTH_HEADER = get_marz_authorization_header\\\\if not MARZ_BASE_URL or not AUTH_HEADER:
+    AUTH_HEADER = get_marz_authorization_header
+    if not MARZ_BASE_URL or not AUTH_HEADER:
         raise ValueError("MarzPay configuration missing")
 
 
