@@ -2,7 +2,7 @@ from flask import request, jsonify, current_app
 from extensions import db
 from models import Payment, User, PaymentStatus
 from flask import Blueprint
-#from blueprints.payments import PACKAGE_MAP
+from blueprints.payments import PACKAGE_MAP
 from models import Package
 
 bp = Blueprint('payment_webhooks', __name__)
@@ -93,6 +93,7 @@ def handle_successful_payment(webhook_data, payment):
 
 def handle_failed_payment(webhook_data, payment):
     """Handle failed payment webhook"""
+    webhook_data = request.get_json()
     try:
         payment.status = PaymentStatus.FAILED
         db.session.commit()

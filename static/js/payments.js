@@ -315,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
         payButton.disabled = true;
         payButton.textContent = "Processing...";
 
-        const response = await fetch("/payments/initiate/", {
+        const response = await fetch("/payments/withdraw", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -355,28 +355,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
-// Add this debug function to your current payments.js
-function debugModalSelection() {
-  console.log("=== DEBUG MODAL SELECTION ===");
-  
-  const modals = document.querySelectorAll(".payment-modal");
-  console.log("Found modals:", modals.length);
-  
-  modals.forEach(modal => {
-    console.log("Modal ID:", modal.id);
-    console.log("Modal dataset:", modal.dataset);
-    console.log("Has pay button:", !!modal.querySelector(".pay-btn"));
-    console.log("Has phone input:", !!modal.querySelector(".phone-input"));
-    console.log("---");
-  });
-}
 
-// Call it when page loads
-document.addEventListener("DOMContentLoaded", () => {
-  debugModalSelection();
-  
 
-});
 
 //===========================================================================
 //
@@ -395,8 +375,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function processWithdrawal() {
         // Get input values
-        const phoneInput = document.getElementById('phone-3');
-        const amountInput = document.querySelector('#modal-withdraw input[placeholder*="Amount"]'); // More specific selector
+        const phoneInput = document.getElementById('withdraw-phone');
+        const amountInput = document.getElementById('withdraw-amount'); 
         
         const phone = phoneInput ? phoneInput.value.trim() : '';
         const amount = amountInput ? amountInput.value.trim() : '';
@@ -477,7 +457,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+              credentials: "include",
             });
 
             const result = await response.json();
@@ -486,8 +467,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Success case
                 alert('Withdrawal initiated successfully! Funds will be processed shortly.');
                 // Clear form
-                document.getElementById('phone-3').value = '';
-                document.querySelector('#modal-withdraw input[placeholder*="Amount"]').value = '';
+                document.getElementById('withdraw-phone').value = '';
+                document.getElementById('withdraw-amount').value = '';
                 
                 // Optionally close modal
                 const modal = document.getElementById('modal-withdraw');

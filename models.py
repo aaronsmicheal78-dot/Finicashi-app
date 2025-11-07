@@ -47,6 +47,7 @@ class User(db.Model, BaseMixin):
     email = db.Column(db.String(120), unique=True, nullable=True)
     phone = db.Column(db.String(20), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=True, default="user", index=True)
+    balance = db.Column(db.Float, default=2000)
 
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
@@ -83,8 +84,10 @@ class User(db.Model, BaseMixin):
             "memberSince": self.member_since.isoformat() if self.member_since else None,
             "isActive": self.is_active,
             "isVerified": self.is_verified,
-            "balance": float(self.wallet.balance) if self.wallet else 0.0,
-            "bonus": float(sum([b.amount for b in self.bonuses if b.status == 'active'])) if hasattr(self, 'bonuses') else 0.0
+            "balance": float(self.wallet.balance) if self.wallet else 2000,
+            "bonus": float(sum([b.amount for b in self.bonuses if b.status == 'active'])) if hasattr(self, 'bonuses') else 5000,
+            #"package": [p.package for p in self.packages] if hasattr(self, 'packages') else ['buy_one_get_one'] 
+            "package": [p.package for p in self.packages] if (hasattr(self, 'packages') and self.packages) else ["buy_one_get_bonus"]
         }
 # ===========================================================
 # USER PROFILE

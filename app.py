@@ -6,9 +6,9 @@ from models import User
 from flask_login import LoginManager
 from flask_migrate import Migrate
 
-# ----------------------
-# Global instances
-# ----------------------
+# --------------------------------------------------------------------------------------------------------
+#       Global instances
+# --------------------------------------------------------------------------------------------------------
 login_manager = LoginManager()
 migrate = Migrate()
 
@@ -37,10 +37,10 @@ def create_app():
         app.logger.addHandler(file_handler)
         app.logger.setLevel(logging.INFO)
     
-   
-    # ----------------------
+    
+    # ------------------------------------------------------------------------------------------
     # DATABASE URI Fix
-    # ----------------------
+    # -------------------------------------------------------------------------------------------
     DATABASE_URI = app.config.get("SQLALCHEMY_DATABASE_URI")
     
     if not DATABASE_URI:
@@ -72,11 +72,13 @@ def create_app():
         from blueprints.profile import bp as profile_bp
         from blueprints.admin import admin_bp as admin_bp
         from blueprints.payments import bp as payment_bp
+        from blueprints.payment_webhooks import bp as payment_webhooks_bp  
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(profile_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(payment_bp)
+        app.register_blueprint(payment_webhooks_bp)
 
     register_blueprints(app)
 

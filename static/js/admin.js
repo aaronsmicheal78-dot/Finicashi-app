@@ -528,7 +528,7 @@ const DOM = {
                 totalPayments: document.getElementById('total-payments'),
                 totalUsers: document.getElementById('total-users'),
                 activeUsers: document.getElementById('active-users'),
-                dailyUsers: document.getElementById('daily-users'),
+                dailyUsers: document.getElementById('daily-new-users'),
                 totalBonus: document.getElementById('total-bonus'),
                 pendingBonus: document.getElementById('pending-bonus'),
                 pendingPayments: document.getElementById('pending-payments'),
@@ -860,12 +860,12 @@ const UIManager = {
     DOM.safeUpdateText(DOM.elements.totalPayments, Formatters.formatNumber(stats.total_payments));
     DOM.safeUpdateText(DOM.elements.totalUsers, Formatters.formatNumber(stats.total_users));
     DOM.safeUpdateText(DOM.elements.activeUsers, Formatters.formatNumber(stats.active_users));
-    DOM.safeUpdateText(DOM.elements.totalBonus, Formatters.formatCurrency(stats.total_bonus));
+    DOM.safeUpdateText(DOM.elements.totalBonus, Formatters.formatNumber(stats.total_bonus));
     DOM.safeUpdateText(DOM.elements.pendingBonus, Formatters.formatCurrency(stats.pending_bonus));
     DOM.safeUpdateText(DOM.elements.pendingPayments, Formatters.formatNumber(stats.pending_payments));
     DOM.safeUpdateText(DOM.elements.dailyInvestments, Formatters.formatCurrency(stats.daily_investments || 0));
     DOM.safeUpdateText(DOM.elements.dailyPayouts, Formatters.formatCurrency(stats.daily_payouts));
-    DOM.safeUpdateText(DOM.elements.dailyUsers, Formatters.formatNumber(stats.daily_new_users || 0));
+    DOM.safeUpdateText(DOM.elements.dailyUsers, Formatters.formatNumber(stats.daily_new_users));
         // Update change indicators
         this.updateChangeIndicators(stats);
         

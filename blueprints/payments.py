@@ -19,12 +19,14 @@ import os
 from datetime import datetime, timedelta
 import base64
 import logging
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, login_user
 from decimal import Decimal
 from blueprints.payments_helpers import send_withdraw_request
 
+
 bp = Blueprint("payments", __name__)  
 logger = logging.getLogger(__name__)
+
 
 REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '15'))
 MARZ_BASE_URL=('https://wallet.wearemarz.com/api/v1')
@@ -269,18 +271,32 @@ def check_status(reference):
 #      WITHDRAWAL ENDPOINT
 #============================================================================
 
+from flask import Blueprint, request, jsonify, session
+from decimal import Decimal
+from extensions import db
+from models import User, Withdrawal
+import re
+
+bp = Blueprint("payments", __name__)
+
 @bp.route("/payments/withdraw", methods=["POST"])
-@login_required
 def withdraw():
- 
+    """
+    Secure withdrawal route without @login_required.
+    User must be identified via session or token.
+    """
+
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
 
     data = request.get_json()
-    amount = data.get("amount")
-    phone = data.get("phone")
 
-   
+    # Extract fields
+    amount = data.get("amount")
+    phone = data.get("phone") or data.get("phone_number")
+    narration = data.get("narration", "Cash Out")
+
+    # Validate input
     if not amount or not phone:
         return jsonify({"error": "Amount and phone number are required"}), 400
 
@@ -289,43 +305,49 @@ def withdraw():
     except:
         return jsonify({"error": "Invalid amount format"}), 400
 
-    if amount <= 5000:
-        return jsonify({"error": "Withdrawal amount must be positive"}), 400
+    if amount < 5000:
+        return jsonify({"error": "Minimum withdrawal is UGX 5,000"}), 400
 
+    # Validate Ugandan phone number
+    phone_regex = re.compile(r"^(?:\+256|0)?7\d{8}$")
+    if not phone_regex.match(phone):
+        return jsonify({"error": "Invalid phone number"}), 400
 
-    user_id = session.get("user_id") or getattr(current_user, "id", None)
+    # Identify user (example using session)
+    user_id = session.get("user_id")
     if not user_id:
-        return jsonify({"error": "User not logged in"}), 401
+        return jsonify({"error": "User not authenticated"}), 401
 
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-
+    # Check user balance
     if user.balance is None or user.balance < amount:
         return jsonify({"error": "Insufficient balance"}), 400
 
- 
-    withdraw_request = {
-        "user_id": user.id,
-        "amount": float(amount),
-        "phone": phone,
-        "status": "pending"}
-    
+    # Create withdrawal record
+    withdrawal = Withdrawal(
+        user_id=user.id,
+        amount=float(amount),
+        phone=phone,
+        narration=narration,
+        status="pending"
+    )
+
+    # Deduct balance
     user.balance -= amount
-   
-    db.session.add(withdraw_request)
+
+    # Save to DB
+    db.session.add(withdrawal)
     db.session.commit()
 
-    marz_response = send_withdraw_request(withdraw_request)
 
-
+    marz_response = send_withdraw_request(withdrawal)
     if not marz_response["success"]:
-        return jsonify({"error": "Failed to send to MarzPay", "details": marz_response["error"]}), 502
+        return jsonify({"error": "Gateway failed"}), 502
 
     return jsonify({
-        "message": "Withdrawal request sent successfully",
-        "withdraw_id": withdraw_request.id,
-        "marz_response": marz_response["response"]
+        "message": "Withdrawal request created successfully",
+        "withdrawal_id": withdrawal.id
     }), 200
-    

@@ -1,7 +1,7 @@
 import requests
 from flask import current_app
 from uuid import uuid4
-#from blueprints.payment_webhooks import get_marz_authorization_header
+from utils import get_marz_authorization_header
 
 def send_withdraw_request(withdraw_obj):
     """
@@ -11,18 +11,15 @@ def send_withdraw_request(withdraw_obj):
 
     
     MARZ_BASE_URL = current_app.config.get("MARZ_BASE_URL")
-    CALLBACK_URL = f"{current_app.config.get('APP_BASE_URL')}/withdraw/pay"
-    AUTH_HEADER = get_marz_authorization_header()  
-
- 
-    if not MARZ_BASE_URL or not AUTH_HEADER:
+    CALLBACK_URL = f"{current_app.config.get('APP_BASE_URL')}/payments/withdraw"
+    AUTH_HEADER = get_marz_authorization_header\\\\if not MARZ_BASE_URL or not AUTH_HEADER:
         raise ValueError("MarzPay configuration missing")
 
 
     payload = {
-        "reference": str(withdraw_obj.id),  # or your uuid field
+        "reference": str(withdraw_obj.id), 
         "amount": float(withdraw_obj.amount),
-        "phone_number": f"+256{withdraw_obj.phone.strip()[-9:]}",  # normalize Ugandan format
+        "phone_number": f"+256{withdraw_obj.phone.strip()[-9:]}",  
         "country_code": "UG",
         "callback_url": CALLBACK_URL,
     }

@@ -58,56 +58,6 @@ def admin_dashboard():
     
     return render_template("partials/admin.html")
 
-# @admin_bp.route("/admin/data", methods=["GET"])
-# @admin_required
-# def admin_data():
-#     total_users = User.query.count()
-#     active_users = User.query.filter_by(is_active=True).count()
-#     verified_users = User.query.filter_by(is_verified=True).count()
-#     daily_new_users = User.query.filter(db.func.date(User.created_at) == date.today()).count()
-
-#     total_payments = User.query.count()
-#     pending_payments = User.query.filter_by(status="pending").count()
-#     completed_payments = User.query.filter_by(status="completed").count()
-#     total_bonus = User.query.with_entities(db.func.sum(User.bonus_amount)).scalar() or 0
-#     pending_bonus = User.query.with_entities(db.func.sum(User.bonus_amount)).filter(User.bonus_status == "pending").scalar() or 0
-#     daily_payouts = User.query.with_entities(db.func.sum(User.withdrawal_amount)).scalar() or 0
-
-#     return jsonify({
-#         "total_users": total_users,
-#         "active_users": active_users,
-#         "verified_users": verified_users,
-#         "daily_new_users": daily_new_users,
-#         "total_payments": total_payments,
-#         "pending_payments": pending_payments,
-#         "completed_payments": completed_payments,
-#         "total_bonus": total_bonus,
-#         "pending_bonus": pending_bonus,
-#         "daily_payouts": daily_payouts
-#     })
-    
-# @admin_bp.route("/admin/data", methods=["GET"])
-# @admin_required
-# def admin_data():
-#     total_users = User.query.count()
-    
-#     user_stats = {
-#         "total_users": total_users,
-#         "active_users": User.query.filter_by(is_active=True).count(),
-#         "verified_users": User.query.filter_by(is_verified=True).count(),
-#         "daily_new_users": User.query.filter(db.func.date(User.created_at) == date.today()).count()
-#     }
-    
-#     payment_stats = {
-#         "total_payments": User.query.filter_by(User.payment_status.isnot(None)).count(),
-#         "pending_payments": User.query.filter_by(payment_status="pending").count(),
-#         "completed_payments": User.query.filter_by(payment_status="completed").count(),
-#         "total_bonus": User.query.with_entities(db.func.sum(User.bonus_amount)).scalar() or 0,
-#         "pending_bonus": User.query.with_entities(db.func.sum(User.bonus_amount)).filter(User.bonus_status=="pending").scalar() or 0,
-#         "daily_payouts": User.query.with_entities(db.func.sum(User.withdrawal_amount)).scalar() or 0
-#     }
-    
-#     return jsonify({**user_stats, **payment_stats})
 
 @admin_bp.route("/admin/data", methods=["GET"])
 @admin_required
@@ -127,7 +77,7 @@ def admin_data():
     total_bonus = Bonus.query.with_entities(db.func.sum(Bonus.amount)).scalar() or 0
     pending_bonus = Bonus.query.filter_by(status="pending").with_entities(db.func.sum(Bonus.amount)).scalar() or 0
     daily_payouts = Withdrawal.query.filter(db.func.date(Withdrawal.created_at) == today).with_entities(db.func.sum(Withdrawal.amount)).scalar() or 0
-   # daily_deductions = Withdrawal.query.filter(db.func.date(Withdrawal.created_at) == today).with_entities(db.func.sum(Withdrawal.fee)).scalar() or 0
+    #daily_deductions = Withdrawal.query.filter(db.func.date(Withdrawal.created_at) == today).with_entities(db.func.sum(Withdrawal.fee)).scalar() or 0
     #daily_investments = Payment.query.filter(db.func.date(Payment.created_at) == today, Payment.status==PaymentStatus.SUCCESS).with_entities(db.func.sum(Payment.amount)).scalar() or 0
     return jsonify({
         "total_users": total_users,
