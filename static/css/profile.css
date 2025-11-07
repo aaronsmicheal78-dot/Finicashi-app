@@ -465,13 +465,27 @@
             opacity: 1;
         }
 
-        .package-card:nth-child(1) { --package-bg: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'); }
+        .package-card:nth-child(1) { --package-bg: url('https://cdn.globalbajaj.com/-/media/Demo/Images/Boxer/Boxer-100/Variant-Banner_1640x997.png?h=997&iar=0&w=1640&rev=642d7dde0afb40dabb7cbd742861038d&hash=90634DC58E9A4D8A751F1B8C6BD15EA7'); }
         .package-card:nth-child(2) { --package-bg: url('https://s.alicdn.com/@sc04/kf/A9786426cf4f14aa391aadfac38c9886cE.jpg'); }
-        .package-card:nth-child(3) { --package-bg: url('https://images.unsplash.com/photo-1642790595397-7043e3b05663?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'); }
-        .package-card:nth-child(4) { --package-bg: url('https://images.unsplash.com/photo-1640622308238-70e5b54547c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'); }
-        .package-card:nth-child(5) { --package-bg: url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'); }
-        .package-card:nth-child(6) { --package-bg: url('https://images.unsplash.com/photo-1642790595397-7043e3b05663?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'); }
+        .package-card:nth-child(3) { --package-bg: url('https://image.made-in-china.com/2f0j00sPFqkOedUwrm/Africa-Tuktuk-Motor-Tricycles-Gasoline-Dirt-Bike-Auto-Rickshaw-Cargo-Tricycle-Motorcycle.webp'); }
+        .package-card:nth-child(4) { --package-bg: url('https://cars.japanesecartrade.com/vehicle_image/10102064_201110.jpg'); }
+        .package-card:nth-child(5) { --package-bg: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQm3njLsB9yANmhqm84kzlI1z1sHZ5AOuPhrA&s'); }
+        .package-card:nth-child(6) { --package-bg: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/2018-2023_Toyota_Alphard_X.jpg/330px-2018-2023_Toyota_Alphard_X.jpg'); }
+       
 
+        .package-card:nth-child(6)::before {
+            background: linear-gradient(135deg, rgba(255, 109, 0, 0.1), rgba(255, 152, 0, 0.1));
+        content_before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(41, 98, 255, 0.1), rgba(0, 200, 83, 0.1));
+            opacity: 0;
+            transition: var(--transition-normal);
+        }}
         .package-header {
             display: flex;
             justify-content: space-between;
@@ -961,4 +975,68 @@
 
 .invest-button:hover {
     background: #0056b3;
+}
+
+.logout {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 5px;
+    align-content: end;
+    transition: background 0.3s;
+    
+}
+
+.social-channel-link, .social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin: 5px;
+}
+
+.social-channel-link:hover, .social-link:hover {
+    background: #ffffff;
+    border-color: #007bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.social-icons {
+    display: flex;
+    gap: 12px;
+}
+
+.social-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.social-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* WhatsApp specific hover effect */
+.social-link[href*="wa.me"]:hover {
+    border-color: #25D366;
+    color: #25D366;
+}
+
+/* Telegram specific hover effect */
+.social-link[href*="t.me"]:hover {
+    border-color: #2996d8;
+    color: #2996d8;
 }

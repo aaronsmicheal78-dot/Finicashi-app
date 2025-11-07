@@ -528,11 +528,13 @@ const DOM = {
                 totalPayments: document.getElementById('total-payments'),
                 totalUsers: document.getElementById('total-users'),
                 activeUsers: document.getElementById('active-users'),
+                dailyUsers: document.getElementById('daily-users'),
                 totalBonus: document.getElementById('total-bonus'),
                 pendingBonus: document.getElementById('pending-bonus'),
                 pendingPayments: document.getElementById('pending-payments'),
                 dailyInvestments: document.getElementById('daily-investments'),
                 dailyPayouts: document.getElementById('daily-payouts'),
+
                 
                 // Change indicators
                 paymentsChange: document.getElementById('payments-change'),
@@ -836,21 +838,34 @@ const UIManager = {
     /**
      * Update all dashboard statistics
      */
-    updateStats(data) {
-        if (!data || !data.stats) return;
+    // updateStats(data) {
+    //     if (!data || !data.stats) return;
         
-        const stats = data.stats;
+    //     const stats = data.stats;
         
-        // Update main statistics
-        DOM.safeUpdateText(DOM.elements.totalPayments, Formatters.formatCurrency(stats.total_payments));
-        DOM.safeUpdateText(DOM.elements.totalUsers, Formatters.formatNumber(stats.total_users));
-        DOM.safeUpdateText(DOM.elements.activeUsers, Formatters.formatNumber(stats.active_users));
-        DOM.safeUpdateText(DOM.elements.totalBonus, Formatters.formatCurrency(stats.total_bonus));
-        DOM.safeUpdateText(DOM.elements.pendingBonus, Formatters.formatCurrency(stats.pending_bonus));
-        DOM.safeUpdateText(DOM.elements.pendingPayments, Formatters.formatNumber(stats.pending_payments));
-        DOM.safeUpdateText(DOM.elements.dailyInvestments, Formatters.formatCurrency(stats.daily_investments));
-        DOM.safeUpdateText(DOM.elements.dailyPayouts, Formatters.formatCurrency(stats.daily_payouts));
+    //     // Update main statistics
+    //     DOM.safeUpdateText(DOM.elements.totalPayments, Formatters.formatCurrency(stats.total_payments));
+    //     DOM.safeUpdateText(DOM.elements.totalUsers, Formatters.formatNumber(stats.total_users));
+    //     DOM.safeUpdateText(DOM.elements.activeUsers, Formatters.formatNumber(stats.active_users));
+    //     DOM.safeUpdateText(DOM.elements.totalBonus, Formatters.formatCurrency(stats.total_bonus));
+    //     DOM.safeUpdateText(DOM.elements.pendingBonus, Formatters.formatCurrency(stats.pending_bonus));
+    //     DOM.safeUpdateText(DOM.elements.pendingPayments, Formatters.formatNumber(stats.pending_payments));
+    //     DOM.safeUpdateText(DOM.elements.dailyInvestments, Formatters.formatCurrency(stats.daily_investments));
+    //     DOM.safeUpdateText(DOM.elements.dailyPayouts, Formatters.formatCurrency(stats.daily_payouts));
         
+       updateStats(data) {
+    if (!data) return;
+    
+    const stats = data.stats || data; // fallback to top-level
+    DOM.safeUpdateText(DOM.elements.totalPayments, Formatters.formatNumber(stats.total_payments));
+    DOM.safeUpdateText(DOM.elements.totalUsers, Formatters.formatNumber(stats.total_users));
+    DOM.safeUpdateText(DOM.elements.activeUsers, Formatters.formatNumber(stats.active_users));
+    DOM.safeUpdateText(DOM.elements.totalBonus, Formatters.formatCurrency(stats.total_bonus));
+    DOM.safeUpdateText(DOM.elements.pendingBonus, Formatters.formatCurrency(stats.pending_bonus));
+    DOM.safeUpdateText(DOM.elements.pendingPayments, Formatters.formatNumber(stats.pending_payments));
+    DOM.safeUpdateText(DOM.elements.dailyInvestments, Formatters.formatCurrency(stats.daily_investments || 0));
+    DOM.safeUpdateText(DOM.elements.dailyPayouts, Formatters.formatCurrency(stats.daily_payouts));
+    DOM.safeUpdateText(DOM.elements.dailyUsers, Formatters.formatNumber(stats.daily_new_users || 0));
         // Update change indicators
         this.updateChangeIndicators(stats);
         

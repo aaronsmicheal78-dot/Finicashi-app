@@ -7,6 +7,8 @@ from utils import validate_email, validate_phone
 from flask import Blueprint, jsonify, request, session
 from extensions import db
 import logging
+import string
+import secrets
 
 
 
@@ -70,11 +72,7 @@ def signup():
 
         print("✅ No existing user found, creating new user...")
 
-        # ✅ ADD THESE IMPORTS AT THE TOP OF YOUR FUNCTION
-        import string
-        import secrets
-
-        # Generate referral code (complete the function)
+        # Generate referral code 
         def generate_referral_code(length=8):
             characters = string.ascii_uppercase + string.digits
             for attempt in range(10):  # Safety limit to prevent infinite loops
@@ -84,7 +82,7 @@ def signup():
             # Fallback if no unique code found after 10 attempts
             return ''.join(secrets.choice(characters) for _ in range(length))
 
-        # ✅ Create user with proper session management
+       #  Create user with proper session management
         new_user = User(
             username=username,
             email=email,
@@ -93,13 +91,19 @@ def signup():
         )
         new_user.set_password(password)
 
-        print(f"✅ User object created: {new_user}")
-
-        # Add to session and commit
         db.session.add(new_user)
         db.session.commit()
 
-        print("✅ User saved to database successfully!")
+         #offer signup bonus
+        signup_bonus = Bonus(
+        user_id=new_user.id,
+        amount=5000,          
+        type="signup",
+        status="active")
+
+ 
+        db.session.add(signup_bonus)
+        db.session.commit()
 
         return jsonify({
             "message": "Signup successful!",
@@ -111,10 +115,10 @@ def signup():
         }), 201
 
     except Exception as e:
-        db.session.rollback()  # Critical for failed transactions
+        db.session.rollback()            #    Critical for failed transactions
         print(f"❌ Signup error: {str(e)}")
         import traceback
-        traceback.print_exc()  # This will show the full stack trace
+        traceback.print_exc()            #   This will show the full stack trace
         return jsonify({"error": "Internal server error"}), 500
 # --------------------------------------------------
 # 1️⃣ Signup Route
@@ -175,16 +179,7 @@ def signup():
 #     db.session.add(new_user)
 #     db.session.commit()
 
-#     # Grant signup bonus
-#     signup_bonus = Bonus(
-#     user_id=new_user.id,
-#     amount=5000,          
-#     type="signup",
-#     status="active"
-
-# )
-#     db.session.add(signup_bonus)
-#     db.session.commit()
+#   
 
 #     session["user_id"] = new_user.id  # auto-login after signup
 #      # Include referral link in response

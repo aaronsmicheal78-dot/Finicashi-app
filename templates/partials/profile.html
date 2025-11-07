@@ -5,7 +5,7 @@
     <!-- Header -->
     <header class="dashboard-header">
         <div class="logo">
-            <div class="logo-icon">F</div>
+            <div class="logo-icon">Fc</div>
             <div class="logo-text">Finicashi</div>
         </div>
         
@@ -97,8 +97,40 @@
                         <span id="referralLink"></span>
                         <button class="copy-btn" id="copy-link">Copy</button>
                     </div>
+
+                   <div class="referral-note">
+                        <p style="font-size: 20px;">Share your referral-link and earn bonuses!</p>
+                        
+                            <button class="package-btn" id="withdraw">Withdraw</button>
+                              <div class="logout-section">
+                        
+        <!-- Option 1: Single link that opens both channels in new tabs -->
+<a href="#" class="social-channel-link" onclick="openSocialChannels()">
+    <span class="social-icons">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI1Qzc1MCI+PHBhdGggZD0iTTE3LjQ3MiAxNC4zODVjLS4yMjYuODQ2LS4zNzEgMS4zMzEtMS40NzUgMi4yMjUtMS4zNTEgMS4xNzMtMi44MzMgMS4yNTktMy40MTMuMjY2LS42MTMtMS4wMzYtMi4yODUtMy4yMjctMi44MjQtMy44MjQtLjU0OC0uNjA3LS45ODUtLjUyMi0xLjM3NS4wNTMtLjM5LjU3NS0xLjUwOCAxLjc1OC0xLjUwOCAz4oCWMy4xOTcgNS4wMjIgNC4wMDMgNS4zNzcgOC4zNzcgMy42MjIgNC4zNzQtMS43NTUgNC40MTctMi45ODQgNC0zLjg3NHptLTUuNDcyLTkuMzg1Yy00LjQxNyAwLTggMy41ODMtOCA4czMuNTgzIDggOCA4IDgtMy41ODMgOC04LTMuNTgzLTgtOC04eiIvPjwvc3ZnPg==" alt="WhatsApp" class="social-icon">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIj4NCjxwYXRoIGZpbGw9IiMyQTlDREUiIGQ9Ik0xMiwyQzYuNDgsMiwyLDYuNDgsMiwxMnM0LjQ4LDEwLDEwLDEwaDEwYzAsMCwwLDAsMCwwYzAsLTUuNTItNC40OC0xMC0xMC0xMFptMy45NCw4LjVoLTIuOTI5YzAsMS4zODEsMCwxLjk3Mi0wLjU3NCwyLjM3NmMtMC4zNjcsMC4zMjUtMC44ODcsMC4zNjQtMS4xODgsMC4zNjRjLTAuMzAxLDAtMC44MjEtMC4wMzktMS4xODgtMC4zNjRjLTAuNTc0LTAuNDA0LTAuNTc0LTAuOTk1LTAuNTc0LTIuMzc2YzAtMS4zODEsMC0xLjk3MiwwLjU3NC0yLjM3NmMwLjM2Ny0wLjMyNSwwLjg4Ny0wLjM2NCwxLjE4OC0wLjM2NGMwLjMwMSwwLDAuODIxLDAuMDM5LDEuMTg4LDAuMzY0QzE1Ljk0LDguNTI4LDE1Ljk0LDkuMTE5LDE1Ljk0LDEwLjV6Ii8+DQo8cGF0aCBmaWxsPSIjMkE5Q0RFIiBkPSJNMTcsMTZjMCwwLDAsMCwwLDBjLTAuODI3LDAtMS41LTAuNjczLTEuNS0xLjVzMC42NzMtMS41LDEuNS0xLjVjMC44MjcsMCwxLjUsMC42NzMsMS41LDEuNVMxNy44MjcsMTYsMTcsMTZ6Ii8+DQo8L3N2Zz4=" alt="Telegram" class="social-icon">
+    </span>
+    Join Our Community
+</a>
+
+
+<div class="social-links">
+    <a href="https://wa.me/your-number" target="_blank" class="social-link">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI1Qzc1MCI+PHBhdGggZD0iTTE3LjQ3MiAxNC4zODVjLS4yMjYuODQ2LS4zNzEgMS4zMzEtMS40NzUgMi4yMjUtMS4zNTEgMS4xNzMtMi44MzMgMS4yNTktMy40MTMuMjY2LS42MTMtMS4wMzYtMi4yODUtMy4yMjctMi44MjQtMy44MjQtLjU0OC0uNjA3LS45ODUtLjUyMi0xLjM3NS4wNTMtLjM5LjU3NS0xLjUwOCAxLjc1OC0xLjUwOCAz4oCWMy4xOTcgNS4wMjIgNC4wMDMgNS4zNzcgOC4zNzcgMy42MjIgNC4zNzQtMS43NTUgNC40MTctMi45ODQgNC0zLjg3NHptLTUuNDcyLTkuMzg1Yy00LjQxNyAwLTggMy41ODMtOCA4czMuNTgzIDggOCA4IDgtMy41ODMgOC04LTMuNTgzLTgtOC04eiIvPjwvc3ZnPg==" alt="WhatsApp" class="social-icon">
+        WhatsApp
+    </a>
+    
+    <a href="https://t.me/your-channel" target="_blank" class="social-link">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI5OTZkOCI+PHBhdGggZD0iTTEyIDBDNS4zNzMgMCAwIDUuMzczIDAgMTJzNS4zNzMgMTIgMTIgMTIgMTItNS4zNzMgMTItMTJTMTguNjI3IDAgMTIgMHptNS44OTQgOC4yMjEtNC4xMjkgMS45NTFjLS41MzEuMjQ2LS44ODcuNDA5LTEuMDY3LjY3OC0uMTc2LjI2My0uMTU5LjU0Ni0uMTE5Ljc3MWwtLjAwNi4wMDVsLjA2OC4wMjkuMDc0LjAzOGMuMTI4LjA2Ni4yOTkuMTU5LjQyMi4yMTcuMzUyLjE2Ni42NDUuMzA2IDEuMDI0LjU0OC4zNzcuMjQxLjc0OS41MDIgMS4wMzEuODc0LjI4Mi4zNzEuNDc0Ljc1My42MTggMS4yMzcuMTQ0LjQ4NC4yMzcgMS4wMTEuMzQ3IDEuNTU0LjEwOS41NDEuMjM0IDEuMTUzLjM3OCAxLjc0OGwuMDM0LjE0NGMuMDM2LjE1NS4wNzEuMzA2LjEwNi40NTUuMDM0LjE0OC4wNjguMjk0LjEwNC40MzUuMDM2LjE0LjA3My4yNzcuMTE2LjQwNS4wNDIuMTI4LjA4OS4yNDQuMTUyLjM0Ny4wNjIuMTAzLjEzOC4xOTMuMjM0LjI1OC4wOTYuMDY1LjIwOC4xMDcuMzM2LjEwNy4xMjggMCAuMjQtLjA0Mi4zMzYtLjEwNy4wOTYtLjA2NS4xNzItLjE1NS4yMzQtLjI1OC4wNjMtLjEwMy4xMS0uMjE5LjE1Mi0uMzQ3LjA0My0uMTI4LjA4LS4yNjUuMTE2LS40MDUuMDM2LS4xNDEuMDctLjI4Ny4xMDQtLjQzNS4wMzUtLjE0OS4wNy0uMy4xMDYtLjQ1NWwuMDM0LS4xNDRjLjE0NC0uNTk1LjI2OS0xLjIwNy4zNzgtMS43NDguMTA5LS41NDMuMi0xLjA3LjM0Ny0xLjU1NC4xNDQtLjQ4NC4zMzYtLjg2Ni42MTgtMS4yMzcuMjgyLS4zNzIuNjU0LS42MzMgMS4wMzEtLjg3NC4zNzktLjI0Mi42NzItLjM4MiAxLjAyNC0uNTQ4LjEyMy0uMDU4LjI5NC0uMTUxLjQyMi0uMjE3bC4wNzQtLjAzOC4wNjgtLjAyOS0uMDA2LS4wMDVjLjA0LS4yMjUuMDU3LS41MDgtLjExOS0uNzcxLS4xOC0uMjY5LS41MzYtLjQzMi0xLjA2Ny0uNjc4bC00LjEyOS0xLjk1MWMtLjE2OS0uMDgtLjMxNi0uMTItLjQ1MS0uMTItLjI4NSAwLS41MjUuMDk1LS42OTUuMjUtLjE3LjE1NS0uMjU1LjM2LS4yNTUuNTc5IDAgLjIxOC4wODUuNDI0LjI1NS41NzkuMTcuMTU1LjQxLjI1LjY5NS4yNS4xMzUgMCAuMjgyLS4wNC40NTEtLjEyeiIvPjwvc3ZnPg==" alt="Telegram" class="social-icon">
+        Telegram
+    </a>
+</div>
+<button class="logout " id="logout-btn">Logout</button>
                 </div>
+                    </div>
+           
             </section>
+                </div>
             <!-- Columns 2 & 3: Investment Packages -->
             <section class="packages-container">
                 <div class="packages-header">
@@ -108,7 +140,7 @@
                 
                 <div class="packages-grid">
                     <!-- Package 1 -->
-                    <div class="package-card" data-modal="modal-1" data-amount="10000" data-package="bronze" data-description="Bronze Package - 5% ROI">
+                    <div class="package-card" data-modal="modal-1" data-amount="10000" datapackage="bronze" data-description="Bronze Package - 5% ROI">
                         <div class="package-header">
                             <div>
                                 <h3 class="package-name">Bronze</h3>
@@ -129,7 +161,7 @@
                     </div>
 
                     <!-- Package 2 -->
-                    <div class="package-card" data-modal="modal-2" data-amount="20000" data-package="silver" data-description="Silver Package - 6% ROI">
+                    <div class="package-card" data-modal="modal-2" data-amount="20000" datapackage="silver" data-description="Silver Package - 6% ROI">
                         <div class="package-header">
                             <div>
                                 <h3 class="package-name">Silver</h3>
@@ -255,10 +287,13 @@
                 </div>
             </div>
             
+             
+
             <form class="investment-form payment-form">
                 <div class="form-group">
                     <label class="form-label">Investment Amount</label>
                     <div class="fixed-amount">UGX. 10,000</div>
+                    
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="phone-1">Phone Number</label>
@@ -267,14 +302,14 @@
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
-                    <button type="button" class="btn btn-primary pay-btn-modal">Pay Now</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal 2 -->
-    <div class="modal payment-modal" id="modal-2" data-amount="20000" data-package="silver">
+    <div class="modal payment-modal" data-amount="20000" data-package="silver" id="modal-2" >
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -309,7 +344,7 @@
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
-                    <button type="button" class="btn btn-primary pay-btn-modal">Pay Now</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
                 </div>
             </form>
         </div>
@@ -351,7 +386,7 @@
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
-                    <button type="button" class="btn btn-primary pay-btn-modal">Pay Now</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
                 </div>
             </form>
         </div>
@@ -393,7 +428,7 @@
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
-                    <button type="button" class="btn btn-primary pay-btn-modal">Pay Now</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
                 </div>
             </form>
         </div>
@@ -432,10 +467,10 @@
                     <label class="form-label" for="phone-5">Phone Number</label>
                     <input type="tel" class="form-input phone-input" id="phone-5" placeholder="Enter your phone number" required>
                 </div>
-                
+                a
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
-                    <button type="button" class="btn btn-primary pay-btn-modal">Pay Now</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
                 </div>
             </form>
         </div>
@@ -477,12 +512,49 @@
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
-                    <button type="button" class="btn btn-primary pay-btn-modal">Pay Now</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Payment Modal 3 -->
+    <div class="modal payment-modal" id="modal-withdraw">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Cash Out</h2>
+                <p class="modal-description">Securely withdaw your funds with Finicashi. Anytime, EveryWhere</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Rate Free</div>
+                    <div class="modal-detail-value">0%</div>
+                </div>
+                
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Processing Time</div>
+                    <div class="modal-detail-value">Instant</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone-3">Phone Number</label>
+                    <input type="tel" class="form-input phone-input" id="phone-3" placeholder="Enter your phone number" required>
+                </div>
+                 <div class="form-group">
+                    <label class="form-label" for="phone-3">Withdraw Amount</label>
+                    <input type="tel" class="form-input phone-input" id="phone-3" placeholder="Enter Amount(UGX)" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary" id="withdraw-btn">Withdraw</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal Functionality Script -->
+     
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const DOM = {
@@ -555,6 +627,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ModalManager.init();
 });
+document.getElementById("withdraw").addEventListener("click", () => {
+  document.getElementById("modal-withdraw").classList.add("show");
+});
+document.getElementById("logout-btn").onclick = () => {
+  if (confirm("Are you sure you want to logout?")) { window.location.href = "partials/index.html"; window.close(); }
+};
+function openSocialChannels() {
+    // Open both channels in new tabs
+    window.open('https://wa.me/0756393205', '_blank');
+    window.open('https://t.me/your-telegram-channel', '_blank');
+    return false;
+}
+
 </script>
 
-   <script src="{{url_for('static', filename='js/profile.js')}}"></script>
+   <script src="{{url_for('static', filename='js/profile.js')}}" defer></script>
+   <script src="{{url_for('static', filename='js/payments.js')}}" defer></script>

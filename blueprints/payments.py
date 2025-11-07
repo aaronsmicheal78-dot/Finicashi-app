@@ -1,28 +1,38 @@
-
-# we initiate payments and call Marz Pay
-# blueprints/payments.py - Handles payment initiation, status checks, and webhook processing
-from flask import Blueprint, request, jsonify, current_app, session, url_for             # Flask essentials                                                        # HTTP client to call Marz
-import uuid                                                          # for generating unique references
-from extensions import db, logger, sess                             # DB session factory & logger
-from models import Payment, PaymentStatus, User                           # DB models
-from utils import safe_marz_headers, verify_webhook_signature           # helper utilities
-from sqlalchemy.exc import IntegrityError                               # DB error handling
-from sqlalchemy import select                                            # query helper
+#======================================================================================================
+#
+#   PAYMENT API BLUEPRINT FOR MARZ PAYMENT GATEWAY INTEGRATION
+#
+#===========================================================================================================
+from flask import Blueprint, request, jsonify, current_app, session, url_for, current_app                                                                   # HTTP client to call Marz
+import uuid                                                                              
+from models import Payment, PaymentStatus, User                        
+from utils import validate_phone, validate_email, get_marz_authorization_header      
+from sqlalchemy.exc import IntegrityError                             
+from sqlalchemy import select                                          
 from sqlalchemy.orm import Session   
-import re
-import hmac
-import hashlib   
+import re  
 import json
 import requests 
-from blueprints.payment_webhooks import SessionLocal 
+from extensions import db
+#from blueprints.payment_webhooks import SessionLocal 
 import os
-  
+from datetime import datetime, timedelta
+import base64
+import logging
+from flask_login import current_user, login_required
+from decimal import Decimal
+from blueprints.payments_helpers import send_withdraw_request
 
+bp = Blueprint("payments", __name__)  
+logger = logging.getLogger(__name__)
 
-bp = Blueprint("payments", __name__, url_prefix="")  
-
-
-
+REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '15'))
+MARZ_BASE_URL=('https://wallet.wearemarz.com/api/v1')
+def deterministic_json(obj):
+   """Return deterministic JSON string for signing: keys sorted, separators compact.
+   Avoids variations between client/server serializations.
+   """
+   return json.dumps(obj, separators=(",", ":"), sort_keys=True, ensure_ascii=False)
 
 PACKAGE_MAP = {
     10000: "Bronze",
@@ -32,163 +42,134 @@ PACKAGE_MAP = {
     200000: "Platinum",
     500000: "Ultimate"
 }
+ALLOWED_AMOUNTS = set(PACKAGE_MAP.keys())
 
-MARZ_API_BASE = current_app.config.get("MARZ_BASE_URL")
-MARZ_API_KEY = current_app.config.get("MARZ_API_KEY")
-MARZ_SECRET = current_app.config.get("MARZ_SECRET")
-
-
-def generate_hmac_signature(payload: dict, secret: str) -> str:
-    """
-    Generate HMAC SHA256 signature for Marz API
-    - Payload is converted to JSON string with no whitespace
-    - Secret is the Marz secret key
-    """
-    body_json = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
-    signature = hmac.new(secret.encode(), body_json.encode(), hashlib.sha256).hexdigest()
-    return signature, body_json
-
-
-@bp.route("/payment/initiate", methods=["POST"])
+#=============================================================================================
+#      PAYMENT INITIATION ENDPOINT
+#=============================================================================================
+@bp.route('/payments/initiate/', methods=['POST'])
 def initiate_payment():
-    # 1️⃣ Ensure user is authenticated FIRST (best practice)
+    
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
-
-    # 2️⃣ Parse and validate request data
+   
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
-
     amount = data.get('amount')
+    package = data.get('package', '').lower()
     phone = data.get('phone')
+ 
+   
+    if not all([amount, package, phone]):
+       return jsonify({"error": "Missing fields"}), 400
 
-    # 3️⃣ Validate phone (Ugandan format)
-    if not phone or not re.match(r'^(?:\+256|0)?7\d{8}$', phone.replace(' ', '')):
-        return jsonify({'error': 'Invalid phone number'}), 400
-
-    # 4️⃣ Enforce allowed amounts
-    allowed_amounts = {10000, 20000, 30000, 40000, 50000}
-    if amount not in allowed_amounts:
-        return jsonify({'error': 'Invalid investment amount'}), 400  # ❗ was 40 → should be 400
-
-    # return jsonify({
-    #     'status': 'success',
-    #     'amount': amount,
-    #     'phone': phone,
-    #     'user_id': user.id
-    # })
-
-
-    # 5️⃣ Generate merchant reference
+    if amount not in ALLOWED_AMOUNTS:
+       return jsonify({"error": "Invalid amount"}), 400
+    
+    expected_package = PACKAGE_MAP.get(amount).lower()
+       
+    if expected_package != package.lower():
+       return jsonify({"error": "Invalid or mismatched package"}), 400
+    if not re.match(r"^(?:\+256|0)?7\d{8}$", phone):
+        return jsonify({"error": "Invalid phone number"}), 400
+    
     merchant_reference = str(uuid.uuid4())
 
-    # 6️⃣ Create pending payment record
-    try:
-        payment = Payment(
-            user_id=user.id,
-            reference=merchant_reference,
-            amount=amount,
-            currency="UGX",
-            phone_number=phone,
-            status=PaymentStatus.PENDING
-        )
-        db.session.add(payment)
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        existing = Payment.query.filter_by(reference=merchant_reference).first()
+    existing_payment = Payment.query.filter_by(
+       user_id=user.id,
+       amount=amount,
+    #   package=package,
+       status=PaymentStatus.PENDING
+    ).first()
+  
+    if existing_payment:
         return jsonify({
-            "reference": existing.reference,
-            "status": existing.status.value,
-            "note": "Idempotent - existing record returned"
-        }), 200
-    except Exception as ex:
-        db.session.rollback()
-        logger.exception("Failed to create payment record: %s", ex)
-        return jsonify({"error": "Internal server error"}), 500
+        "reference": existing_payment.reference,
+        "status": existing_payment.status.value,
+        "note": "Idempotent: existing record returned"}), 200
+  
 
-    # 7️⃣ Prepare payload for Marz
+    payment = Payment(
+        user_id=user.id,
+        reference=merchant_reference,
+        amount=amount,
+        currency="UGX",
+        phone_number=phone,
+    #    package=package,
+        status=PaymentStatus.PENDING
+        )
+    db.session.add(payment)
+    db.session.commit()
+    
+
+    headers = {
+        "Authorization": get_marz_authorization_header(),
+        "Content-Type": "application/json",}
+    
+    callback_url = f"{current_app.config.get('APP_BASE_URL')}/payments/webhook"
     marz_payload = {
         "phone_number": phone,
         "amount": str(amount),
-        "country": "UG",
+        "currency": "UGX",
         "reference": merchant_reference,
-        "callback_url": marz_payload.get("callback_url") or f"{current_app.config.get('APP_BASE_URL')}/api/payments/webhook",
+        "callback_url": callback_url,
         "metadata": {
             "user_id": user.id,
-            "package": PACKAGE_MAP[amount]
-        }
+            "package": package
+        }       
     }
-
-    # 8️⃣ Generate HMAC signature
-    signature, body_json = generate_hmac_signature(marz_payload, MARZ_SECRET)
-
-    headers = {
-        "Content-Type": "application/json",
-        "Api-Key": MARZ_API_KEY,
-        "Signature": signature,          #  Marz server verifies this
-        "Idempotency-Key": merchant_reference
-    }
-
-    # 9️⃣ Call Marz API
+ 
+  
     try:
         resp = requests.post(
-            f"{MARZ_API_BASE.rstrip('/')}/collect-money",
-            data=body_json,
+            f"{MARZ_BASE_URL}/collect-money",
+            json=marz_payload,
             headers=headers,
             timeout=15
         )
         resp.raise_for_status()
         marz_data = resp.json()
     except requests.RequestException as e:
-        logger.exception("Marz API request failed: %s", e)
         payment.status = PaymentStatus.FAILED
         payment.raw_response = str(e)
         db.session.commit()
         return jsonify({"error": "Payment provider error"}), 502
 
-    # 10️⃣ Save response
+    # Update payment record with gateway response
+    payment.payment_id = marz_data.get("transaction_id")
+    payment.payment_status = marz_data.get("status")
     payment.raw_response = json.dumps(marz_data)
-    payment.gateway_id = marz_data.get("transaction_id") or marz_data.get("id")
-    payment.gateway_status = marz_data.get("status")
     db.session.commit()
 
-    # 11️⃣ Return to client
-    checkout_url = marz_data.get("checkout_url") or marz_data.get("redirect_url")
+    # Return checkout URL to frontend
+    checkout_url = marz_data.get("checkout_url")
     return jsonify({
         "reference": merchant_reference,
         "status": "pending",
-        "package": PACKAGE_MAP[amount],
-        "checkout_url": checkout_url,
-        "marz_response": marz_data
+        "package": package,
+        "checkout_url": checkout_url
     }), 200
 
-
-# Webhook endpoint that Marz will call asynchronously
-@bp.route("/webhook", methods=["POST"])
+#============================================================================
+#      PAYMENT WEBHOOK ENDPOINT
+#============================================================================
+@bp.route("/payments/webhook", methods=["POST"])
 def webhook_handler():
     """
-    POST /api/payments/webhook
+    POST /payments/webhook
     This endpoint handles asynchronous events from Marz (payment.success, payment.failed, etc).
     Security:
       - Verifies HMAC signature using WEBHOOK_SECRET and timestamp header
       - Uses idempotency via payment reference to avoid re-processing retries
     """
-    raw_body = request.get_data()                                         # raw bytes required for signature validation
-    headers = {k: v for k, v in request.headers.items()}                  # capture headers for verification
+    raw_body = request.get_data()                                         
+    headers = {k: v for k, v in request.headers.items()}                  
 
-    # signature verification (reject early if required)
-    if current_app.config.get("REQUIRE_WEBHOOK_SIGNATURE", True):
-        if not verify_webhook_signature(raw_body, headers):
-            logger.warning("Webhook signature verification failed; returning 400")
-            return jsonify({"error": "invalid signature"}), 400
-
-    # parse JSON after verifying signature (helps avoid processing false payloads)
     try:
         data = request.get_json(force=True)
     except Exception as ex:
@@ -258,8 +239,10 @@ def webhook_handler():
     # respond 200 to acknowledge receipt to Marz
     return jsonify({"status": "ok"}), 200
 
+#============================================================================
+#      PAYMENT STATUS CHECK ENDPOINT
+#============================================================================
 
-# Query endpoint for merchant to check status (or for your frontend)
 @bp.route("/status/<reference>", methods=["GET"])
 def check_status(reference):
     """
@@ -281,3 +264,68 @@ def check_status(reference):
         }), 200
     finally:
         db.close()
+
+#============================================================================
+#      WITHDRAWAL ENDPOINT
+#============================================================================
+
+@bp.route("/payments/withdraw", methods=["POST"])
+@login_required
+def withdraw():
+ 
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    data = request.get_json()
+    amount = data.get("amount")
+    phone = data.get("phone")
+
+   
+    if not amount or not phone:
+        return jsonify({"error": "Amount and phone number are required"}), 400
+
+    try:
+        amount = Decimal(amount)
+    except:
+        return jsonify({"error": "Invalid amount format"}), 400
+
+    if amount <= 5000:
+        return jsonify({"error": "Withdrawal amount must be positive"}), 400
+
+
+    user_id = session.get("user_id") or getattr(current_user, "id", None)
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+
+    if user.balance is None or user.balance < amount:
+        return jsonify({"error": "Insufficient balance"}), 400
+
+ 
+    withdraw_request = {
+        "user_id": user.id,
+        "amount": float(amount),
+        "phone": phone,
+        "status": "pending"}
+    
+    user.balance -= amount
+   
+    db.session.add(withdraw_request)
+    db.session.commit()
+
+    marz_response = send_withdraw_request(withdraw_request)
+
+
+    if not marz_response["success"]:
+        return jsonify({"error": "Failed to send to MarzPay", "details": marz_response["error"]}), 502
+
+    return jsonify({
+        "message": "Withdrawal request sent successfully",
+        "withdraw_id": withdraw_request.id,
+        "marz_response": marz_response["response"]
+    }), 200
+    

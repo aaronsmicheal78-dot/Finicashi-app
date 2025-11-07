@@ -180,6 +180,7 @@ class Withdrawal(db.Model, BaseMixin):
     processed_at = db.Column(db.DateTime(timezone=True))
     status = db.Column(db.String(50), default='pending')
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
+    fee = db.Column(db.Numeric(12,2), default=0) 
 
 # ===========================================================
 # BONUS & REFERRALS
@@ -195,6 +196,15 @@ class Bonus(db.Model, BaseMixin):
     status = db.Column(db.String(20), default='active')
 #==========================================================================
 #for temporary testing the dynamic admin dashboard
+
+class Package(db.Model, BaseMixin):
+    __tablename__ = 'packages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    package = db.Column(db.String(50),  nullable=True)
+    type = db.Column(db.String(50))  
+    status = db.Column(db.String(20), default='active')
 class ReferralBonus(db.Model, BaseMixin):
     __tablename__ = 'Referralbonuses'
 

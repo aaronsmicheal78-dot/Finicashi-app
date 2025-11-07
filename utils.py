@@ -3,7 +3,11 @@ import hmac                                                         # HMAC libra
 import hashlib                                                      # hashing algorithms
 import time                                                         # timestamp operations
 from flask import current_app                                       # app config access
-from extensions import logger                                        # centralized logger
+from extensions import logger  
+import base64
+import requests                                      # centralized logger
+import os
+import re
 
 def verify_webhook_signature(raw_body: bytes, headers: dict) -> bool:
     """
@@ -56,10 +60,79 @@ def safe_marz_headers():
         "Authorization": f"Basic {token}",                           # Basic auth token expected by Marz
         # Do not set content-type here if using multipart/form-data; the requests lib will handle it
     }
-import re
+
 
 def validate_email(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def validate_phone(phone):
     return re.match(r'^\+?\d{9,15}$', phone)
+
+
+
+def get_marz_authorization_header():
+    API_KEY = "your_api_key_here"  # Replace with your actual API key
+    SECRET = "your_secret_here"    # Replace with your actual secret
+    
+    credentials = f"{API_KEY}:{SECRET}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+    return f"Basic {encoded_credentials}"
+
+
+
+
+
+
+def get_marz_authorization_header():
+    API_KEY = os.environ.get('MARZ_API_KEY')
+    SECRET = os.environ.get('MARZ_SECRET')
+    
+    if not API_KEY or not SECRET:
+        raise ValueError("Marz Pay API credentials not found in environment variables")
+    
+    credentials = f"{API_KEY}:{SECRET}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+    return f"Basic {encoded_credentials}"
+
+# Example usage with error handling
+try:
+    auth_header = get_marz_authorization_header()
+    print("✅ Authorization header generated successfully")
+except ValueError as e:
+    print(f"❌ Error: {e}")
+
+
+# Usage in your payment route:
+#@bp.route('/payments/initiate/', methods=['POST'])
+def initiate_payment():
+    try:
+        # Your existing code...
+        
+        # Prepare Marz Pay API request
+        headers = {
+            'Authorization': get_marz_authorization_header(),
+            'Content-Type': 'application/json'
+        }
+        
+        # payload = {
+        #     'amount': amount,
+        #     'currency': 'UGX',
+        # #    'description': f'{package.title()} Package Payment',
+        #     'phone': phone,
+        #     'callback_url': 'http://yourdomain.com/payments/webhook',
+        #     'return_url': 'http://yourdomain.com/payments/success'
+        
+        
+        # # Make API call to Marz Pay
+        # response = requests.post(
+        #     'https://api.marzpay.com/v1/payments',  # Replace with actual Marz Pay endpoint
+        #     headers=headers,
+        #     json=payload,
+        #     timeout=30
+        # )
+        
+        # Handle response...
+        
+    except Exception as e:
+        # Error handling...
+        pass

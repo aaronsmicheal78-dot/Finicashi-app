@@ -114,71 +114,61 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     };
+document.addEventListener('DOMContentLoaded', () => {
+  const buttons = document.querySelectorAll('.pay-btn-modal');
 
-// const ModalManager = {
-//     init: function() {
-//         this.setupEventListeners();
-//         this.setupOpenButtons();
-//     },
+  buttons.forEach(button => {
+    button.addEventListener('click', async (event) => {
+      // 1️⃣ Identify the modal (not the package card)
+      const modal = event.target.closest('.payment-modal');
 
-//     setupEventListeners: function() {
-//         // Close buttons
-//         document.querySelectorAll('.close-modal, .close-form').forEach(button => {
-//             button.addEventListener('click', (e) => {
-//                 e.preventDefault();
-//                 this.closeAllModals();
-//             });
-//         });
+      // 2️⃣ Get amount and phone number from modal
+      const amount = modal.getAttribute('data-amount');
+      const phoneInput = modal.querySelector('.phone-input');
+      const phone = phoneInput.value.trim();
 
-//         // Clicking outside modal content
-//         document.querySelectorAll('.modal').forEach(modal => {
-//             modal.addEventListener('click', (e) => {
-//                 if (e.target === modal) {
-//                     this.closeAllModals();
-//                 }
-//             });
-//         });
+      // 3️⃣ Validate phone
+      const phoneRegex = /^(?:\+256|0)?7\d{8}$/;
+      if (!phoneRegex.test(phone)) {
+        alert("Please enter a valid phone number (Ugandan format)");
+        return;
+      }
 
-//         // Escape key
-//         document.addEventListener('keydown', (e) => {
-//             if (e.key === 'Escape') {
-//                 this.closeAllModals();
-//             }
-//         });
-//     },
+      // 4️⃣ Prepare payload
+      const payload = { amount: parseInt(amount), phone };
 
-//     setupOpenButtons: function() {
-//         // Automatically bind all buttons with data-modal
-//         document.querySelectorAll('[data-modal]').forEach(button => {
-//             button.addEventListener('click', () => {
-//                 const modalId = button.dataset.modal;
-//                 this.openModal(modalId);
-//             });
-//         });
-//     },
+      try {
+        // 5️⃣ Send to backend
+        const response = await fetch('/payments/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-//     openModal: function(modalId) {
-//         const modal = document.getElementById(modalId);
-//         if (!modal) return;
+        const data = await response.json();
 
-//         this.closeAllModals();
-//         modal.style.display = 'flex';
-//         modal.style.visibility = 'visible';
-//         modal.style.opacity = '1';
-//         modal.classList.add('active');
-//     },
+        if (!response.ok) {
+          alert(data.error || "Payment initiation failed.");
+          return;
+        }
 
-//     closeAllModals: function() {
-//         document.querySelectorAll('.modal').forEach(modal => {
-//             modal.style.display = 'none';
-//             modal.style.visibility = 'hidden';
-//             modal.style.opacity = '0';
-//             modal.classList.remove('active');
-//         });
-//     }
-// };
+        // 6️⃣ Redirect or inform
+        if (data.checkout_url) {
+          window.location.href = data.checkout_url;
+        } else {
+          alert("Payment initiated. Please wait for confirmation.");
+        }
 
-// // Initialize after DOM loaded
-// document.addEventListener('DOMContentLoaded', () => {
-//     ModalManager.init();
-// });
+      } catch (error) {
+        console.error('Error:', error);
+        alert("Network or server error. Try again later.");
+      }
+    });
+  });
+});
+
+
+
+
+
+
