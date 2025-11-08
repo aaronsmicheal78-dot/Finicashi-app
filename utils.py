@@ -45,13 +45,13 @@ def get_marz_authorization_header():
 
 
 def get_marz_authorization_header():
-    API_KEY = os.environ.get('MARZ_API_KEY')
-    SECRET = os.environ.get('MARZ_SECRET')
+    MARZ_API_KEY = os.environ.get('MARZ_API_KEY')
+    MARZ_API_SECRET = os.environ.get('MARZ_API_SECRET')
     
-    if not API_KEY or not SECRET:
+    if not MARZ_API_KEY or not MARZ_API_SECRET:
         raise ValueError("Marz Pay API credentials not found in environment variables")
     
-    credentials = f"{API_KEY}:{SECRET}"
+    credentials = f"{MARZ_API_KEY}:{MARZ_API_SECRET}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
     return f"Basic {encoded_credentials}"
 

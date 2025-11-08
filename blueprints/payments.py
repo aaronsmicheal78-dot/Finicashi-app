@@ -13,8 +13,7 @@ from sqlalchemy.orm import Session
 import re  
 import json
 import requests 
-from extensions import db
-#from blueprints.payment_webhooks import SessionLocal 
+from extensions import db, SessionLocal
 import os
 from datetime import datetime, timedelta
 import base64
@@ -29,7 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '15'))
+
 MARZ_BASE_URL=('https://wallet.wearemarz.com/api/v1')
+
 def deterministic_json(obj):
    """Return deterministic JSON string for signing: keys sorted, separators compact.
    Avoids variations between client/server serializations.
@@ -110,10 +111,10 @@ def initiate_payment():
     
 
     headers = {
-        "Authorization": get_marz_authorization_header(),
+        "Authorization": os.environ.get("MARZ_AUTH_HEADER"),
         "Content-Type": "application/json",}
     
-    callback_url = f"{current_app.config.get('APP_BASE_URL')}/payments/webhook"
+    callback_url = f"{os.environ.get('APP_BASE_URL')}/payments/webhook"
     marz_payload = {
         "phone_number": phone,
         "amount": str(amount),

@@ -1,10 +1,10 @@
 import os
 from flask import Flask, render_template, session, g
 from config import Config
-from extensions import db
 from models import User
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from extensions import db
 
 # --------------------------------------------------------------------------------------------------------
 #       Global instances
@@ -15,7 +15,6 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    # Debug settings
     if app.config.get("DEBUG", False):
         app.config['TEMPLATES_AUTO_RELOAD'] = True
         app.jinja_env.auto_reload = True
@@ -23,7 +22,7 @@ def create_app():
         app.config['DEBUG'] = True
      
     
-
+    # ------------------------------------------------------------------------------------------
     # Basic logging setup
     if not app.debug:
         import logging
@@ -38,9 +37,9 @@ def create_app():
         app.logger.setLevel(logging.INFO)
     
     
-    # ------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------------------------------------------------------
     # DATABASE URI Fix
-    # -------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------------------------
     DATABASE_URI = app.config.get("SQLALCHEMY_DATABASE_URI")
     
     if not DATABASE_URI:
@@ -50,35 +49,37 @@ def create_app():
         DATABASE_URI = f"sqlite:///{os.path.join(instance_dir, 'fincash.db')}"
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI 
 
-    # if DATABASE_URI.startswith("postgres://"):
-    #     DATABASE_URI = DATABASE_URI.replace("postgres://", "postgresql+pg8000://", 1)
-    #     app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
+    if DATABASE_URI.startswith("postgres://"):
+        DATABASE_URI = DATABASE_URI.replace("postgres://", "postgresql+pg8000://", 1)
+        app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
 
-    # print("Using DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
+        print("Using DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
 
-    # ----------------------
+    # --------------------------------------------------------------------------------------------------------------------------
     # Initialize extensions
-    # ----------------------
+    # ----------------------------------------------------------------------------------------------------------------------------
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    # ----------------------
+    # ------------------------------------------------------------------------------------------------------------------------
     # Register blueprints
-    # ----------------------
+    # -----------------------------------------------------------------------------------------------------------------------
     def register_blueprints(app):
         from blueprints.auth import bp as auth_bp
         from blueprints.profile import bp as profile_bp
         from blueprints.admin import admin_bp as admin_bp
         from blueprints.payments import bp as payment_bp
-        from blueprints.payment_webhooks import bp as payment_webhooks_bp  
+        from blueprints.payment_webhooks import bp as payment_webhooks_bp 
+        from blueprints.payment_callback import bp as payment_callbacks_bp 
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(profile_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(payment_bp)
         app.register_blueprint(payment_webhooks_bp)
+        app.register_blueprint(payment_callbacks_bp)
 
     register_blueprints(app)
 
@@ -102,6 +103,37 @@ def create_app():
     @app.route("/healthz")
     def healthz():
         return {"status": "ok"}, 200
+    
+     #----------------------------------------------------------------------------------------------------------
+    @app.route("/debug/config")
+    def debug_config():
+        """⚠️ Development-only route to inspect loaded configuration."""
+        safe_keys = [
+            "FLASK_ENV",
+            "DEBUG",
+            "SQLALCHEMY_DATABASE_URI",
+            "MARZ_BASE_URL",
+            "APP_BASE_URL"
+        ]
+
+        config_snapshot = {key: app.config.get(key) for key in safe_keys}
+
+        # Add a small check to see if sensitive keys are loaded
+        secrets_loaded = {
+            "SECRET_KEY": bool(app.config.get("SECRET_KEY")),
+            "MARZ_API_KEY": bool(app.config.get("MARZ_API_KEY")),
+            "MARZ_API_SECRET": bool(app.config.get("MARZ_API_SECRET")),
+        }
+
+        return {
+            "config": config_snapshot,
+            "secrets_loaded": secrets_loaded,
+            "environment": dict(
+                FLASK_ENV=os.getenv("FLASK_ENV"),
+                DATABASE_URL=os.getenv("DATABASE_URL"),
+            )
+        }, 200
+    #----------------------------------------------------------------------------------------------------------------------------------------
 
     return app
 

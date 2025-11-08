@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, User
-from models import Withdraw
+from models import Withdrawal
 
 bp = Blueprint("withdraw_callback", __name__, url_prefix="/withdraw")
 
@@ -30,7 +30,7 @@ def marzpay_callback():
         return jsonify({"error": "Missing required fields"}), 400
 
     # Find the withdrawal record
-    withdraw_record = Withdraw.query.filter_by(id=reference).first()
+    withdraw_record = Withdrawal.query.filter_by(id=reference).first()
     if not withdraw_record:
         return jsonify({"error": "Withdrawal reference not found"}), 404
 

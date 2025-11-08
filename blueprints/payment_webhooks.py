@@ -2,7 +2,7 @@ from flask import request, jsonify, current_app
 from extensions import db
 from models import Payment, User, PaymentStatus
 from flask import Blueprint
-from blueprints.payments import PACKAGE_MAP
+#from blueprints.payments import PACKAGE_MAP
 from models import Package
 
 bp = Blueprint('payment_webhooks', __name__)
@@ -78,7 +78,7 @@ def handle_successful_payment(webhook_data, payment):
         # Update related records if any (e.g., subscriptions, orders)
         user = User.query.get(Package.user_id)
         if user:
-            user.package = PACKAGE_MAP.get(Package.package_name, user.package)
+           # user.package = PACKAGE_MAP.get(Package.package_name, user.package)
             current_app.logger.info(f"Package{payment.reference}: User {user.id} package updated")
 
         db.session.commit()
