@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, session, g
+from flask import Flask, render_template, session, g, jsonify
 from config import Config
 from models import User
 from flask_login import LoginManager
@@ -20,6 +20,21 @@ def create_app():
         app.jinja_env.auto_reload = True
         app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
         app.config['DEBUG'] = True
+
+    @app.route("/debug/routes", methods=["GET"])
+    def debug_routes():
+          """
+          Returns a JSON list of all registered routes with their methods.
+           Useful for debugging 404s and endpoint registration issues.
+          """
+          routes = []
+          for rule in app.url_map.iter_rules():
+            routes.append({
+               "endpoint": rule.endpoint,
+            "url": rule.rule,
+            "methods": list(rule.methods)
+         })
+          return jsonify(routes), 200
      
     
     # ------------------------------------------------------------------------------------------
@@ -134,6 +149,7 @@ def create_app():
             )
         }, 200
     #----------------------------------------------------------------------------------------------------------------------------------------
+
 
     return app
 

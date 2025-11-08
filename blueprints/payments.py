@@ -5,7 +5,7 @@
 #===========================================================================================================
 from flask import Blueprint, request, jsonify, current_app, session, url_for, current_app                                                                   # HTTP client to call Marz
 import uuid                                                                              
-from models import Payment, PaymentStatus, User                        
+from models import Payment, PaymentStatus, User, Withdrawal                      
 from utils import validate_phone, validate_email, get_marz_authorization_header      
 from sqlalchemy.exc import IntegrityError                             
 from sqlalchemy import select                                          
@@ -21,6 +21,10 @@ import logging
 from flask_login import current_user, login_required, login_user
 from decimal import Decimal
 from blueprints.payments_helpers import send_withdraw_request
+
+
+
+
 
 
 bp = Blueprint("payments", __name__)  
@@ -50,7 +54,7 @@ ALLOWED_AMOUNTS = set(PACKAGE_MAP.keys())
 #=============================================================================================
 #      PAYMENT INITIATION ENDPOINT
 #=============================================================================================
-@bp.route('/payments/initiate/', methods=['POST'])
+@bp.route("/payments/initiate", methods=['POST'])
 def initiate_payment():
     
     user_id = session.get("user_id")
@@ -272,13 +276,6 @@ def check_status(reference):
 #      WITHDRAWAL ENDPOINT
 #============================================================================
 
-from flask import Blueprint, request, jsonify, session
-from decimal import Decimal
-from extensions import db
-from models import User, Withdrawal
-import re
-
-bp = Blueprint("payments", __name__)
 
 @bp.route("/payments/withdraw", methods=["POST"])
 def withdraw():
