@@ -14,14 +14,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 class PaymentStatus(enum.Enum):
     PENDING = "pending"
-    SUCCESS = "success"
+    COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    
 
 class KycStatus(enum.Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+
 
 # ===========================================================
 # BASE MIXIN FOR COMMON FIELDS
@@ -161,9 +163,10 @@ class Payment(db.Model):
     idempotency_key = db.Column(db.String(128), index=True)
     
     verified = db.Column(db.Boolean, default=False)
-    status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
-    amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
+    status = db.Column(db.Enum('pending', 'completed', 'failed', 'cancelled', 
+                              name='paymentstatus'), nullable=False)
     currency = db.Column(db.String(8), nullable=False, default='UGX')
+    amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     raw_response = db.Column(db.Text)
     phone_number = db.Column(db.String(32))
 
@@ -177,12 +180,14 @@ class Withdrawal(db.Model, BaseMixin):
     __tablename__ = 'withdrawals'
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))  
     transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id', ondelete='SET NULL'), nullable=True, index=True)
     destination = db.Column(db.String(255))  # mobile number or bank account
     processed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     processed_at = db.Column(db.DateTime(timezone=True))
     status = db.Column(db.String(50), default='pending')
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)
     fee = db.Column(db.Numeric(12,2), default=0) 
 
 # ===========================================================

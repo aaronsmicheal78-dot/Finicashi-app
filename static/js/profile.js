@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("referral_code").textContent = user.referralCode;
       document.getElementById("balance").textContent = user.balance;
       document.getElementById("bonus").textContent = user.bonus;
+      
     })
     .catch(err => {
       console.error("Error fetching profile:", err);
@@ -168,7 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-
-
-
-
+// Simply add this to your main JS file
+document.addEventListener('DOMContentLoaded', function() {
+    // Method 1: Simple initialization
+    initProfileAvatar();
+    
+    // Method 2: For multiple avatars on page
+    initSmartAvatar();
+    
+    // Method 3: Manual initialization for specific element
+    const username = "aarons";
+    const avatarElement = document.querySelector('.profile-avatar');
+    avatarGenerator.updateExistingAvatar('.profile-avatar', username);
+});

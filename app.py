@@ -68,7 +68,7 @@ def create_app():
         DATABASE_URI = DATABASE_URI.replace("postgres://", "postgresql+pg8000://", 1)
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
 
-        print("Using DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
+    print("Using DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
 
     # --------------------------------------------------------------------------------------------------------------------------
     # Initialize extensions
@@ -86,15 +86,15 @@ def create_app():
         from blueprints.profile import bp as profile_bp
         from blueprints.admin import admin_bp as admin_bp
         from blueprints.payments import bp as payment_bp
-        from blueprints.payment_webhooks import bp as payment_webhooks_bp 
-        from blueprints.payment_callback import bp as payment_callbacks_bp 
+       
+        
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(profile_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(payment_bp)
-        app.register_blueprint(payment_webhooks_bp)
-        app.register_blueprint(payment_callbacks_bp)
+     
+      
 
     register_blueprints(app)
 
@@ -128,7 +128,8 @@ def create_app():
             "DEBUG",
             "SQLALCHEMY_DATABASE_URI",
             "MARZ_BASE_URL",
-            "APP_BASE_URL"
+            "APP_BASE_URL",
+            "MARZ_AUTH_HEADER",
         ]
 
         config_snapshot = {key: app.config.get(key) for key in safe_keys}
@@ -138,6 +139,7 @@ def create_app():
             "SECRET_KEY": bool(app.config.get("SECRET_KEY")),
             "MARZ_API_KEY": bool(app.config.get("MARZ_API_KEY")),
             "MARZ_API_SECRET": bool(app.config.get("MARZ_API_SECRET")),
+            "MARZ_AUTH_HEADER":bool(app.config.get("MARZ_AUTH_HEADER")),
         }
 
         return {
@@ -146,10 +148,16 @@ def create_app():
             "environment": dict(
                 FLASK_ENV=os.getenv("FLASK_ENV"),
                 DATABASE_URL=os.getenv("DATABASE_URL"),
+                MARZ_AUTH_HEADER=os.getenv("MARZ_AUTH_HEADER")
             )
         }, 200
     #----------------------------------------------------------------------------------------------------------------------------------------
 
+
+   
+
+# Call this when app starts
+    
 
     return app
 
@@ -169,7 +177,9 @@ app = create_app()
 # Local development
 # ----------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 80))
     debug_mode = app.config.get("DEBUG", False)
-    print(f"🚀 Starting Flask app on port {port}...")
+   
+      
+   # print(f"🚀 Starting Flask app on port {port}...")
     app.run(debug=True, host="0.0.0.0", port=port)

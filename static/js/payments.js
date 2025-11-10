@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         phone: phone
       };
      
+
       console.log("Sending payment payload:", payload);
 
       try {
@@ -152,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: parseInt(amount),
             narration: 'Cash Out - Finicashi'
         };
-
         // Send request to Flask backend
         makeWithdrawalRequest(withdrawalData);
     }
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading state
             withdrawBtn.disabled = true;
             withdrawBtn.textContent = 'Processing...';
-
+            console.log("Withdrawal payload:", payload);
             const response = await fetch('/payments/withdraw', {
                 method: 'POST',
                 headers: {

@@ -1,3 +1,9 @@
+#=========================================================================================================
+#
+# --------THE BONUS REFERRAL ENGINE OF FINICASHI UP TO 30 LEVELS.----------------
+# -----DESIGNED AND ARCHITECTED WITH MLM AND UML PRINCIPLES BY ENG. MWESIGYE AARONS. SOFTWARE ENGINEER
+#==========================================================================================================
+
 """
 flask_webhook_referral_handler.py
 
@@ -17,60 +23,29 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import enum
 from extensions import db
-from models import User, Payment, ReferralBonus 
+from models import User, Payment, ReferralBonus, PaymentStatus
 
 
 # ======================================================
 # CONFIG & INIT
 # ======================================================
 
-db = SQLAlchemy()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BONUS_PERCENTAGES = [Decimal('10'), Decimal('5'), Decimal('3'),
                      Decimal('2'), Decimal('1')] + [Decimal('0.5')] * 15
-MAX_BONUS_LEVEL = 20
+
+MAX_BONUS_LEVEL = 30
 DECIMAL_QUANT = Decimal('0.01')
-TIMESTAMP_TOLERANCE_SECONDS = 300  # 5 minutes
+TIMESTAMP_TOLERANCE_SECONDS = 300  
 
-
-class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///test.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    WEBHOOK_HMAC_SECRET = os.getenv("WEBHOOK_HMAC_SECRET", "change_me")
-    SIGNATURE_HEADER = os.getenv("SIGNATURE_HEADER", "X-Signature")
-    TIMESTAMP_HEADER = os.getenv("TIMESTAMP_HEADER", "X-Timestamp")
-    REQUIRE_HTTPS = os.getenv("REQUIRE_HTTPS", "1") == "1"
-
-
-# ======================================================
-# MODELS
-# ======================================================
-
-class PaymentStatus(enum.Enum):
-    PENDING = "pending"
-    SUCCESS = "success"
-    FAILED = "failed"
 
 
 # ======================================================
 # HELPERS
 # ======================================================
-
-def verify_hmac_signature(secret: str, payload: bytes, header_value: str) -> bool:
-    """Verifies HMAC-SHA256 signature."""
-    if not header_value:
-        return False
-    value = header_value.strip()
-    if "=" in value:
-        _, hex_digest = value.split("=", 1)
-    else:
-        hex_digest = value
-    expected = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, hex_digest)
-
-
 def verify_timestamp(header_value: Optional[str], tolerance=TIMESTAMP_TOLERANCE_SECONDS) -> bool:
     """Prevents replay attacks."""
     if not header_value:
@@ -93,8 +68,8 @@ def quantize_decimal(d: Decimal) -> Decimal:
 
 def distribute_referral_bonus(payment: Payment, session):
     """Distribute bonuses for up to 20 referrers."""
-    if payment.status != PaymentStatus.SUCCESS:
-        raise ValueError("Only SUCCESS payments generate bonuses")
+    if payment.status != PaymentStatus.COMPLETED.value:
+        raise ValueError("Only COMPLETED payments generate bonuses")
 
     payer = payment.user
     amount = Decimal(payment.amount)
@@ -124,66 +99,6 @@ def distribute_referral_bonus(payment: Payment, session):
 # ======================================================
 # FLASK WEBHOOK HANDLER
 # ======================================================
-
-def create_app(config=None):
-    app = Flask(__name__)
-    app.config.from_object(config or Config)
-    db.init_app(app)
-
-    @app.route("/webhook/payment", methods=["POST"])
-    def payment_webhook():
-        raw_body = request.get_data()
-        sig_header = request.headers.get(app.config["SIGNATURE_HEADER"])
-        ts_header = request.headers.get(app.config["TIMESTAMP_HEADER"])
-
-        # Security checks
-        if not verify_timestamp(ts_header):
-            return jsonify({"error": "Invalid timestamp"}), 400
-        if not verify_hmac_signature(app.config["WEBHOOK_HMAC_SECRET"], raw_body, sig_header):
-            return jsonify({"error": "Invalid signature"}), 401
-
-        data = request.get_json(force=True)
-        pid = data.get("provider_payment_id")
-        uid = data.get("user_id")
-        amount = Decimal(str(data.get("amount", "0")))
-        status_str = (data.get("status") or "").lower()
-        status = PaymentStatus.SUCCESS if status_str in ("success", "succeeded") else PaymentStatus.FAILED
-
-        try:
-            with db.session.begin_nested():
-                payment = Payment.query.filter_by(provider_payment_id=pid).with_for_update().first()
-                if payment:
-                    if payment.status == PaymentStatus.SUCCESS:
-                        return jsonify({"status": "already_processed"}), 200
-                    payment.status = status
-                    payment.processed_at = datetime.utcnow()
-                else:
-                    user = User.query.get(uid)
-                    if not user:
-                        return jsonify({"error": "user not found"}), 404
-                    payment = Payment(
-                        provider_payment_id=pid,
-                        user_id=user.id,
-                        amount=amount,
-                        status=status,
-                        processed_at=datetime.utcnow() if status == PaymentStatus.SUCCESS else None,
-                    )
-                    db.session.add(payment)
-                    db.session.flush()
-                    payment.user = user
-
-                if status == PaymentStatus.SUCCESS:
-                    distribute_referral_bonus(payment, db.session)
-
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logger.exception("webhook failed")
-            return jsonify({"error": "internal"}), 500
-
-        return jsonify({"status": "processed"}), 200
-
-    return app
 
 
 

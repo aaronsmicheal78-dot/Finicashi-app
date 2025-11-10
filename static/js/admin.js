@@ -1,500 +1,4 @@
-// class AdminDashboard {
-//     constructor() {
-//         this.currentSection = 'dashboard';
-//         this.adminData = null;
-//         this.dashboardMetrics = null;
-//         this.init();
-//     }
 
-//     async init() {
-//         await this.loadAdminData();
-//         this.initializeEventListeners();
-//         this.renderDashboard();
-//         this.startLiveUpdates();
-//     }
-
-//     // Unified API fetcher with error handling
-//     async apiFetch(url, options = {}) {
-//         const defaultOptions = {
-//             method: 'GET',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'X-Requested-With': 'XMLHttpRequest'
-//             },
-//             credentials: 'same-origin', // ensures session cookies are sent
-//             ...options
-//         };
-
-//         try {
-//             const response = await fetch(url, defaultOptions);
-
-//             // Handle non-JSON or network errors
-//             if (!response.ok) {
-//                 let message = `Request failed: ${response.status} ${response.statusText}`;
-//                 try {
-//                     const errorData = await response.json();
-//                     message = errorData.message || errorData.error || message;
-//                 } catch (e) {
-//                     // Response not JSON—keep default message
-//                 }
-//                 throw new Error(message);
-//             }
-
-//             // Handle JSON parsing
-//             const contentType = response.headers.get('content-type');
-//             if (contentType && contentType.includes('application/json')) {
-//                 return await response.json();
-//             } else {
-//                 throw new Error('Invalid response: expected JSON');
-//             }
-//         } catch (error) {
-//             console.error(`API Error (${url}):`, error);
-//             this.showNotification(`Error: ${error.message}`, 'error');
-//             return null;
-//         }
-//     }
-
-//     showNotification(message, type = 'info') {
-//         // Create or reuse a toast container
-//         let toastContainer = document.getElementById('admin-toast-container');
-//         if (!toastContainer) {
-//             toastContainer = document.createElement('div');
-//             toastContainer.id = 'admin-toast-container';
-//             toastContainer.style.cssText = `
-//                 position: fixed;
-//                 top: 20px;
-//                 right: 20px;
-//                 z-index: 10000;
-//                 max-width: 400px;
-//             `;
-//             document.body.appendChild(toastContainer);
-//         }
-
-//         const toast = document.createElement('div');
-//         toast.className = `admin-toast admin-toast-${type}`;
-//         toast.style.cssText = `
-//             background: ${type === 'error' ? '#fee' : type === 'success' ? '#efe' : '#eef'};
-//             color: ${type === 'error' ? '#c33' : type === 'success' ? '#282' : '#228'};
-//             border-left: 4px solid ${type === 'error' ? '#c33' : type === 'success' ? '#282' : '#258'};
-//             padding: 12px 16px;
-//             margin-bottom: 10px;
-//             border-radius: 4px;
-//             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-//             animation: fadeIn 0.3s;
-//         `;
-//         toast.innerHTML = `<strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
-
-//         toastContainer.appendChild(toast);
-
-//         // Auto-remove after 5s
-//         setTimeout(() => {
-//             toast.style.animation = 'fadeOut 0.5s';
-//             setTimeout(() => toast.remove(), 500);
-//         }, 5000);
-//     }
-
-//     // --- Data Loading ---
-//     async loadAdminData() {
-//         const adminData = localStorage.getItem('fincashpro_admin_data');
-//         if (adminData) {
-//             try {
-//                 this.adminData = JSON.parse(adminData);
-//                 this.updateUserInfo();
-//             } catch (e) {
-//                 console.warn('Invalid admin data in localStorage');
-//             }
-//         }
-//         await this.refreshAllData();
-//     }
-
-//     initializeEventListeners() {
-//         document.querySelectorAll('.admin-nav-item').forEach(item => {
-//             item.addEventListener('click', (e) => {
-//                 e.preventDefault();
-//                 this.switchSection(item.dataset.section);
-//             });
-//         });
-
-//         document.getElementById('admin-refresh-data')?.addEventListener('click', () => {
-//             this.refreshAllData();
-//         });
-
-//         // Modal close buttons
-//         ['payment', 'bonus', 'user', 'message', 'confirm'].forEach(type => {
-//             const btn = document.getElementById(`admin-close-${type}-modal`);
-//             btn?.addEventListener('click', () => this.closeModal(type));
-//         });
-
-//         document.getElementById('admin-user-menu')?.addEventListener('click', () => {
-//             this.showUserMenu();
-//         });
-//     }
-
-//     // --- Navigation ---
-//     switchSection(section) {
-//         this.currentSection = section;
-//         document.querySelectorAll('.admin-nav-item').forEach(item => {
-//             item.classList.toggle('active', item.dataset.section === section);
-//         });
-
-//         const titles = {
-//             'dashboard': 'Dashboard Overview',
-//             'payment-requests': 'Payment Requests',
-//             'bonus-requests': 'Bonus Requests',
-//             'user-management': 'User Management',
-//             'messages': 'User Messages',
-//             'reports': 'System Reports',
-//             'system': 'System Settings'
-//         };
-//         document.getElementById('admin-current-section').textContent = titles[section] || 'Admin Panel';
-
-//         this.renderSection(section);
-//     }
-
-//     renderSection(section) {
-//         const contentArea = document.getElementById('admin-dynamic-content');
-//         if (!contentArea) return;
-
-//         let html = '';
-//         switch (section) {
-//             case 'dashboard': html = this.renderDashboardContent(); break;
-//             case 'payment-requests': html = this.renderPaymentRequests(); break;
-//             case 'bonus-requests': html = this.renderBonusRequests(); break;
-//             case 'user-management': html = this.renderUserManagement(); break;
-//             case 'messages': html = this.renderMessages(); break;
-//             case 'reports': html = this.renderReports(); break;
-//             case 'system': html = this.renderSystemSettings(); break;
-//             default: html = '<p>Section not found</p>';
-//         }
-//         contentArea.innerHTML = html;
-//     }
-
-//     // --- Dashboard Rendering ---
-//     renderDashboard() {
-//         this.renderStatsGrid(); // Will be populated by updateStats()
-//         this.renderSection('dashboard');
-//     }
-
-//     renderStatsGrid(data = null) {
-//         const statsGrid = document.getElementById('admin-stats-grid');
-//         if (!statsGrid) return;
-
-//         if (!data) {
-//             statsGrid.innerHTML = `
-//                 <div class="admin-stat-card loading">loading...</div>
-//                 <div class="admin-stat-card loading">Loading...</div>
-//                 <div class="admin-stat-card loading">Loading...</div>
-//                 <div class="admin-stat-card loading">Loading...</div>
-//                 <div class="admin-stat-card loading">Loading...</div>
-//                 <div class="admin-stat-card loading">Loading...</div>
-//             `;
-//             return;
-//         }
-
-//         const stats = [
-//             { label: 'Total Users', value: data.total_users.toLocaleString(), type: 'users' },
-//             { label: 'Pending Payments', value: data.pending_payments.toLocaleString(), type: 'payments' },
-//             { label: 'Total Bonuses', value: `$${data.total_bonuses.toFixed(2)}`, type: 'bonuses' },
-//             { label: 'Total Volume', value: `$${data.total_balances.toFixed(2)}`, type: 'volume' },
-//             { label: 'New Users (24h)', value: data.new_users_24h.toLocaleString(), type: 'users' },
-//             { label: 'Failed Logins (24h)', value: data.failed_logins_24h.toLocaleString(), type: 'security' }
-//         ];
-
-//         statsGrid.innerHTML = stats.map(stat => `
-//             <div class="admin-stat-card ${stat.type}">
-//                 <div class="admin-stat-value">${stat.value}</div>
-//                 <div class="admin-stat-label">${stat.label}</div>
-//             </div>
-//         `).join('');
-//     }
-
-//     renderDashboardContent() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">Recent Activity</h3>
-//                     <div class="admin-section-actions">
-//                         <button class="admin-action-btn view" id="view-all-activity">View All</button>
-//                     </div>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <p class="admin-no-data">Recent activity feed will appear here soon.</p>
-//                 </div>
-//             </div>
-
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">Quick Actions</h3>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-//                         <button class="admin-action-btn view" id="quick-view-payments">Review Payments</button>
-//                         <button class="admin-action-btn approve" id="quick-process-bonuses">Process Bonuses</button>
-//                         <button class="admin-action-btn edit" id="quick-user-search">Search Users</button>
-//                         <button class="admin-action-btn view" id="quick-generate-report">Generate Report</button>
-//                     </div>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     // --- Other Section Templates (unchanged) ---
-//     renderPaymentRequests() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">Pending Payment Requests</h3>
-//                     <div class="admin-section-actions">
-//                         <button class="admin-action-btn view" id="export-payments">Export</button>
-//                         <button class="admin-action-btn approve" id="bulk-approve-payments">Bulk Approve</button>
-//                     </div>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <p class="admin-no-data">Payment requests will load here.</p>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     renderBonusRequests() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">Pending Bonus Requests</h3>
-//                     <div class="admin-section-actions">
-//                         <button class="admin-action-btn view" id="export-bonuses">Export</button>
-//                         <button class="admin-action-btn approve" id="bulk-approve-bonuses">Bulk Approve</button>
-//                     </div>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <p class="admin-no-data">Bonus requests will load here.</p>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     renderUserManagement() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">User Management</h3>
-//                     <div class="admin-section-actions">
-//                         <input type="text" id="user-search-input" placeholder="Search users..." class="admin-form-input" style="width: 300px;">
-//                         <button class="admin-action-btn view" id="search-users">Search</button>
-//                     </div>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <p class="admin-no-data">User list will appear after search.</p>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     renderMessages() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">User Messages</h3>
-//                     <div class="admin-section-actions">
-//                         <button class="admin-action-btn view" id="mark-all-read">Mark All Read</button>
-//                     </div>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <p class="admin-no-data">Messages will load here.</p>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     renderReports() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">System Reports</h3>
-//                     <div class="admin-section-actions">
-//                         <button class="admin-action-btn view" id="generate-financial-report">Financial Report</button>
-//                         <button class="admin-action-btn view" id="generate-user-report">User Report</button>
-//                     </div>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <div id="reports-container">
-//                         <p>Generate reports using the buttons above.</p>
-//                     </div>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     renderSystemSettings() {
-//         return `
-//             <div class="admin-content-section">
-//                 <div class="admin-section-header">
-//                     <h3 class="admin-section-title">System Configuration</h3>
-//                 </div>
-//                 <div class="admin-section-body">
-//                     <form id="system-settings-form">
-//                         <div class="admin-form-group">
-//                             <label class="admin-form-label">System Maintenance Mode</label>
-//                             <select class="admin-form-select" id="maintenance-mode">
-//                                 <option value="false">Disabled</option>
-//                                 <option value="true">Enabled</option>
-//                             </select>
-//                         </div>
-//                         <div class="admin-form-group">
-//                             <label class="admin-form-label">Auto-approve Payments Under ($)</label>
-//                             <input type="number" step="0.01" class="admin-form-input" id="auto-approve-limit" placeholder="0.00">
-//                         </div>
-//                         <div class="admin-form-group">
-//                             <label class="admin-form-label">System Notification Email</label>
-//                             <input type="email" class="admin-form-input" id="notification-email" placeholder="admin@fincashpro.com">
-//                         </div>
-//                         <button type="submit" class="admin-action-btn approve">Save Settings</button>
-//                     </form>
-//                 </div>
-//             </div>
-//         `;
-//     }
-
-//     // --- Data Refresh ---
-//     async refreshAllData() {
-//         await this.updateStats();
-//         // Later: await this.updatePaymentRequests(); etc.
-//     }
-
-//     async updateStats() {
-//         const metrics = await this.apiFetch('/admin/dashboard/data');
-//         if (metrics) {
-//             this.dashboardMetrics = metrics;
-//             this.renderStatsGrid(metrics);
-//         } else {
-//             this.renderStatsGrid(null); // show loading/error
-//         }
-//     }
-
-//     // --- Modals & Utils ---
-//     closeModal(type) {
-//         const modal = document.getElementById(`admin-${type}-modal`);
-//         if (modal) modal.classList.remove('show');
-//     }
-
-//     updateUserInfo() {
-//         if (this.adminData) {
-//             const usernameEl = document.getElementById('admin-username');
-//             const avatarEl = document.getElementById('admin-user-avatar');
-//             if (usernameEl) usernameEl.textContent = this.adminData.username;
-//             if (avatarEl) avatarEl.textContent = this.adminData.username.charAt(0).toUpperCase();
-//         }
-//     }
-
-//     showUserMenu() {
-//         // Implement dropdown logic if needed
-//         console.log('User menu toggled');
-//     }
-
-//     startLiveUpdates() {
-//         // Refresh stats every 30 seconds
-//         setInterval(() => {
-//             if (this.currentSection === 'dashboard') {
-//                 this.updateStats();
-//             }
-//         }, 30000);
-//     }
-// }
-
-// // Inject CSS for toasts if not present
-// (function injectToastCSS() {
-//     if (document.getElementById('admin-toast-styles')) return;
-//     const style = document.createElement('style');
-//     style.id = 'admin-toast-styles';
-//     style.textContent = `
-//         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-//         @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
-//         .admin-toast { font-size: 14px; }
-//     `;
-//     document.head.appendChild(style);
-// })();
-
-// // Initialize when DOM is ready
-// document.addEventListener('DOMContentLoaded', () => {
-//     window.adminDashboard = new AdminDashboard();
-// });
-
-
-
-
-//     async function fetchAdminData() {
-//         const valueEl = document.getElementById('total-users-value');
-//         const valueE2 = document.getElementById('total-users-active');
-//         if (!valueEl) return; // Exit if element not found
-
-//         // Show loading state
-//         valueEl.textContent = 'Loading...';
-//         valueEl.style.opacity = '0.7';
-
-//         try {
-//             const response = await fetch('/admin/data', {
-//                 method: 'GET',
-//                 headers: {
-//                     'Accept': 'application/json'
-//                 },
-//                 credentials: 'same-origin' // Ensures session cookies are sent
-//             });
-
-//             if (!response.ok) {
-//                 throw new Error(`HTTP ${response.status}`);
-//             }
-
-//             const data = await response.json();
-
-//             // Update UI with real number (formatted)
-//             if (typeof data.total_users === 'number',
-//                 typeof data.total_active_users === 'number'
-//             ) {
-//                 valueEl.textContent = data.total_users.toLocaleString();
-//                 valueEl.textContent = data.total_active_users.toLocaleString();
-//             } 
-//                 else {
-//                 throw new Error('Invalid data format');}
-                
-            
-
-//         } 
-        
-//         catch (error) {
-//             console.error('Failed to load total users:', error);
-//             valueEl.textContent = 'Error';
-//             valueEl.style.color = '#e53e3e'; // Red for error
-//         } finally {
-//             valueEl.style.opacity = '1';
-//         }
-//     }
-
-//     // Fetch when DOM is ready
-//     document.addEventListener('DOMContentLoaded', () => {
-//         fetchAdminData();
-//     });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// admin-dashboard.js
-/**
- * Finicashi Admin Dashboard JavaScript
- * Professional, maintainable admin dashboard data management
- * Fetches data from Flask backend and dynamically updates the UI
- */
 console.log("🚀 Admin dashboard script loaded");
 // Configuration and Constants
 const CONFIG = {
@@ -1498,3 +1002,449 @@ if (typeof module !== 'undefined' && module.exports) {
         Formatters
     };
 }
+//=======================================================
+//
+// ADMIN DASHBOARD SEARCH JS
+//===========================================================
+
+    
+        let currentResults = {
+            users: [],
+            payments: [],
+            bonuses: []
+        };
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                const response = await fetch(`/admin/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentResults = data;
+                    displayAllResults();
+                    updateStats();
+                } else {
+                    throw new Error(data.error || 'Search failed');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError('Search failed: ' + error.message);
+            }
+        }
+
+        function displayAllResults() {
+            displayUsers(currentResults.users);
+            displayPayments(currentResults.payments);
+            displayBonuses(currentResults.bonuses);
+        }
+
+        function displayUsers(users) {
+            const container = document.getElementById('usersResults');
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No users found</h3>
+                        <p>Try searching with different terms</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-user"></i> ${user.username}
+                        </div>
+                        <div class="badge badge-user">USER</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">ID</span>
+                            <span class="info-value">#${user.id}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email</span>
+                            <span class="info-value">${user.email || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phone</span>
+                            <span class="info-value">${user.phone}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Role</span>
+                            <span class="info-value">${user.role}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Balance</span>
+                            <span class="info-value">${user.balance} UGX</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Wallet Balance</span>
+                            <span class="info-value">${user.wallet_balance} UGX</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Referral Code</span>
+                            <span class="info-value">${user.referral_code || 'None'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">
+                                <span class="badge ${user.is_active ? 'badge-success' : 'badge-failed'}">
+                                    ${user.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Verified</span>
+                            <span class="info-value">
+                                <span class="badge ${user.is_verified ? 'badge-success' : 'badge-pending'}">
+                                    ${user.is_verified ? 'Verified' : 'Pending'}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Member Since</span>
+                            <span class="info-value">${formatDate(user.member_since)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="user-actions">
+                        <button class="btn btn-primary" onclick="viewUserDetails(${user.id})">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <button class="btn btn-secondary" onclick="editUser(${user.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn ${user.is_active ? 'btn-secondary' : 'btn-success'}" 
+                                onclick="toggleUserStatus(${user.id}, ${!user.is_active})">
+                            <i class="fas ${user.is_active ? 'fa-pause' : 'fa-play'}"></i> 
+                            ${user.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayPayments(payments) {
+            const container = document.getElementById('paymentsResults');
+            
+            if (!payments || payments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>No payments found</h3>
+                        <p>Try searching with different terms</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = payments.map(payment => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-receipt"></i> ${payment.reference}
+                        </div>
+                        <div class="badge badge-payment">PAYMENT</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Payment ID</span>
+                            <span class="info-value">#${payment.id}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Amount</span>
+                            <span class="info-value">${payment.amount} ${payment.currency}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">
+                                <span class="badge ${getStatusBadgeClass(payment.status)}">
+                                    ${payment.status.toUpperCase()}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">External Reference</span>
+                            <span class="info-value">${payment.external_ref || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phone Number</span>
+                            <span class="info-value">${payment.phone_number || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Provider</span>
+                            <span class="info-value">${payment.provider || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Verified</span>
+                            <span class="info-value">
+                                <span class="badge ${payment.verified ? 'badge-success' : 'badge-pending'}">
+                                    ${payment.verified ? 'Yes' : 'No'}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">User ID</span>
+                            <span class="info-value">${payment.user_id || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Created At</span>
+                            <span class="info-value">${formatDate(payment.created_at)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="user-actions">
+                        <button class="btn btn-primary" onclick="viewPaymentDetails(${payment.id})">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <button class="btn btn-secondary" onclick="verifyPayment(${payment.id})">
+                            <i class="fas fa-check"></i> Verify
+                        </button>
+                        <button class="btn btn-success" onclick="refundPayment(${payment.id})">
+                            <i class="fas fa-undo"></i> Refund
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayBonuses(bonuses) {
+            const container = document.getElementById('bonusesResults');
+            
+            if (!bonuses || bonuses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-gift"></i>
+                        <h3>No bonuses found</h3>
+                        <p>Try searching with different terms</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = bonuses.map(bonus => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-gift"></i> ${bonus.bonus_type} Bonus
+                        </div>
+                        <div class="badge badge-bonus">BONUS</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Bonus ID</span>
+                            <span class="info-value">#${bonus.id}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Amount</span>
+                            <span class="info-value">${bonus.amount} UGX</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Type</span>
+                            <span class="info-value">${bonus.bonus_type}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">
+                                <span class="badge ${getStatusBadgeClass(bonus.status)}">
+                                    ${bonus.status.toUpperCase()}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">User ID</span>
+                            <span class="info-value">${bonus.user_id}</span>
+                        </div>
+                        ${bonus.referred_id ? `
+                        <div class="info-item">
+                            <span class="info-label">Referred User ID</span>
+                            <span class="info-value">${bonus.referred_id}</span>
+                        </div>
+                        ` : ''}
+                        ${bonus.level ? `
+                        <div class="info-item">
+                            <span class="info-label">Referral Level</span>
+                            <span class="info-value">Level ${bonus.level}</span>
+                        </div>
+                        ` : ''}
+                        <div class="info-item">
+                            <span class="info-label">Created At</span>
+                            <span class="info-value">${formatDate(bonus.created_at)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="user-actions">
+                        <button class="btn btn-primary" onclick="viewBonusDetails(${bonus.id})">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <button class="btn btn-secondary" onclick="editBonus(${bonus.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn ${bonus.status === 'active' ? 'btn-secondary' : 'btn-success'}" 
+                                onclick="toggleBonusStatus(${bonus.id}, '${bonus.status === 'active' ? 'inactive' : 'active'}')">
+                            <i class="fas ${bonus.status === 'active' ? 'fa-pause' : 'fa-play'}"></i> 
+                            ${bonus.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const statsBar = document.getElementById('statsBar');
+            statsBar.style.display = 'flex';
+            
+            document.getElementById('totalResults').textContent = currentResults.total_results || 0;
+            document.getElementById('userCount').textContent = currentResults.users?.length || 0;
+            document.getElementById('paymentCount').textContent = currentResults.payments?.length || 0;
+            document.getElementById('bonusCount').textContent = currentResults.bonuses?.length || 0;
+            
+            // Update tab counts
+            document.getElementById('usersTabCount').textContent = currentResults.users?.length || 0;
+            document.getElementById('paymentsTabCount').textContent = currentResults.payments?.length || 0;
+            document.getElementById('bonusesTabCount').textContent = currentResults.bonuses?.length || 0;
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showLoading() {
+            const containers = ['usersResults', 'paymentsResults', 'bonusesResults'];
+            containers.forEach(containerId => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Searching...</p>
+                    </div>
+                `;
+            });
+        }
+
+        function showError(message) {
+            const containers = ['usersResults', 'paymentsResults', 'bonusesResults'];
+            containers.forEach(containerId => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error</h3>
+                        <p>${message}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status?.toLowerCase()) {
+                case 'success':
+                case 'active':
+                case 'verified':
+                    return 'badge-success';
+                case 'pending':
+                    return 'badge-pending';
+                case 'failed':
+                case 'inactive':
+                    return 'badge-failed';
+                default:
+                    return 'badge-pending';
+            }
+        }
+
+        // Placeholder functions for actions
+        function viewUserDetails(userId) {
+            alert('View user details: ' + userId);
+            // Implement user details view
+        }
+
+        function editUser(userId) {
+            alert('Edit user: ' + userId);
+            // Implement user edit
+        }
+
+        function toggleUserStatus(userId, newStatus) {
+            if (confirm(`Are you sure you want to ${newStatus ? 'activate' : 'deactivate'} this user?`)) {
+                alert(`User ${userId} status changed to: ${newStatus}`);
+                // Implement status toggle API call
+            }
+        }
+
+        function viewPaymentDetails(paymentId) {
+            alert('View payment details: ' + paymentId);
+            // Implement payment details view
+        }
+
+        function verifyPayment(paymentId) {
+            if (confirm('Verify this payment?')) {
+                alert('Payment verified: ' + paymentId);
+                // Implement payment verification
+            }
+        }
+
+        function refundPayment(paymentId) {
+            if (confirm('Refund this payment?')) {
+                alert('Payment refunded: ' + paymentId);
+                // Implement payment refund
+            }
+        }
+
+        function viewBonusDetails(bonusId) {
+            alert('View bonus details: ' + bonusId);
+            // Implement bonus details view
+        }
+
+        function editBonus(bonusId) {
+            alert('Edit bonus: ' + bonusId);
+            // Implement bonus edit
+        }
+
+        function toggleBonusStatus(bonusId, newStatus) {
+            if (confirm(`Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} this bonus?`)) {
+                alert(`Bonus ${bonusId} status changed to: ${newStatus}`);
+                // Implement bonus status toggle API call
+            }
+        }
+
+        // Initialize with empty state
+        document.addEventListener('DOMContentLoaded', function() {
+            // Any initialization code can go here
+        });
+    

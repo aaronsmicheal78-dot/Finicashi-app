@@ -28,7 +28,7 @@ class Config:
     MARZ_API_KEY = os.getenv("MARZ_API_KEY")
     MARZ_API_SECRET = os.getenv("MARZ_API_SECRET")
     MARZ_BASE_URL = os.getenv("MARZ_BASE_URL", "https://wallet.wearemarz.com/api/v1")
-    MARZ_BASIC_TOKEN = os.getenv("MARZ_Base64_Authorization_header")
+    MARZ_AUTH_HEADER = os.getenv("MARZ_AUTH_HEADER")
 
     
-    APP_BASE_URL = os.getenv("APP_BASE_URL", "https://finicashi-app.onrender.com")
+    APP_BASE_URL = os.getenv("APP_BASE_URL", "https://bedfast-kamron-nondeclivitous.ngrok-free.dev")

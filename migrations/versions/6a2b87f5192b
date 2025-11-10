@@ -1,0 +1,50 @@
+"""Add amount to payments and user_id to withdrawals"""
+
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision = '6a2b87f5192b'   # 👈 generate a new unique ID (any hex string works)
+down_revision = '58da7df4f30b'
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    # -------------------------------
+    # 1️⃣ Add 'amount' column to payments
+    # -------------------------------
+    op.add_column('payments',
+        sa.Column('amount', sa.Numeric(10, 2), nullable=True)
+    )
+    # Initialize null rows
+    op.execute('UPDATE payments SET amount = 0 WHERE amount IS NULL')
+    # Make it NOT NULL
+    op.alter_column('payments', 'amount', nullable=False)
+
+    # -------------------------------
+    # 2️⃣ Add 'user_id' column to withdrawals
+    # -------------------------------
+    op.add_column('withdrawals',
+        sa.Column('user_id', sa.Integer(), nullable=True)
+    )
+
+    # Add foreign key to users table
+    op.create_foreign_key(
+        'fk_withdrawals_user',
+        'withdrawals', 'users',
+        ['user_id'], ['id'],
+        ondelete='CASCADE'
+    )
+
+    # Optional: if you want, set a default user for existing rows
+    # op.execute('UPDATE withdrawals SET user_id = 1 WHERE user_id IS NULL')
+
+    # Optional: then make NOT NULL if safe
+    # op.alter_column('withdrawals', 'user_id', nullable=False)
+
+
+def downgrade():
+    op.drop_constraint('fk_withdrawals_user', 'withdrawals', type_='foreignkey')
+    op.drop_column('withdrawals', 'user_id')
+    op.drop_column('payments', 'amount')

@@ -10,9 +10,10 @@ from flask import render_template, jsonify, request, Blueprint, session, redirec
 from flask_login import login_required, current_user
 from datetime import datetime, date
 from extensions import db
-from models import User, Payment, Bonus, Withdrawal
+from models import User, Payment, Bonus, Withdrawal, ReferralBonus
 from models import PaymentStatus
 from functools import wraps
+from sqlalchemy import or_
 
 def admin_required(f):
     """
@@ -71,10 +72,10 @@ def admin_data():
     daily_new_users = User.query.filter(db.func.date(User.created_at) == today).count()
 
     total_payments = Payment.query.count()
-    pending_payments = Payment.query.filter_by(status=PaymentStatus.PENDING).count()
+    pending_payments = Payment.query.filter_by(status=PaymentStatus.PENDING.value).count()
 
-    completed_payments = Payment.query.filter_by(status=PaymentStatus.SUCCESS).count()
-    total_bonus = Bonus.query.with_entities(db.func.sum(Bonus.amount)).scalar() or 0
+    completed_payments = Payment.query.filter_by(status=PaymentStatus.COMPLETED.value).count()
+    total_bonus = Bonus.query.count()
     pending_bonus = Bonus.query.filter_by(status="pending").with_entities(db.func.sum(Bonus.amount)).scalar() or 0
     daily_payouts = Withdrawal.query.filter(db.func.date(Withdrawal.created_at) == today).with_entities(db.func.sum(Withdrawal.amount)).scalar() or 0
     #daily_deductions = Withdrawal.query.filter(db.func.date(Withdrawal.created_at) == today).with_entities(db.func.sum(Withdrawal.fee)).scalar() or 0
@@ -94,3 +95,181 @@ def admin_data():
        # "daily_investments": daily_investments
 
     })
+#============================================================================================================
+#
+#     ------------------------ADMIN SEARCH FUNCTIONALITY---------------------------------------
+#-----------DASHBOARD COMPLETE SEARCH SYSTEM FOR USERS, BALANCES, AND PAYMENTS-----------------
+#
+#============================================================================================================
+
+@admin_bp.route('/admin/search', methods=['GET'])
+def admin_search():
+    """Admin search across users, payments, and bonuses"""
+    try:
+        query = request.args.get('q', '').strip()
+        if not query:
+            return jsonify({
+                'users': [],
+                'payments': [],
+                'bonuses': [],
+                'message': 'Please provide a search query'
+            }), 400
+
+        # Search across different models
+        users = search_users(query)
+        payments = search_payments(query)
+        bonuses = search_bonuses(query)
+
+        return jsonify({
+            'users': users,
+            'payments': payments,
+            'bonuses': bonuses,
+            'total_results': len(users) + len(payments) + len(bonuses)
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+def search_users(query):
+    """Search users by username, email, phone, referral code, or ID"""
+    try:
+        # Check if query is numeric (could be user ID)
+        if query.isdigit():
+            users = User.query.filter(
+                or_(
+                    User.id == int(query),
+                    User.username.ilike(f'%{query}%'),
+                    User.email.ilike(f'%{query}%'),
+                    User.phone.ilike(f'%{query}%'),
+                    User.referral_code.ilike(f'%{query}%')
+                )
+            ).limit(50).all()
+        else:
+            users = User.query.filter(
+                or_(
+                    User.username.ilike(f'%{query}%'),
+                    User.email.ilike(f'%{query}%'),
+                    User.phone.ilike(f'%{query}%'),
+                    User.referral_code.ilike(f'%{query}%')
+                )
+            ).limit(50).all()
+
+        return [user_to_search_dict(user) for user in users]
+    except Exception as e:
+        print(f"Error searching users: {e}")
+        return []
+
+
+def search_payments(query):
+    """Search payments by reference, external_ref, phone, or ID"""
+    try:
+        # Check if query is numeric (could be payment ID or amount)
+        if query.isdigit():
+            payments = Payment.query.filter(
+                or_(
+                    Payment.id == int(query),
+                    Payment.reference.ilike(f'%{query}%'),
+                    Payment.external_ref.ilike(f'%{query}%'),
+                    Payment.phone_number.ilike(f'%{query}%'),
+                    Payment.amount == float(query)
+                )
+            ).limit(50).all()
+        else:
+            payments = Payment.query.filter(
+                or_(
+                    Payment.reference.ilike(f'%{query}%'),
+                    Payment.external_ref.ilike(f'%{query}%'),
+                    Payment.phone_number.ilike(f'%{query}%')
+                )
+            ).limit(50).all()
+
+        return [payment_to_search_dict(payment) for payment in payments]
+    except Exception as e:
+        print(f"Error searching payments: {e}")
+        return []
+
+
+def search_bonuses(query):
+    """Search bonuses by type, status, or user attributes"""
+    try:
+        # Search in Bonus model
+        bonuses_query = Bonus.query.filter(
+            or_(
+                Bonus.type.ilike(f'%{query}%'),
+                Bonus.status.ilike(f'%{query}%')
+            )
+        ).limit(50).all()
+
+        # Search in ReferralBonus model
+        referral_bonuses_query = ReferralBonus.query.filter(
+            or_(
+                ReferralBonus.type.ilike(f'%{query}%'),
+                ReferralBonus.status.ilike(f'%{query}%')
+            )
+        ).limit(50).all()
+
+        all_bonuses = list(bonuses_query) + list(referral_bonuses_query)
+        
+        return [bonus_to_search_dict(bonus) for bonus in all_bonuses]
+    except Exception as e:
+        print(f"Error searching bonuses: {e}")
+        return []
+
+
+# Helper functions to serialize search results
+def user_to_search_dict(user):
+    """Serialize user for search results"""
+    return {
+        'type': 'user',
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'phone': user.phone,
+        'role': user.role,
+        'balance': float(user.balance or 0),
+        'referral_code': user.referral_code,
+        'is_active': user.is_active,
+        'is_verified': user.is_verified,
+        'member_since': user.member_since.isoformat() if user.member_since else None,
+        'wallet_balance': float(user.wallet.balance) if user.wallet else 0
+    }
+
+
+def payment_to_search_dict(payment):
+    """Serialize payment for search results"""
+    return {
+        'type': 'payment',
+        'id': payment.id,
+        'reference': payment.reference,
+        'external_ref': payment.external_ref,
+        'amount': float(payment.amount or  0),
+        'currency': payment.currency,
+        'status': payment.status.value if hasattr(payment.status, 'value') else str(payment.status),
+        'phone_number': payment.phone_number,
+        'verified': payment.verified,
+        'provider': payment.provider,
+        'user_id': payment.user_id,
+        'created_at': payment.created_at.isoformat() if hasattr(payment, 'created_at') and payment.created_at else None
+    }
+
+
+def bonus_to_search_dict(bonus):
+    """Serialize bonus for search results"""
+    bonus_data = {
+        'type': 'bonus',
+        'id': bonus.id,
+        'user_id': bonus.user_id,
+        'amount': float(bonus.amount) if bonus.amount else 0,
+        'bonus_type': bonus.type,
+        'status': bonus.status,
+        'created_at': bonus.created_at.isoformat() if hasattr(bonus, 'created_at') and bonus.created_at else None
+    }
+
+    # Add specific fields for ReferralBonus
+    if hasattr(bonus, 'referred_id'):
+        bonus_data['referred_id'] = bonus.referred_id
+        bonus_data['level'] = bonus.level
+        bonus_data['bonus_type'] = 'referral'
+
+    return bonus_data

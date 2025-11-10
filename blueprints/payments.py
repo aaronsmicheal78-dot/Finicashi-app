@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session   
 import re  
 import json
+from sqlalchemy import and_
 import requests 
 from extensions import db, SessionLocal
 import os
@@ -21,10 +22,7 @@ import logging
 from flask_login import current_user, login_required, login_user
 from decimal import Decimal
 from blueprints.payments_helpers import send_withdraw_request
-
-
-
-
+import sys
 
 
 bp = Blueprint("payments", __name__)  
@@ -56,7 +54,8 @@ ALLOWED_AMOUNTS = set(PACKAGE_MAP.keys())
 #=============================================================================================
 @bp.route("/payments/initiate", methods=['POST'])
 def initiate_payment():
-    
+
+
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
@@ -86,52 +85,51 @@ def initiate_payment():
         return jsonify({"error": "Invalid phone number"}), 400
     
     merchant_reference = str(uuid.uuid4())
-
+   
     existing_payment = Payment.query.filter_by(
        user_id=user.id,
        amount=amount,
-    #   package=package,
-       status=PaymentStatus.PENDING
+       status=PaymentStatus.PENDING.value,
     ).first()
-  
+    print("Existing payment found:", existing_payment, flush=True)
+    
     if existing_payment:
         return jsonify({
         "reference": existing_payment.reference,
-        "status": existing_payment.status.value,
+        "status": existing_payment.status,
         "note": "Idempotent: existing record returned"}), 200
   
-
+   
     payment = Payment(
-        user_id=user.id,
-        reference=merchant_reference,
-        amount=amount,
-        currency="UGX",
-        phone_number=phone,
-    #    package=package,
-        status=PaymentStatus.PENDING
-        )
+    user_id=user.id,
+    reference=merchant_reference,
+    amount=amount,
+    currency="UGX",
+    phone_number=phone,
+    provider=None,
+    status="pending",  
+    method="MarzPay",         
+    external_ref=None,        
+    idempotency_key=str(uuid.uuid4()), 
+    raw_response=None,  
+    )
     db.session.add(payment)
     db.session.commit()
     
-
     headers = {
-        "Authorization": os.environ.get("MARZ_AUTH_HEADER"),
+        "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
         "Content-Type": "application/json",}
     
-    callback_url = f"{os.environ.get('APP_BASE_URL')}/payments/webhook"
+    callback_url = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/payments/callback"
     marz_payload = {
-        "phone_number": phone,
-        "amount": str(amount),
-        "currency": "UGX",
-        "reference": merchant_reference,
+        "phone_number": f"+256{phone.lstrip('0')}",
+        "amount": int(amount),
+        "country": "UG",
+        "reference": str(merchant_reference),
         "callback_url": callback_url,
-        "metadata": {
-            "user_id": user.id,
-            "package": package
-        }       
-    }
- 
-  
+        "description": f"payment_for_{package}" }   
+
+     
     try:
         resp = requests.post(
             f"{MARZ_BASE_URL}/collect-money",
@@ -141,160 +139,96 @@ def initiate_payment():
         )
         resp.raise_for_status()
         marz_data = resp.json()
+        print("Sandbox MarzPay response:", marz_data, flush=True)
+
     except requests.RequestException as e:
-        payment.status = PaymentStatus.FAILED
-        payment.raw_response = str(e)
+       
+        payment.status = PaymentStatus.failed
+        payment.raw_response = json.dumps(marz_data)
         db.session.commit()
         return jsonify({"error": "Payment provider error"}), 502
 
-    # Update payment record with gateway response
+    
     payment.payment_id = marz_data.get("transaction_id")
     payment.payment_status = marz_data.get("status")
     payment.raw_response = json.dumps(marz_data)
     db.session.commit()
 
-    # Return checkout URL to frontend
+   
     checkout_url = marz_data.get("checkout_url")
     return jsonify({
         "reference": merchant_reference,
-        "status": "pending",
+        "status": "PENDING",
         "package": package,
         "checkout_url": checkout_url
     }), 200
+#=======================================================================================================
+#                   ------------------------------------------------------
+#---------------------WEBHOOK CALLBACK ENDPOINT FOR PAYMENT INITIATION--------------------------------------
+#=========================================================================================================
+@bp.route("/payments/callback", methods=['POST'])
+def payment_callback():
+    data = request.get_json(silent=True) or {}
 
-#============================================================================
-#      PAYMENT WEBHOOK ENDPOINT
-#============================================================================
-@bp.route("/payments/webhook", methods=["POST"])
-def webhook_handler():
-    """
-    POST /payments/webhook
-    This endpoint handles asynchronous events from Marz (payment.success, payment.failed, etc).
-    Security:
-      - Verifies HMAC signature using WEBHOOK_SECRET and timestamp header
-      - Uses idempotency via payment reference to avoid re-processing retries
-    """
-    raw_body = request.get_data()                                         
-    headers = {k: v for k, v in request.headers.items()}                  
-
-    try:
-        data = request.get_json(force=True)
-    except Exception as ex:
-        logger.exception("Invalid JSON on webhook payload: %s", ex)
-        return jsonify({"error": "invalid json"}), 400
-
-    # Example payload fields: {'reference': 'ref', 'status': 'success', 'transaction_id': 'tx123', ...}
-    reference = data.get("reference") or (data.get("data") and data["data"].get("reference"))  # be flexible
-    status_text = data.get("status") or (data.get("data") and data["data"].get("status"))
-
+    transaction = data.get("transaction", {})
+    status = transaction.get("status", "completed").lower() 
+    reference = (
+        data.get("transaction", {}).get("reference") or
+        data.get("reference")
+    )
+    
     if not reference:
-        logger.warning("Webhook missing reference; ignoring. payload=%s", data)
-        return jsonify({"error": "missing reference"}), 400
+        return jsonify({"error": "Missing reference"}), 400
 
-    # idempotent update: fetch by reference and apply state transitions only once
-    db = SessionLocal()
-    try:
-        record = db.execute(select(Payment).filter_by(reference=reference)).scalar_one_or_none()
-        if record is None:
-            # if we do not have a record, we can optionally create one as 'unknown origin' or return 404
-            logger.warning("Received webhook for unknown reference %s - creating audit record", reference)
-            # create a minimal audit record to avoid losing info
-            record = Payment(
-                reference=reference,
-                amount=float(data.get("amount", 0.0)),
-                currency=data.get("currency", "UGX"),
-                phone_number=data.get("phone_number"),
-                status=PaymentStatus.PENDING,
-                raw_response=str(data)
-            )
-            db.add(record)
-            db.commit()
-            # reload record
-            record = db.execute(select(Payment).filter_by(reference=reference)).scalar_one()
+    payment = Payment.query.filter_by(status="pending").first()
+    if not payment:
+        return jsonify({"status": "ignored"}), 200
+    
+    if status == "completed":
+        payment.status = PaymentStatus.COMPLETED.value
+    else:
+        payment.status = PaymentStatus.FAILED.value
+        
+    payment.updated_at = datetime.utcnow()
+    payment.provider = data.get("transaction", {}).get("provider")
+    payment.external_ref = data.get("transaction", {}).get("uuid")
+    payment.raw_response = json.dumps(data)
+    payment.provider_reference = transaction.get("provider_reference")
 
-        # Determine target status and idempotently update (only transition from pending -> final states)
-        if record.status == PaymentStatus.SUCCESS:
-            logger.info("Webhook for reference %s ignored: already success", reference)
-            return jsonify({"status": "already_processed"}), 200
+    db.session.commit()
+    description = (
+        data.get("transaction", {}).get("description") or
+        data.get("description", "")
+    )
+    package = None
+    if "payment_for_" in description:
+        package = description.replace("payment_for_", "").strip()
 
-        # map provider status to our enum (example mapping, adapt if Marz uses different values)
-        if status_text and status_text.lower() in ("success", "completed", "paid"):
-            record.status = PaymentStatus.SUCCESS
-        elif status_text and status_text.lower() in ("failed", "declined"):
-            record.status = PaymentStatus.FAILED
-        else:
-            # if ambiguous, leave pending but store raw payload
-            record.raw_response = str(data)
-            db.commit()
-            logger.info("Webhook for %s left as pending (ambiguous status: %s)", reference, status_text)
-            return jsonify({"status": "pending"}), 200
-
-        # store Marz's transaction id if present for reconciliation
-        txid = data.get("transaction_id") or (data.get("data") and data["data"].get("transaction_id"))
-        if txid:
-            record.marz_transaction_id = txid
-        record.raw_response = str(data)                                      # save full payload for audits
-        db.commit()                                                          # persist state change
-        logger.info("Webhook processed: reference=%s new_status=%s", reference, record.status.value)
-    except Exception as e:
-        db.rollback()
-        logger.exception("Error processing webhook for %s: %s", reference, e)
-        return jsonify({"error": "processing error"}), 500
-    finally:
-        db.close()
-
-    # respond 200 to acknowledge receipt to Marz
+    if payment.user_id and package:
+        user = User.query.get(payment.user_id)
+        if user:
+            user.package = package
+            db.session.commit()
+        
     return jsonify({"status": "ok"}), 200
+#========================================================================================================================
+#=======================================================================================================================
 
-#============================================================================
-#      PAYMENT STATUS CHECK ENDPOINT
-#============================================================================
-
-@bp.route("/status/<reference>", methods=["GET"])
-def check_status(reference):
-    """
-    GET /api/payments/status/<reference>
-    Returns local status for the given merchant reference and optionally queries Marz for reconciliation.
-    This should be used by the frontend to show final status to the user.
-    """
-    db = SessionLocal()
-    try:
-        record = db.execute(select(Payment).filter_by(reference=reference)).scalar_one_or_none()
-        if not record:
-            return jsonify({"error": "not_found"}), 404
-        # option: return local DB status; if you want live status, you may call Marz transactions endpoint
-        return jsonify({
-            "reference": record.reference,
-            "status": record.status.value,
-            "marz_transaction_id": record.marz_transaction_id,
-            "raw_response": record.raw_response
-        }), 200
-    finally:
-        db.close()
 
 #============================================================================
 #      WITHDRAWAL ENDPOINT
 #============================================================================
 
-
 @bp.route("/payments/withdraw", methods=["POST"])
 def withdraw():
-    """
-    Secure withdrawal route without @login_required.
-    User must be identified via session or token.
-    """
-
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    # if not request.is_json:
+    #     return jsonify({"error": "Request must be JSON"}), 400
 
     data = request.get_json()
-
-    # Extract fields
     amount = data.get("amount")
     phone = data.get("phone") or data.get("phone_number")
     narration = data.get("narration", "Cash Out")
 
-    # Validate input
     if not amount or not phone:
         return jsonify({"error": "Amount and phone number are required"}), 400
 
@@ -306,12 +240,12 @@ def withdraw():
     if amount < 5000:
         return jsonify({"error": "Minimum withdrawal is UGX 5,000"}), 400
 
-    # Validate Ugandan phone number
-    phone_regex = re.compile(r"^(?:\+256|0)?7\d{8}$")
-    if not phone_regex.match(phone):
-        return jsonify({"error": "Invalid phone number"}), 400
+   
+    # phone_regex = re.compile(r"^\+2567\d{8}$")
+    # if not phone_regex.match(phone):
+    #     return jsonify({"error": "Invalid phone number"}), 400
 
-    # Identify user (example using session)
+
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
@@ -320,32 +254,147 @@ def withdraw():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # Check user balance
-    if user.balance is None or user.balance < amount:
-        return jsonify({"error": "Insufficient balance"}), 400
+    merchant_reference = str(uuid.uuid4())
 
-    # Create withdrawal record
     withdrawal = Withdrawal(
         user_id=user.id,
         amount=float(amount),
         phone=phone,
-        narration=narration,
-        status="pending"
+        status="pending",
+        transaction_id=None
     )
 
-    # Deduct balance
-    user.balance -= amount
-
-    # Save to DB
     db.session.add(withdrawal)
     db.session.commit()
 
+    CALL_BACK_URL = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/withdraw/callback"
+    
+    payload = {
+        "reference": str(merchant_reference),
+        "amount": int(amount),
+        "phone_number": f"+256{phone.strip()[-9:]}",  
+        "country": "UG",
+        "description": "customer_withdraw",
+        "callback_url": CALL_BACK_URL,
 
-    marz_response = send_withdraw_request(withdrawal)
-    if not marz_response["success"]:
-        return jsonify({"error": "Gateway failed"}), 502
+    }
+    headers = {
+        "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
+        "Content-Type": "application/json"
+    }
+    try:
+        response = requests.post(f"{MARZ_BASE_URL}/send-money", json=payload, headers=headers, timeout=10)
+        print("MarzPay response status:", response.status_code, "body:", response.text, flush=True)
+        response.raise_for_status()
+        marz_data = response.json()
 
-    return jsonify({
+       
+        return jsonify({
         "message": "Withdrawal request created successfully",
-        "withdrawal_id": withdrawal.id
+        "withdrawal_id": withdrawal.id,
+        "marz_response": marz_data
     }), 200
+
+    except requests.exceptions.RequestException as e:
+        print("MarzPay request error:", str(e), flush=True)
+        
+        return jsonify({
+        "error": "Gateway failed",
+        "details": str(e)
+    }), 502  
+#=====================================================================================================
+#
+#-----------------WITHDRAW CALLBACK ENDPOINT------------------------------------
+
+@bp.route('/withdraw/callback', methods=['POST'])
+def withdraw_callback():
+    try:
+        # Get the callback data from Marz
+        callback_data = request.get_json()
+        
+        if not callback_data:
+            return jsonify({"error": "No JSON data received"}), 400
+        
+        # Extract relevant data from callback
+        marz_reference = callback_data.get('reference')
+        marz_status = callback_data.get('status')
+        marz_amount = callback_data.get('amount')
+        
+        if not marz_reference:
+            return jsonify({"error": "Missing reference in callback"}), 400
+        
+        print(f"Callback received - Reference: {marz_reference}, Status: {marz_status}, Amount: {marz_amount}", flush=True)
+        
+        # Find the withdrawal with the matching reference
+        withdrawal = Withdrawal.query.filter(
+            and_(
+                Withdrawal.merchant_reference == marz_reference,
+                Withdrawal.status == 'pending'
+            )
+        ).first()
+        
+        if not withdrawal:
+            print(f"Withdrawal not found for reference: {marz_reference}", flush=True)
+            return jsonify({"error": "Withdrawal not found"}), 404
+        
+        # Update withdrawal status based on Marz response
+        if marz_status == 'success' or marz_status == 'completed':
+            # Get the user associated with this withdrawal
+            user = User.query.get(withdrawal.user_id)
+            
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+            
+            # Check if user has sufficient balance
+            if user.balance < withdrawal.amount:
+                withdrawal.status = 'failed'
+                withdrawal.note = 'Insufficient balance'
+                db.session.commit()
+                return jsonify({"error": "Insufficient balance"}), 400
+            
+            # Deduct the amount from user's balance
+            user.balance -= withdrawal.amount
+            
+            # Update withdrawal status
+            withdrawal.status = 'completed'
+            withdrawal.transaction_id = callback_data.get('transaction_id')
+            
+            db.session.commit()
+            
+            print(f"Withdrawal completed successfully - User: {user.id}, Amount: {withdrawal.amount}, New Balance: {user.balance}", flush=True)
+            
+            return jsonify({
+                "message": "Callback processed successfully",
+                "status": "completed",
+                "user_id": user.id,
+                "amount_deducted": withdrawal.amount,
+                "new_balance": user.balance
+            }), 200
+        
+        elif marz_status == 'failed':
+            # Update withdrawal status to failed
+            withdrawal.status = 'failed'
+            withdrawal.note = f"Failed by provider: {callback_data.get('reason', 'Unknown reason')}"
+            db.session.commit()
+            
+            print(f"Withdrawal failed - Reference: {marz_reference}, Reason: {callback_data.get('reason', 'Unknown')}", flush=True)
+            
+            return jsonify({
+                "message": "Withdrawal marked as failed",
+                "status": "failed"
+            }), 200
+        
+        else:
+            # Handle other statuses (pending, processing, etc.)
+            withdrawal.status = marz_status
+            db.session.commit()
+            
+            return jsonify({
+                "message": f"Withdrawal status updated to {marz_status}",
+                "status": marz_status
+            }), 200
+            
+    except Exception as e:
+        print(f"Error processing callback: {str(e)}", flush=True)
+        db.session.rollback()
+        return jsonify({"error": "Internal server error processing callback"}), 500

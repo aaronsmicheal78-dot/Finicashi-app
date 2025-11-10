@@ -132,7 +132,7 @@
                                 <i class="fas fa-user-check"></i>
                             </div>
                         </div>
-                        <div class="stat-value" id="daily-new-users">0</div>
+                        <div class="stat-value" id="daily-new-users"></div>
                         <div class="stat-label">Daily New Users</div>
                     </div>
 
@@ -324,4 +324,111 @@
             </div>
         </main>
     </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    <div class="admin-container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> Admin Search Dashboard</h1>
+            <p>Search across users, payments, and bonuses</p>
+        </div>
+
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" 
+                       placeholder="Search users, payments, bonuses, references, emails, phones..." 
+                       onkeypress="handleKeyPress(event)">
+                <button class="search-btn" onclick="performSearch()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div class="stats-bar" id="statsBar" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalResults">0</div>
+                    <div class="stat-label">Total Results</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="userCount">0</div>
+                    <div class="stat-label">Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="paymentCount">0</div>
+                    <div class="stat-label">Payments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="bonusCount">0</div>
+                    <div class="stat-label">Bonuses</div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('users')">
+                    <i class="fas fa-users"></i> Users (<span id="usersTabCount">0</span>)
+                </button>
+                <button class="tab" onclick="switchTab('payments')">
+                    <i class="fas fa-credit-card"></i> Payments (<span id="paymentsTabCount">0</span>)
+                </button>
+                <button class="tab" onclick="switchTab('bonuses')">
+                    <i class="fas fa-gift"></i> Bonuses (<span id="bonusesTabCount">0</span>)
+                </button>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-content active" id="usersTab">
+                <div class="results-grid" id="usersResults">
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No users found</h3>
+                        <p>Search for users by username, email, phone, or referral code</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payments Tab -->
+            <div class="tab-content" id="paymentsTab">
+                <div class="results-grid" id="paymentsResults">
+                    <div class="empty-state">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>No payments found</h3>
+                        <p>Search for payments by reference, external reference, or phone number</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bonuses Tab -->
+            <div class="tab-content" id="bonusesTab">
+                <div class="results-grid" id="bonusesResults">
+                    <div class="empty-state">
+                        <i class="fas fa-gift"></i>
+                        <h3>No bonuses found</h3>
+                        <p>Search for bonuses by type, status, or user information</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
