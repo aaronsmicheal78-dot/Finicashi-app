@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, session, g, jsonify
 from config import Config
-from models import User
+from models import User, PackageCatalog, Payment
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from extensions import db
@@ -15,28 +15,11 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    if app.config.get("DEBUG", False):
+    if app.config.get("DEBUG", True):
         app.config['TEMPLATES_AUTO_RELOAD'] = True
         app.jinja_env.auto_reload = True
         app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
         app.config['DEBUG'] = True
-
-    @app.route("/debug/routes", methods=["GET"])
-    def debug_routes():
-          """
-          Returns a JSON list of all registered routes with their methods.
-           Useful for debugging 404s and endpoint registration issues.
-          """
-          routes = []
-          for rule in app.url_map.iter_rules():
-            routes.append({
-               "endpoint": rule.endpoint,
-            "url": rule.rule,
-            "methods": list(rule.methods)
-         })
-          return jsonify(routes), 200
-     
-    
     # ------------------------------------------------------------------------------------------
     # Basic logging setup
     if not app.debug:
@@ -67,9 +50,6 @@ def create_app():
     if DATABASE_URI.startswith("postgres://"):
         DATABASE_URI = DATABASE_URI.replace("postgres://", "postgresql+pg8000://", 1)
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
-
-    print("Using DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
-
     # --------------------------------------------------------------------------------------------------------------------------
     # Initialize extensions
     # ----------------------------------------------------------------------------------------------------------------------------
@@ -87,17 +67,12 @@ def create_app():
         from blueprints.admin import admin_bp as admin_bp
         from blueprints.payments import bp as payment_bp
        
-        
-
         app.register_blueprint(auth_bp)
         app.register_blueprint(profile_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(payment_bp)
      
-      
-
     register_blueprints(app)
-
     # ----------------------
     # Global before_request
     # ----------------------
@@ -120,47 +95,7 @@ def create_app():
         return {"status": "ok"}, 200
     
      #----------------------------------------------------------------------------------------------------------
-    @app.route("/debug/config")
-    def debug_config():
-        """⚠️ Development-only route to inspect loaded configuration."""
-        safe_keys = [
-            "FLASK_ENV",
-            "DEBUG",
-            "SQLALCHEMY_DATABASE_URI",
-            "MARZ_BASE_URL",
-            "APP_BASE_URL",
-            "MARZ_AUTH_HEADER",
-        ]
-
-        config_snapshot = {key: app.config.get(key) for key in safe_keys}
-
-        # Add a small check to see if sensitive keys are loaded
-        secrets_loaded = {
-            "SECRET_KEY": bool(app.config.get("SECRET_KEY")),
-            "MARZ_API_KEY": bool(app.config.get("MARZ_API_KEY")),
-            "MARZ_API_SECRET": bool(app.config.get("MARZ_API_SECRET")),
-            "MARZ_AUTH_HEADER":bool(app.config.get("MARZ_AUTH_HEADER")),
-        }
-
-        return {
-            "config": config_snapshot,
-            "secrets_loaded": secrets_loaded,
-            "environment": dict(
-                FLASK_ENV=os.getenv("FLASK_ENV"),
-                DATABASE_URL=os.getenv("DATABASE_URL"),
-                MARZ_AUTH_HEADER=os.getenv("MARZ_AUTH_HEADER")
-            )
-        }, 200
-    #----------------------------------------------------------------------------------------------------------------------------------------
-
-
-   
-
-# Call this when app starts
-    
-
     return app
-
 # ----------------------
 # Flask-Login user_loader
 # ----------------------
@@ -169,7 +104,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ----------------------
-# WSGI entrypoint - DO NOT OVERWRITE THIS!
+# 
 # ----------------------
 app = create_app()
 
@@ -178,8 +113,9 @@ app = create_app()
 # ----------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 80))
-    debug_mode = app.config.get("DEBUG", False)
-   
-      
-   # print(f"🚀 Starting Flask app on port {port}...")
+    debug_mode = app.config.get("DEBUG", True)
     app.run(debug=True, host="0.0.0.0", port=port)
+
+#=======================================================================================================
+#------------------------THE END OF APP----------------------------------------------------------------
+#===========================================================================================================

@@ -1447,4 +1447,106 @@ if (typeof module !== 'undefined' && module.exports) {
         document.addEventListener('DOMContentLoaded', function() {
             // Any initialization code can go here
         });
+
+
+        //=================================================================
+        //===============================================================
+        //============================================================
+        
+        // function refreshData() {
+        //     // Show loading state
+        //     const refreshBtn = document.querySelector('.refresh-btn');
+        //     const originalText = refreshBtn.innerHTML;
+        //     refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+        //     refreshBtn.disabled = true;
+            
+        //     // Simulate API call
+        //     setTimeout(() => {
+        //         refreshBtn.innerHTML = originalText;
+        //         refreshBtn.disabled = false;
+        //         // In a real app, this would reload data from the server
+        //         alert('Data refreshed successfully!');
+        //     }, 1500);
+        // }
+        
+        // // Search functionality
+        // document.getElementById('searchInput').addEventListener('input', function() {
+        //     const searchTerm = this.value.toLowerCase();
+        //     const rows = document.querySelectorAll('tbody tr');
+        //     let visibleRows = 0;
+            
+        //     rows.forEach(row => {
+        //         const text = row.textContent.toLowerCase();
+        //         if (text.includes(searchTerm)) {
+        //             row.style.display = '';
+        //             visibleRows++;
+        //         } else {
+        //             row.style.display = 'none';
+        //         }
+        //     });
+            
+        //     // Show/hide empty state
+        //     const emptyState = document.querySelector('.empty-state');
+        //     if (visibleRows === 0 && searchTerm !== '') {
+        //         emptyState.style.display = 'block';
+        //     } else {
+        //         emptyState.style.display = 'none';
+        //     }
+        // });
+        
+        // // Filter functionality
+        // document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        // document.getElementById('roleFilter').addEventListener('change', applyFilters);
+        
+        // function applyFilters() {
+        //     const statusFilter = document.getElementById('statusFilter').value;
+        //     const roleFilter = document.getElementById('roleFilter').value;
+        //     const rows = document.querySelectorAll('tbody tr');
+        //     let visibleRows = 0;
+            
+        //     rows.forEach(row => {
+        //         let showRow = true;
+                
+        //         // Status filter
+        //         if (statusFilter) {
+        //             if (statusFilter === 'active' && !row.querySelector('.status-active')) {
+        //                 showRow = false;
+        //             } else if (statusFilter === 'inactive' && !row.querySelector('.status-inactive')) {
+        //                 showRow = false;
+        //             } else if (statusFilter === 'verified' && !row.querySelector('.verified-badge')) {
+        //                 showRow = false;
+        //             } else if (statusFilter === 'unverified' && row.querySelector('.verified-badge')) {
+        //                 showRow = false;
+        //             }
+        //         }
+                
+        //         // Role filter
+        //         if (roleFilter && showRow) {
+        //             const roleBadge = row.querySelector('.badge').textContent.toLowerCase();
+        //             if (roleFilter !== roleBadge) {
+        //                 showRow = false;
+        //             }
+        //         }
+                
+        //         if (showRow) {
+        //             row.style.display = '';
+        //             visibleRows++;
+        //         } else {
+        //             row.style.display = 'none';
+        //         }
+        //     });
+            
+        //     // Show/hide empty state
+        //     const emptyState = document.querySelector('.empty-state');
+        //     if (visibleRows === 0) {
+        //         emptyState.style.display = 'block';
+        //     } else {
+        //         emptyState.style.display = 'none';
+        //     }
+        // }
+        
+        // // Auto-refresh every 60 seconds (optional)
+        //  setInterval(() => {
+        //     refreshData();
+        //  }, 60000);
     

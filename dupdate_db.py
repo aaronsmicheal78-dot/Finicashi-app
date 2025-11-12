@@ -1,31 +1,18 @@
-from extensions import db
-from models import User  # import your User model
+# fix_database.py
+import os
+import sys
+from sqlalchemy import create_engine, text
 
-def delete_users_by_phone(phone_list):
-    """
-    Delete users whose phone numbers are in the given list.
-    
-    Args:
-        phone_list (0756393205): List of phone numbers to delete.
-    """
-    if not phone_list:
-        print("No phone numbers provided")
-        return
+# Direct database connection - no models, no app
+DATABASE_URI = "postgresql+pg8000://finicashi_db_user:8OCk4GypHpsh3KQH3oPq7bBSVylwVD96@dpg-d433kjmuk2gs738mgej0-a.oregon-postgres.render.com/finicashi_db"
 
-    try:
-        users_to_delete = User.query.filter(User.phone.in_(phone_list)).all()
-        
-        if not users_to_delete:
-            print("No matching users found")
-            return
+engine = create_engine(DATABASE_URI)
 
-        for user in users_to_delete:
-            db.session.delete(user)
-            print(f"Deleted user: {user.full_name} ({user.phone})")
-
-        db.session.commit()
-        print("Deletion successful!")
-
-    except Exception as e:
-        db.session.rollback()
-        print("Error deleting users:", e)
+try:
+    with engine.connect() as conn:
+        # Add the missing column - use text() for SQL statements
+        conn.execute(text("ALTER TABLE payments ADD COLUMN transaction_type VARCHAR(50)"))
+        conn.commit()
+    print("✅ Added transaction_type column to payments")
+except Exception as e:
+    print(f"❌ Error: {e}")

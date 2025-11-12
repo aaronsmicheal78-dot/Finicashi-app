@@ -6,11 +6,21 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint, Index, event
 from extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
+from enum import Enum
 
 
 # ===========================================================
 # ENUM DEFINITIONS
 # ===========================================================
+
+
+class TransactionType(Enum):
+    PACKAGE = "package"
+    DEPOSIT = "deposit"
+    WITHDRAWAL = "withdrawal"
+    BONUS = "bonus"
+    OTHER = "other"
+
 
 class PaymentStatus(enum.Enum):
     PENDING = "pending"
@@ -149,13 +159,17 @@ class Payment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete='SET NULL'), nullable=True)
     
     reference = db.Column(db.String(128), nullable=False)
-    
+    #transaction_type = db.Column(db.Enum(TransactionType), nullable=False, default=TransactionType.PACKAGE)
+    transaction_type = db.Column(db.String(50)) 
     transaction_id = db.Column(
         db.Integer,
         db.ForeignKey('transactions.id', ondelete='SET NULL'),
         nullable=True,
         index=True
     )
+
+    package_id = db.Column(db.Integer, db.ForeignKey('packagecatalog.id'))
+    package = db.relationship("Package", backref="payments")
     
     provider = db.Column(db.String(50))
     method = db.Column(db.String(50))
@@ -170,12 +184,33 @@ class Payment(db.Model):
     raw_response = db.Column(db.Text)
     phone_number = db.Column(db.String(32))
 
+    user = db.relationship('User', backref=db.backref('payments', lazy=True))
+    package = db.relationship('PackageCatalog', backref=db.backref('payments', lazy=True))
+
     __table_args__ = (
         # Unique constraints with explicit names to prevent Alembic batch errors
         UniqueConstraint('reference', name='uq_payments_reference'),
         UniqueConstraint('idempotency_key', 'external_ref', name='uq_payments_idempotency_external'),
        # Index('ix_payments_external_ref', 'external_ref'),
+
+    
     )
+
+class PackageCatalog(db.Model):
+    __tablename__ = 'packagecatalog'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    reward_description = db.Column(db.Text)
+    bonus_percentage = db.Column(db.Numeric(5, 2), default=0)
+    duration_days = db.Column(db.Integer, default=30)
+    features = db.Column(db.JSON)  
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), 
+                          onupdate=db.func.current_timestamp())
+
 class Withdrawal(db.Model, BaseMixin):
     __tablename__ = 'withdrawals'
 

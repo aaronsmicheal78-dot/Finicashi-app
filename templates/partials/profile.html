@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Header -->
     <header class="dashboard-header">
+        <div class="dashboard-header">
         <div class="logo">
             <div class="logo-icon">Fc</div>
             <div class="logo-text">Finicashi</div>
@@ -33,9 +34,8 @@
             </div>
         </div>
     </header>
-
     <!-- Main Content -->
-    <section class="dashboard-container">
+   <section class="dashboard-container"> 
         <main class="dashboard-main">
             <!-- Column 1: User Profile -->
             <section class="profile-column">
@@ -100,11 +100,10 @@
 
                    <div class="referral-note">
                         <p style="font-size: 20px;">Share your referral-link and earn bonuses!</p>
-                        
-                            <button class="package-btn" id="withdraw">Withdraw</button>
-                              <div class="logout-section">
-                        
-        <!-- Option 1: Single link that opens both channels in new tabs -->
+                    
+                           
+                                  <button class="package-btn" id="deposit">Deposit</button>                             
+        <!-- social handles -->
 <a href="#" class="social-channel-link" onclick="openSocialChannels()">
     <span class="social-icons">
         <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI1Qzc1MCI+PHBhdGggZD0iTTE3LjQ3MiAxNC4zODVjLS4yMjYuODQ2LS4zNzEgMS4zMzEtMS40NzUgMi4yMjUtMS4zNTEgMS4xNzMtMi44MzMgMS4yNTktMy40MTMuMjY2LS42MTMtMS4wMzYtMi4yODUtMy4yMjctMi44MjQtMy44MjQtLjU0OC0uNjA3LS45ODUtLjUyMi0xLjM3NS4wNTMtLjM5LjU3NS0xLjUwOCAxLjc1OC0xLjUwOCAz4oCWMy4xOTcgNS4wMjIgNC4wMDMgNS4zNzcgOC4zNzcgMy42MjIgNC4zNzQtMS43NTUgNC40MTctMi45ODQgNC0zLjg3NHptLTUuNDcyLTkuMzg1Yy00LjQxNyAwLTggMy41ODMtOCA4czMuNTgzIDggOCA4IDgtMy41ODMgOC04LTMuNTgzLTgtOC04eiIvPjwvc3ZnPg==" alt="WhatsApp" class="social-icon">
@@ -125,10 +124,10 @@
         Telegram
     </a>
 </div>
+<button class="package-btn" id="withdraw">Withdraw</button>                          
 <button class="logout " id="logout-btn">Logout</button>
                 </div>
                     </div>
-           
             </section>
                 </div>
             <!-- Columns 2 & 3: Investment Packages -->
@@ -201,10 +200,10 @@
                     </div>
 
                     <!-- Package 4 -->
-                    <div class="package-card" data-modal="modal-4" data-amount="100000" data-package="premium" data-description="Premium Package - 8% ROI">
+                    <div class="package-card" data-modal="modal-4" data-amount="100000" data-package="Platinum data-description="Premium Package - 8% ROI">
                         <div class="package-header">
                             <div>
-                                <h3 class="package-name">Premium</h3>
+                                <h3 class="package-name">Platinum</h3>
                                 <div class="package-rate">8% ROI</div>
                             </div>
                         </div>
@@ -220,15 +219,15 @@
                     </div>
 
                     <!-- Package 5 -->
-                    <div class="package-card" data-modal="modal-5" data-amount="200000" data-package="platinum" data-description="Platinum Package - 10% ROI">
+                    <div class="package-card" data-modal="modal-5" data-amount="150000" data-package="premium" data-description="Platinum Package - 10% ROI">
                         <div class="package-header">
                             <div>
-                                <h3 class="package-name">Platinum</h3>
+                                <h3 class="package-name">Premium</h3>
                                 <div class="package-rate">10% ROI</div>
                             </div>
                         </div>
                         <div>
-                            <div class="package-price">UGX. 200,000</div>
+                            <div class="package-price">UGX. 150,000</div>
                             <ul class="package-features">
                                 <li><i class="fas fa-check"></i> 180-day term</li>
                                 <li><i class="fas fa-check"></i> Quarterly returns</li>
@@ -239,7 +238,7 @@
                     </div>
 
                     <!-- Package 6 -->
-                    <div class="package-card" data-modal="modal-6" data-amount="300000" data-package="ultimate" data-description="Ultimate Package - 15% ROI">
+                    <div class="package-card" data-modal="modal-6" data-amount="200000" data-package="ultimate" data-description="Ultimate Package - 15% ROI">
                         <div class="package-header">
                             <div>
                                 <h3 class="package-name">Ultimate</h3>
@@ -247,7 +246,7 @@
                             </div>
                         </div>
                         <div>
-                            <div class="package-price">UGX. 300,000+</div>
+                            <div class="package-price">UGX. 200,000</div>
                             <ul class="package-features">
                                 <li><i class="fas fa-check"></i> 365-day term</li>
                                 <li><i class="fas fa-check"></i> Custom returns</li>
@@ -261,10 +260,387 @@
         </main>
     </section>
 
+        <div class="policy-container">
+            <aside class="policy-sidebar">
+                <h1 class="policy-title">Policy Document</h1>
+                <p class="policy-subtitle">"Earn. Connect. Grow Together."</p>
+                
+                <nav class="policy-nav">
+                    <div class="policy-nav-item active" data-target="membership">
+                        <i class="fas fa-users"></i>
+                        <span>Membership</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="packages">
+                        <i class="fas fa-box"></i>
+                        <span>Packages</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="referral">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Referral</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="bonus">
+                        <i class="fas fa-gem"></i>
+                        <span>Bonus</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="withdrawals">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Withdrawals</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="team">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Team</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="ranks">
+                        <i class="fas fa-trophy"></i>
+                        <span>Ranks</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="rewards">
+                        <i class="fas fa-gift"></i>
+                        <span>Rewards</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="fairplay">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Fair Play</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="community">
+                        <i class="fas fa-headset"></i>
+                        <span>Community</span>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="policy-content">
+                <section id="membership" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h2 class="section-title">🧩 1. MEMBERSHIP & ELIGIBILITY</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">1</span>
+                            <span class="rule-text">All participants must register with verified phone numbers and active accounts.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">2</span>
+                            <span class="rule-text">Membership is open to individuals aged 18 years and above.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">3</span>
+                            <span class="rule-text">Each member account is unique — no duplicate or shared accounts allowed.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">4</span>
+                            <span class="rule-text">Members must maintain an active package subscription to qualify for bonuses.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">5</span>
+                            <span class="rule-text">Inactive members do not earn bonuses from any level until reactivated.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="packages" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <h2 class="section-title">💼 2. PACKAGES & SUBSCRIPTIONS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">6</span>
+                            <span class="rule-text">Members choose from available investment packages based on their ability and goals.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">7</span>
+                            <span class="rule-text">Each package defines its own bonus rate and qualification levels.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">8</span>
+                            <span class="rule-text">Upgrading to a higher package unlocks higher bonus potential.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">9</span>
+                            <span class="rule-text">Bonuses earned under a previous package do not transfer after upgrade.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">10</span>
+                            <span class="rule-text">Multiple packages may be owned by one member, but each operates independently.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="referral" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h2 class="section-title">🔗 3. REFERRAL STRUCTURE</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">11</span>
+                            <span class="rule-text">Each member receives a unique referral code upon registration.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">12</span>
+                            <span class="rule-text">Referral codes only benefit their registered owners.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">13</span>
+                            <span class="rule-text">Sharing someone else's referral code builds their network, not yours.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">14</span>
+                            <span class="rule-text">Direct referrals earn you an instant 10% bonus from your referee's first investment.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">15</span>
+                            <span class="rule-text">Indirect referrals earn you continuous bonuses up to the 50th generation, provided you stay active.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="bonus" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-gem"></i>
+                        </div>
+                        <h2 class="section-title">💎 4. BONUS QUALIFICATION & ACCUMULATION</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">16</span>
+                            <span class="rule-text">Investment-based bonuses begin accumulating after 14 days from your activation date.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">17</span>
+                            <span class="rule-text">Referral-based bonuses are credited instantly once your referral completes payment.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">18</span>
+                            <span class="rule-text">Bonuses only grow while your account remains active.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">19</span>
+                            <span class="rule-text">Cancelling a package results in loss of all accumulated bonuses tied to that package.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">20</span>
+                            <span class="rule-text">You can view your real-time bonus progress in your dashboard anytime.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="withdrawals" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h2 class="section-title">💰 5. WITHDRAWALS & TRANSACTIONS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">21</span>
+                            <span class="rule-text">Withdrawals and deposits are instant through supported payment channels.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">22</span>
+                            <span class="rule-text">All transaction charges are covered by the member.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">23</span>
+                            <span class="rule-text">Qualified bonuses can be withdrawn after 2 weeks from the date of qualification.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">24</span>
+                            <span class="rule-text">Bonus withdrawals are separate from subscription funds — each balance operates independently.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">25</span>
+                            <span class="rule-text">Minimum withdrawal waiting time is 24 hours after your initial subscription.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="team" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <h2 class="section-title">👥 6. TEAM & GROUP NETWORKING</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">26</span>
+                            <span class="rule-text">Members can form teams of 5 or 10 people.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">27</span>
+                            <span class="rule-text">A team receives a group code linking members to shared achievements.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">28</span>
+                            <span class="rule-text">A 10-member team qualifies for double group bonuses if all members are active.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">29</span>
+                            <span class="rule-text">Groups must maintain full activity — inactive members affect the group's bonus eligibility.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">30</span>
+                            <span class="rule-text">Crossing or leaving a group results in loss of previous group points.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="ranks" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h2 class="section-title">🪙 7. RANKS & LEADERSHIP LEVELS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">31</span>
+                            <span class="rule-text">Finicashi recognizes five progressive ranks: Starter → Builder → Connector → Influencer → Ambassador.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">32</span>
+                            <span class="rule-text">Ranks are earned through total active referrals and team volume.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">33</span>
+                            <span class="rule-text">Higher ranks unlock deeper referral levels and special incentives.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">34</span>
+                            <span class="rule-text">Rank maintenance requires consistent monthly activity.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">35</span>
+                            <span class="rule-text">Top performers are featured on our public leaderboard weekly.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="rewards" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <h2 class="section-title">🌱 8. REWARD STYLES & BONUS VARIANTS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">36</span>
+                            <span class="rule-text">Members earn from four main sources: Direct Bonus, Indirect Bonus, Group Bonus, and Activity Rewards.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">37</span>
+                            <span class="rule-text">Consistent members receive Weekly Loyalty Points convertible to cash.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">38</span>
+                            <span class="rule-text">Achieving milestones (10, 50, 100, 500 referrals) unlocks Bronze, Silver, Gold, and Platinum awards.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">39</span>
+                            <span class="rule-text">Special seasonal campaigns may offer Double Bonus Weeks or Team Challenges.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">40</span>
+                            <span class="rule-text">Global pool bonuses are shared among the top 5% most active members monthly.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="fairplay" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h2 class="section-title">🛡️ 9. FAIR PLAY & ACCOUNTABILITY</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">41</span>
+                            <span class="rule-text">Finicashi promotes honesty, transparency, and fairness for all members.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">42</span>
+                            <span class="rule-text">Creating fake accounts or self-referrals is strictly prohibited.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">43</span>
+                            <span class="rule-text">Any fraudulent activity leads to loss of bonuses and possible account suspension.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">44</span>
+                            <span class="rule-text">Members are encouraged to report suspicious activity via the 24/7 helpline.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">45</span>
+                            <span class="rule-text">Finicashi reserves the right to audit or review member accounts periodically.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="community" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h2 class="section-title">📞 10. COMMUNITY, SUPPORT & GUIDANCE</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">46</span>
+                            <span class="rule-text">Our support team is available 24/7 via chat, WhatsApp, and Telegram.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">47</span>
+                            <span class="rule-text">All members are encouraged to join official groups for mentorship and updates.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">48</span>
+                            <span class="rule-text">Always read and understand our terms and policy before purchasing or upgrading any package.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">49</span>
+                            <span class="rule-text">Networking works best when done with integrity, teamwork, and patience.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">50</span>
+                            <span class="rule-text">Plan, strategize, and grow your Finicashi family — because your network is your net worth.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="closing-message">
+                    <h3>✨ Closing Message</h3>
+                    <p>"Finicashi is built on community, consistency, and connection. The more you grow your network, the more your bonuses grow with you. Team up, stay active, and let success ripple through your referrals."</p>
+                </div>
+            </main>
+        </div>
+    </div>
 <!---- 
     <--------- Package Modals -->
     <!-- Modal 1 -->
-    <div class="modal payment-modal" id="modal-1" data-amount="10000" data-package="bronze">
+    <div class="modal payment-modal" id="modal-1" data-amount="10000" data-package="Bronze">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -286,9 +662,7 @@
                     <div class="modal-detail-value">30 days</div>
                 </div>
             </div>
-            
-             
-
+        
             <form class="investment-form payment-form">
                 <div class="form-group">
                     <label class="form-label">Investment Amount</label>
@@ -309,7 +683,7 @@
     </div>
 
     <!-- Modal 2 -->
-    <div class="modal payment-modal" data-amount="20000" data-package="silver" id="modal-2" >
+    <div class="modal payment-modal" data-amount="20000" data-package="Silver" id="modal-2" >
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -351,7 +725,7 @@
     </div>
 
     <!-- Modal 3 -->
-    <div class="modal payment-modal" id="modal-3" data-amount="50000" data-package="gold">
+    <div class="modal payment-modal" id="modal-3" data-amount="50000" data-package="Gold">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -393,11 +767,11 @@
     </div>
 
     <!-- Modal 4 -->
-    <div class="modal payment-modal" id="modal-4" data-amount="100000" data-package="premium">
+    <div class="modal payment-modal" id="modal-4" data-amount="100000" data-package="Platinum">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
-                <h2 class="modal-title">Premium Package</h2>
+                <h2 class="modal-title">Platinum Package</h2>
                 <p class="modal-description">For sophisticated investors looking for premium returns with VIP treatment and exclusive benefits.</p>
             </div>
             
@@ -433,13 +807,55 @@
             </form>
         </div>
     </div>
-
-    <!-- Modal 5 -->
-    <div class="modal payment-modal" id="modal-5" data-amount="200000" data-package="platinum">
+    <!-- Deposit Modal  -->
+    <div class="modal payment-modal" id="modal-deposit" data-package="deposit">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
-                <h2 class="modal-title">Platinum Package</h2>
+                <h2 class="modal-title">Deposit, Save, & Invest with Finicash</h2>
+                <p class="modal-description">instantly</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Free tier</div>
+                    <div class="modal-detail-value">0</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Read our Policy and Rules First</div>
+                    <div class="modal-detail-value">Open deposit</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Bonus</div>
+                    <div class="modal-detail-value">After 2 weeks</div>
+                </div>
+            </div>
+            
+            <form class="investment-form payment-form">
+                <div class="form-group">
+                    <label class="form-label">Maximum Deposit is UGX. 200,000</label>
+                  
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number</label>
+                    <input type="tel" class="form-input phone-input" id="phone-number" placeholder="Enter your phone number" required>
+                      <label class="form-label" for="amount">Enter your Amount</label>
+                    <input type="number" class="form-input amount-input" id="amount" placeholder="Enter amount to deposit" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary pay-btn">Deposit Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal 5 -->
+    <div class="modal payment-modal" id="modal-5" data-amount="150000" data-package="Premium">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Premium Package</h2>
                 <p class="modal-description">Our executive tier for high-net-worth individuals seeking premium returns with personalized service.</p>
             </div>
             
@@ -450,7 +866,7 @@
                 </div>
                 <div class="modal-detail">
                     <div class="modal-detail-label">Package Price</div>
-                    <div class="modal-detail-value">UGX. 200,000</div>
+                    <div class="modal-detail-value">UGX. 150,000</div>
                 </div>
                 <div class="modal-detail">
                     <div class="modal-detail-label">Term</div>
@@ -461,7 +877,7 @@
             <form class="investment-form payment-form">
                 <div class="form-group">
                     <label class="form-label">Investment Amount</label>
-                    <div class="fixed-amount">UGX. 200,000</div>
+                    <div class="fixed-amount">UGX. 150,000</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="phone-5">Phone Number</label>
@@ -477,7 +893,7 @@
     </div>
 
     <!-- Modal 6 -->
-    <div class="modal payment-modal" id="modal-6" data-amount="300000" data-package="ultimate">
+    <div class="modal payment-modal" id="modal-6" data-amount="200000" data-package="ultimate">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -492,7 +908,7 @@
                 </div>
                 <div class="modal-detail">
                     <div class="modal-detail-label">Package Price</div>
-                    <div class="modal-detail-value">UGX. 300,000</div>
+                    <div class="modal-detail-value">UGX. 200,000</div>
                 </div>
                 <div class="modal-detail">
                     <div class="modal-detail-label">Term</div>
@@ -503,7 +919,7 @@
             <form class="investment-form payment-form">
                 <div class="form-group">
                     <label class="form-label">Investment Amount</label>
-                    <div class="fixed-amount">UGX. 300,000</div>
+                    <div class="fixed-amount">UGX. 200,000</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="phone-6">Phone Number</label>
@@ -518,7 +934,7 @@
         </div>
     </div>
 
-    <!-- Payment Modal 3 -->
+    <!-- withdraw Modal  -->
     <div class="modal payment-modal" id="modal-withdraw">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
@@ -553,8 +969,7 @@
             </form>
         </div>
     </div>
-    <!-- Modal Functionality Script -->
-     
+   
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const DOM = {
@@ -562,10 +977,9 @@ document.addEventListener('DOMContentLoaded', () => {
             packageCards: document.querySelectorAll('.package-card'),
             modals: document.querySelectorAll('.modal'),
             closeModalBtns: document.querySelectorAll('.close-modal, .close-form'),
-            payButtons: document.querySelectorAll('.pay-btn-modal'),
+            payButtons: document.querySelectorAll('.pay-btn'),
             phoneInputs: document.querySelectorAll('.phone-input'),
-            // All buttons with data-modal attribute
-            openModalBtns: document.querySelectorAll('[data-modal]')
+            openModalBtns: document.querySelectorAll('[data-modal]'),
         }
     };
 
@@ -595,18 +1009,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (e.key === 'Escape') this.closeAllModals();
             });
 
-            // Open buttons
+            // Open package modals
             DOM.elements.openModalBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const modalId = btn.dataset.modal;
                     this.openModal(modalId);
                 });
             });
+
+            // Deposit button
+            document.getElementById('deposit').addEventListener('click', () => {
+                this.openModal('modal-deposit');
+            });
+
+            // Withdraw button
+            document.getElementById('withdraw').addEventListener('click', () => {
+                this.openModal('modal-withdraw');
+            });
         },
 
         openModal: function(modalId) {
             const modal = document.getElementById(modalId);
-            if (!modal) return;
+            if (!modal) {
+                console.error('Modal not found:', modalId);
+                return;
+            }
 
             this.closeAllModals();
             modal.style.display = 'flex';
@@ -626,21 +1053,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     ModalManager.init();
+
+    // Logout handler
+    document.getElementById("logout-btn").onclick = () => {
+        if (confirm("Are you sure you want to logout?")) { 
+            window.location.href = "partials/index.html"; 
+            window.close(); 
+        }
+    };
+
+    // Social channels
+    function openSocialChannels() {
+        window.open('https://wa.me/0756393205', '_blank');
+        window.open('https://t.me/your-telegram-channel', '_blank');
+        return false;
+    }
 });
-document.getElementById("withdraw").addEventListener("click", () => {
-  document.getElementById("modal-withdraw").classList.add("show");
-});
-document.getElementById("logout-btn").onclick = () => {
-  if (confirm("Are you sure you want to logout?")) { window.location.href = "partials/index.html"; window.close(); }
-};
-function openSocialChannels() {
-    // Open both channels in new tabs
-    window.open('https://wa.me/0756393205', '_blank');
-    window.open('https://t.me/your-telegram-channel', '_blank');
-    return false;
+
+
+function scrollToPolicy() {
+    const policySection = document.querySelector('.policy-container');
+    if (policySection) {
+        policySection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 </script>
-
-   <script src="{{url_for('static', filename='js/profile.js')}}" defer></script>
+  <script src="{{url_for('static', filename='js/profile.js')}}" defer></script>
    <script src="{{url_for('static', filename='js/payments.js')}}" defer></script>

@@ -168,17 +168,50 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-// Simply add this to your main JS file
-document.addEventListener('DOMContentLoaded', function() {
-    // Method 1: Simple initialization
-    initProfileAvatar();
-    
-    // Method 2: For multiple avatars on page
-    initSmartAvatar();
-    
-    // Method 3: Manual initialization for specific element
-    const username = "aarons";
-    const avatarElement = document.querySelector('.profile-avatar');
-    avatarGenerator.updateExistingAvatar('.profile-avatar', username);
-});
+//================================================================================
+// POLICY DOCUMENT JS
+//==================================================================================
+        // Add interactivity to policy navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.policy-nav-item');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    navItems.forEach(navItem => navItem.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Get the target section ID
+                    const targetId = this.getAttribute('data-target');
+                    
+                    // Scroll to the target section
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+            
+            // Highlight the active section based on scroll position
+            window.addEventListener('scroll', function() {
+                const sections = document.querySelectorAll('.policy-section');
+                let current = '';
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (scrollY >= (sectionTop - 150)) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-target') === current) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        });

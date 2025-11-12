@@ -6,7 +6,7 @@
 from flask import Blueprint, request, jsonify, current_app, session, url_for, current_app                                                                   # HTTP client to call Marz
 import uuid                                                                              
 from models import Payment, PaymentStatus, User, Withdrawal                      
-from utils import validate_phone, validate_email, get_marz_authorization_header      
+     
 from sqlalchemy.exc import IntegrityError                             
 from sqlalchemy import select                                          
 from sqlalchemy.orm import Session   
@@ -19,149 +19,196 @@ import os
 from datetime import datetime, timedelta
 import base64
 import logging
-from flask_login import current_user, login_required, login_user
+
 from decimal import Decimal
-from blueprints.payments_helpers import send_withdraw_request
+from blueprints.payments_helpers import MARZ_BASE_URL
 import sys
+from flask import Blueprint, request, jsonify, session
+from models import User
+from blueprints.payments_helpers import  (validate_payment_input, handle_existing_payment,
+    create_payment_record, send_to_marzpay
+)
 
 
 bp = Blueprint("payments", __name__)  
 logger = logging.getLogger(__name__)
 
 
-REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '15'))
 
-MARZ_BASE_URL=('https://wallet.wearemarz.com/api/v1')
-
-def deterministic_json(obj):
-   """Return deterministic JSON string for signing: keys sorted, separators compact.
-   Avoids variations between client/server serializations.
-   """
-   return json.dumps(obj, separators=(",", ":"), sort_keys=True, ensure_ascii=False)
-
-PACKAGE_MAP = {
-    10000: "Bronze",
-    20000: "Silver",
-    50000: "Gold",
-    100000: "Diamond",
-    200000: "Platinum",
-    500000: "Ultimate"
-}
-ALLOWED_AMOUNTS = set(PACKAGE_MAP.keys())
 
 #=============================================================================================
 #      PAYMENT INITIATION ENDPOINT
-#=============================================================================================
+#============================================================================================
+
 @bp.route("/payments/initiate", methods=['POST'])
 def initiate_payment():
-
-
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
+
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
-   
+
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
-    amount = data.get('amount')
-    package = data.get('package', '').lower()
-    phone = data.get('phone')
+
+    validated, error = validate_payment_input(data)
+    if error:
+        return error
+
+    amount = validated["amount"]
+    phone = validated["phone"]
+    payment_type = validated["payment_type"]
+    #package_name = validated["package"]           
+    package_obj = validated.get("package_obj")  
+    package_id = package_obj.id if package_obj else None
+
+  
+    if package_obj:
+       package_id = package_obj.id
+      
+    # validated, error = validate_payment_input(data)
+    # if error:
+    #     return error
+
+    # amount = validated["amount"]
+    # phone = validated["phone"]
+    # package = validated["package"]
+    # payment_type = validated["payment_type"]
+
+   
+    existing_response = handle_existing_payment(user, amount, payment_type)
+    if existing_response:
+        return existing_response
+
+    payment = create_payment_record(user, amount, phone, payment_type, package=package_obj)
+
+    
+    marz_data, error = send_to_marzpay(payment, phone, amount, package_obj)
+    if error:
+        existing_response, status = error 
+        return error
+
+    return jsonify({
+        "reference": payment.reference,
+        "status": "PENDING.value",
+        "payment_type": payment_type,
+        "package": package_id if package_id else None,
+        "checkout_url": marz_data.get("checkout_url")
+    }), 200
+
+# @bp.route("/payments/initiate", methods=['POST'])
+# def initiate_payment():
+
+
+#     user_id = session.get("user_id")
+#     if not user_id:
+#         return jsonify({"error": "Unauthorized"}), 401
+#     user = User.query.get(user_id)
+#     if not user:
+#         return jsonify({"error": "User not found"}), 404
+   
+#     data = request.get_json()
+#     if not data:
+#         return jsonify({"error": "Invalid JSON"}), 400
+#     amount = data.get('amount')
+#     package = data.get('package', '').lower()
+#     phone = data.get('phone')
  
    
-    if not all([amount, package, phone]):
-       return jsonify({"error": "Missing fields"}), 400
+#     if not all([amount, package, phone]):
+#        return jsonify({"error": "Missing fields"}), 400
 
-    if amount not in ALLOWED_AMOUNTS:
-       return jsonify({"error": "Invalid amount"}), 400
+#     if amount not in ALLOWED_AMOUNTS:
+#        return jsonify({"error": "Invalid amount"}), 400
     
-    expected_package = PACKAGE_MAP.get(amount).lower()
+#     expected_package = PACKAGE_MAP.get(amount).lower()
        
-    if expected_package != package.lower():
-       return jsonify({"error": "Invalid or mismatched package"}), 400
-    if not re.match(r"^(?:\+256|0)?7\d{8}$", phone):
-        return jsonify({"error": "Invalid phone number"}), 400
+#     if expected_package != package.lower():
+#        return jsonify({"error": "Invalid or mismatched package"}), 400
+#     if not re.match(r"^(?:\+256|0)?7\d{8}$", phone):
+#         return jsonify({"error": "Invalid phone number"}), 400
     
-    merchant_reference = str(uuid.uuid4())
+#     merchant_reference = str(uuid.uuid4())
    
-    existing_payment = Payment.query.filter_by(
-       user_id=user.id,
-       amount=amount,
-       status=PaymentStatus.PENDING.value,
-    ).first()
-    print("Existing payment found:", existing_payment, flush=True)
+#     existing_payment = Payment.query.filter_by(
+#        user_id=user.id,
+#        amount=amount,
+#        status=PaymentStatus.PENDING.value,
+#     ).first()
+#     print("Existing payment found:", existing_payment, flush=True)
     
-    if existing_payment:
-        return jsonify({
-        "reference": existing_payment.reference,
-        "status": existing_payment.status,
-        "note": "Idempotent: existing record returned"}), 200
+#     if existing_payment:
+#         return jsonify({
+#         "reference": existing_payment.reference,
+#         "status": existing_payment.status,
+#         "note": "Idempotent: existing record returned"}), 200
   
    
-    payment = Payment(
-    user_id=user.id,
-    reference=merchant_reference,
-    amount=amount,
-    currency="UGX",
-    phone_number=phone,
-    provider=None,
-    status="pending",  
-    method="MarzPay",         
-    external_ref=None,        
-    idempotency_key=str(uuid.uuid4()), 
-    raw_response=None,  
-    )
-    db.session.add(payment)
-    db.session.commit()
+#     payment = Payment(
+#     user_id=user.id,
+#     reference=merchant_reference,
+#     amount=amount,
+#     currency="UGX",
+#     phone_number=phone,
+#     provider=None,
+#     status="pending",  
+#     method="MarzPay",         
+#     external_ref=None,        
+#     idempotency_key=str(uuid.uuid4()), 
+#     raw_response=None,  
+#     )
+#     db.session.add(payment)
+#     db.session.commit()
     
-    headers = {
-        "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
-        "Content-Type": "application/json",}
+#     headers = {
+#         "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
+#         "Content-Type": "application/json",}
     
-    callback_url = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/payments/callback"
-    marz_payload = {
-        "phone_number": f"+256{phone.lstrip('0')}",
-        "amount": int(amount),
-        "country": "UG",
-        "reference": str(merchant_reference),
-        "callback_url": callback_url,
-        "description": f"payment_for_{package}" }   
+#     callback_url = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/payments/callback"
+#     marz_payload = {
+#         "phone_number": f"+256{phone.lstrip('0')}",
+#         "amount": int(amount),
+#         "country": "UG",
+#         "reference": str(merchant_reference),
+#         "callback_url": callback_url,
+#         "description": f"payment_for_{package}" }   
 
      
-    try:
-        resp = requests.post(
-            f"{MARZ_BASE_URL}/collect-money",
-            json=marz_payload,
-            headers=headers,
-            timeout=15
-        )
-        resp.raise_for_status()
-        marz_data = resp.json()
-        print("Sandbox MarzPay response:", marz_data, flush=True)
+#     try:
+#         resp = requests.post(
+#             f"{MARZ_BASE_URL}/collect-money",
+#             json=marz_payload,
+#             headers=headers,
+#             timeout=15
+#         )
+#         resp.raise_for_status()
+#         marz_data = resp.json()
+#         print("Sandbox MarzPay response:", marz_data, flush=True)
 
-    except requests.RequestException as e:
+#     except requests.RequestException as e:
        
-        payment.status = PaymentStatus.failed
-        payment.raw_response = json.dumps(marz_data)
-        db.session.commit()
-        return jsonify({"error": "Payment provider error"}), 502
+#         payment.status = PaymentStatus.failed
+#         payment.raw_response = json.dumps(marz_data)
+#         db.session.commit()
+#         return jsonify({"error": "Payment provider error"}), 502
 
     
-    payment.payment_id = marz_data.get("transaction_id")
-    payment.payment_status = marz_data.get("status")
-    payment.raw_response = json.dumps(marz_data)
-    db.session.commit()
+#     payment.payment_id = marz_data.get("transaction_id")
+#     payment.payment_status = marz_data.get("status")
+#     payment.raw_response = json.dumps(marz_data)
+#     db.session.commit()
 
    
-    checkout_url = marz_data.get("checkout_url")
-    return jsonify({
-        "reference": merchant_reference,
-        "status": "PENDING",
-        "package": package,
-        "checkout_url": checkout_url
-    }), 200
+#     checkout_url = marz_data.get("checkout_url")
+#     return jsonify({
+#         "reference": merchant_reference,
+#         "status": "PENDING",
+#         "package": package,
+#         "checkout_url": checkout_url
+#     }), 200
 #=======================================================================================================
 #                   ------------------------------------------------------
 #---------------------WEBHOOK CALLBACK ENDPOINT FOR PAYMENT INITIATION--------------------------------------
