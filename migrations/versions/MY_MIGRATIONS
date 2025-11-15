@@ -1,0 +1,99 @@
+-- def migrate_user_table():
+--     """Migration script for production changes"""
+--     from sqlalchemy import text
+    
+--     migrations = [
+--         # Fix duplicate referral_code column
+--         "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_referral_code_key1",
+--         "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_referral_code_key2",
+        
+--         # Convert Float to Numeric for money fields
+--         "ALTER TABLE users ALTER COLUMN actual_balance TYPE NUMERIC(18,2)",
+--         "ALTER TABLE users ALTER COLUMN available_balance TYPE NUMERIC(18,2)",
+        
+--         # Add new constraints
+--         "ALTER TABLE users ADD CONSTRAINT chk_network_depth_range CHECK (network_depth >= 0 AND network_depth <= 20)",
+--         "ALTER TABLE users ADD CONSTRAINT chk_direct_referrals_positive CHECK (direct_referrals_count >= 0)",
+        
+--         # Create new indexes
+--         "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_network_stats ON users(network_depth, direct_referrals_count, total_network_size)",
+--         "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_active_users ON users(is_active) WHERE is_active = true",
+--     ]
+    
+--     for migration in migrations:
+--         try:
+--             db.session.execute(text(migration))
+--             db.session.commit()
+--         except Exception as e:
+--             print(f"Migration failed: {migration} - Error: {e}")
+--             db.session.rollback()
+
+
+
+-- def migrate_payments_table():
+--     """Migration script for payment table enhancements"""
+--     migrations = [
+--         # Add new columns
+--         "ALTER TABLE payments ADD COLUMN IF NOT EXISTS uuid VARCHAR(36)",
+--         "ALTER TABLE payments ADD COLUMN IF NOT EXISTS bonus_eligible BOOLEAN DEFAULT true",
+--         "ALTER TABLE payments ADD COLUMN IF NOT EXISTS bonuses_calculated BOOLEAN DEFAULT false",
+        
+--         # Convert to proper enum type
+--         "CREATE TYPE payment_status AS ENUM ('pending', 'completed', 'failed', 'cancelled', 'refunded')",
+--         "ALTER TABLE payments ALTER COLUMN status TYPE payment_status USING status::payment_status",
+        
+--         # Add constraints
+--         "ALTER TABLE payments ADD CONSTRAINT chk_amount_positive CHECK (amount > 0)",
+--         "ALTER TABLE payments ALTER COLUMN user_id SET NOT NULL",
+        
+--         # Create new indexes
+--         "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payments_bonus_eligible ON payments(bonus_eligible, bonuses_calculated)",
+--         "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payments_uuid ON payments(uuid)",
+--     ]
+    
+--     for migration in migrations:
+--         try:
+--             db.session.execute(text(migration))
+--             db.session.commit()
+--         except Exception as e:
+--             print(f"Migration failed: {migration} - Error: {e}")
+--             db.session.rollback()
+
+
+-- def migrate_referral_tables():
+--     """Migration script for referral and bonus tables"""
+--     migrations = [
+--         # ReferralBonuses table
+--         "ALTER TABLE referral_bonuses ADD COLUMN IF NOT EXISTS uuid VARCHAR(36)",
+--         "ALTER TABLE referral_bonuses ADD COLUMN IF NOT EXISTS network_depth SMALLINT",
+--         "ALTER TABLE referral_bonuses ADD COLUMN IF NOT EXISTS closure_path_hash VARCHAR(64)",
+--         "ALTER TABLE referral_bonuses ADD COLUMN IF NOT EXISTS risk_score SMALLINT DEFAULT 0",
+        
+--         # Convert amount to Numeric
+--         "ALTER TABLE referral_bonuses ALTER COLUMN amount TYPE NUMERIC(12,2)",
+        
+--         # Referrals table  
+--         "ALTER TABLE referrals ADD COLUMN IF NOT EXISTS uuid VARCHAR(36)",
+--         "ALTER TABLE referrals ADD COLUMN IF NOT EXISTS signup_bonus_awarded BOOLEAN DEFAULT false",
+--         "ALTER TABLE referrals ADD COLUMN IF NOT EXISTS signup_bonus_amount NUMERIC(10,2) DEFAULT 0",
+        
+--         # Create new indexes
+--         "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bonus_closure_hash ON referral_bonuses(closure_path_hash)",
+--         "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_referral_bonus_tracking ON referrals(signup_bonus_awarded, first_purchase_bonus_awarded)",
+--     ]
+    
+--     for migration in migrations:
+--         try:
+--             db.session.execute(text(migration))
+--             db.session.commit()
+--         except Exception as e:
+--             print(f"Migration failed: {migration} - Error: {e}")
+--             db.session.rollback()
+
+
+
+
+
+
+
+

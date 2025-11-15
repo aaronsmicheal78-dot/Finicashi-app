@@ -10,7 +10,7 @@ from flask import render_template, jsonify, request, Blueprint, session, redirec
 from flask_login import login_required, current_user
 from datetime import datetime, date
 from extensions import db
-from models import User, Payment, Bonus, Withdrawal, ReferralBonus
+from models import User, Payment, Bonus, Withdrawal, ReferralBonus, PackageCatalog, Package
 from models import PaymentStatus
 from functools import wraps
 from sqlalchemy import or_
@@ -95,6 +95,8 @@ def admin_data():
        # "daily_investments": daily_investments
 
     })
+
+
 #============================================================================================================
 #
 #     ------------------------ADMIN SEARCH FUNCTIONALITY---------------------------------------
@@ -115,7 +117,7 @@ def admin_search():
                 'message': 'Please provide a search query'
             }), 400
 
-        # Search across different models
+        # Search across different models  
         users = search_users(query)
         payments = search_payments(query)
         bonuses = search_bonuses(query)

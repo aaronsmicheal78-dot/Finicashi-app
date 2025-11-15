@@ -3,16 +3,14 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import enum
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import UniqueConstraint, Index, event
+from sqlalchemy import UniqueConstraint, Index, event, Numeric, text
 from extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
 from enum import Enum
 
-
 # ===========================================================
 # ENUM DEFINITIONS
 # ===========================================================
-
 
 class TransactionType(Enum):
     PACKAGE = "package"
@@ -59,33 +57,66 @@ class User(db.Model, BaseMixin):
     email = db.Column(db.String(120), unique=True, nullable=True)
     phone = db.Column(db.String(20), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=True, default="user", index=True)
-    balance = db.Column(db.Float, default=6000)
+    actual_balance = db.Column(db.Numeric(18, 2), default=0.00, server_default=text("0.00"))
+    available_balance = db.Column(db.Numeric(18, 2), default=0.00, server_default=text("0.00"))
+  
+    referred_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # ID of user who referred this user
+    referral_code_used = db.Column(db.String(20), nullable=True)  # The referral code used during signup
+    referral_code = db.Column(db.String(20), unique=True, nullable=True)  # User's own referral code
+    referral_bonus_eligible = db.Column(db.Boolean, default=True)  # Track if user is eligible for referral bonuses
+
 
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False)
 
-    referral_code = db.Column(db.String(50), unique=True, index=True)
     member_since = db.Column(db.DateTime(timezone=True), default=db.func.now())
 
     # Relationships
     profile = db.relationship('UserProfile', uselist=False, back_populates='user', cascade="all,delete-orphan")
     wallet = db.relationship('Wallet', uselist=False, back_populates='user', cascade="all,delete-orphan")
     referrals = db.relationship('Referral', back_populates='referrer', foreign_keys='Referral.referrer_id')
+    
+    bonuses = db.relationship('Bonus', back_populates='user', lazy='dynamic')
+    packages = db.relationship('Package', back_populates='user')
+    
+    # Add these new fields for network tracking
+    network_depth = db.Column(db.Integer, default=0)  # User's depth in the network
+    direct_referrals_count = db.Column(db.Integer, default=0)  # Count of direct referrals
+    total_network_size = db.Column(db.Integer, default=0)  # Total downline size
+    
+    # Network performance metrics
+    network_total_investment = db.Column(db.Numeric(18, 2), default=0)
+    network_active_members = db.Column(db.Integer, default=0)
+    last_network_calculation = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    network_ancestors = db.relationship(
+        'ReferralNetwork',
+        foreign_keys='ReferralNetwork.descendant_id',
+        backref='descendant_user',
+        lazy='dynamic'
+    )
+    network_descendants = db.relationship(
+        'ReferralNetwork',
+        foreign_keys='ReferralNetwork.ancestor_id',
+        backref='ancestor_user',
+        lazy='dynamic'
+    )
 
-  
+
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
     
-    def to_dict(self):
-        """Serialize user for JSON responses."""
+    def to_dict(self, include_packages=True, include_bonus=True):
+        """Serialize user for JSON responses with optimized queries."""
         base_url = "https://finicashi-app.onrender.com/"
-        referral_link = f"{base_url}/{self.username}/{self.referral_code}" if self.referral_code else None
-
-        return {
+        referral_link = f"{base_url}{self.referral_code}" if self.referral_code else None
+        
+        result = {
             "id": self.id,
             "role": self.role,
             "username": self.username,
@@ -96,11 +127,43 @@ class User(db.Model, BaseMixin):
             "memberSince": self.member_since.isoformat() if self.member_since else None,
             "isActive": self.is_active,
             "isVerified": self.is_verified,
-            "balance": float(self.wallet.balance) if self.wallet else 6000,
-            "bonus": float(sum([b.amount for b in self.bonuses if b.status == 'active'])) if hasattr(self, 'bonuses') else 5000,
-            #"package": [p.package for p in self.packages] if hasattr(self, 'packages') else ['buy_one_get_one'] 
-            "package": [p.package for p in self.packages] if (hasattr(self, 'packages') and self.packages) else ["buy_one_get_bonus"]
+            "balance": float(self.wallet.balance) if self.wallet else 0,
         }
+
+
+
+        
+
+        if include_bonus and hasattr(self, 'bonuses'):
+            result["bonus"] = float(self.bonuses.filter_by(status='active')
+                                .with_entities(db.func.sum(Bonus.amount))
+                                .scalar() or 0)
+        else:
+            result["bonus"] = 0
+        
+ 
+        if include_packages and hasattr(self, 'packages'):
+           
+            active_packages = [p for p in self.packages if getattr(p, 'status', None) == 'active']
+            
+            result["packages"] = [
+                {
+                    "id": p.id,
+                    "name": p.catalog.name if p.catalog else getattr(p, 'package', 'Unknown'),
+                    "amount": p.catalog.amount if p.catalog else None,
+                    "status": getattr(p, 'status', 'unknown'),
+                    "bonus_percentage": float(p.catalog.bonus_percentage) if p.catalog and p.catalog.bonus_percentage else 0,
+                    "duration_days": p.catalog.duration_days if p.catalog else None,
+                    "activated_at": p.activated_at.isoformat() if getattr(p, 'activated_at', None) else None,
+                    "expires_at": p.expires_at.isoformat() if getattr(p, 'expires_at', None) else None,
+                    "days_remaining": (p.expires_at - datetime.utcnow()).days if getattr(p, 'expires_at', None) else None
+                }
+                for p in active_packages
+            ]
+        else:
+            result["packages"] = []
+        
+        return result
 # ===========================================================
 # USER PROFILE
 # ===========================================================
@@ -154,28 +217,24 @@ class Payment(db.Model):
     __tablename__ = 'payments'
 
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Allow multiple payments per user, unique constraint removed
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete='SET NULL'), nullable=True)
-    
+    package_catalog_id = db.Column(db.Integer, db.ForeignKey('packagecatalog.id'), nullable=True)
     reference = db.Column(db.String(128), nullable=False)
-    #transaction_type = db.Column(db.Enum(TransactionType), nullable=False, default=TransactionType.PACKAGE)
+    
     transaction_type = db.Column(db.String(50)) 
+    balance_type_used = db.Column(db.String(20), default=None)
     transaction_id = db.Column(
         db.Integer,
         db.ForeignKey('transactions.id', ondelete='SET NULL'),
         nullable=True,
         index=True
     )
-
-    package_id = db.Column(db.Integer, db.ForeignKey('packagecatalog.id'))
-    package = db.relationship("Package", backref="payments")
     
     provider = db.Column(db.String(50))
     method = db.Column(db.String(50))
     external_ref = db.Column(db.String(128), index=True)
     idempotency_key = db.Column(db.String(128), index=True)
-    
+   
     verified = db.Column(db.Boolean, default=False)
     status = db.Column(db.Enum('pending', 'completed', 'failed', 'cancelled', 
                               name='paymentstatus'), nullable=False)
@@ -183,17 +242,16 @@ class Payment(db.Model):
     amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     raw_response = db.Column(db.Text)
     phone_number = db.Column(db.String(32))
+    payment_type = db.Column(db.String(50), default='package', nullable=False)
 
     user = db.relationship('User', backref=db.backref('payments', lazy=True))
-    package = db.relationship('PackageCatalog', backref=db.backref('payments', lazy=True))
-
+    package_catalog = db.relationship('PackageCatalog', backref='payments')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     __table_args__ = (
-        # Unique constraints with explicit names to prevent Alembic batch errors
+       
         UniqueConstraint('reference', name='uq_payments_reference'),
         UniqueConstraint('idempotency_key', 'external_ref', name='uq_payments_idempotency_external'),
-       # Index('ix_payments_external_ref', 'external_ref'),
-
-    
     )
 
 class PackageCatalog(db.Model):
@@ -223,7 +281,10 @@ class Withdrawal(db.Model, BaseMixin):
     status = db.Column(db.String(50), default='pending')
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
-    fee = db.Column(db.Numeric(12,2), default=0) 
+    fee = db.Column(db.Numeric(12,2), default=0)
+    actual_balance_deducted = db.Column(db.Float, default=0.0)
+    available_balance_deducted = db.Column(db.Float, default=0.0)
+    hold_period_applied = db.Column(db.Boolean, default=False) 
 
 # ===========================================================
 # BONUS & REFERRALS
@@ -235,8 +296,11 @@ class Bonus(db.Model, BaseMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     amount = db.Column(db.Numeric(precision=18, scale=2),  nullable=True)
-    type = db.Column(db.String(50))  # e.g. 'referral', 'signup', etc.
+    type = db.Column(db.String(50)) 
     status = db.Column(db.String(20), default='active')
+
+    user = db.relationship('User', back_populates='bonuses')
+   
 #==========================================================================
 #for temporary testing the dynamic admin dashboard
 
@@ -245,34 +309,70 @@ class Package(db.Model, BaseMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    catalog_id = db.Column(db.Integer, db.ForeignKey('packagecatalog.id', ondelete='SET NULL'), nullable=True)
     package = db.Column(db.String(50),  nullable=True)
     type = db.Column(db.String(50))  
     status = db.Column(db.String(20), default='active')
+    
+    activated_at = db.Column(db.DateTime, default=db.func.now())
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', back_populates='packages')
+    catalog = db.relationship('PackageCatalog', backref='user_packages')
+
+
 class ReferralBonus(db.Model, BaseMixin):
-    __tablename__ = 'Referralbonuses'
-
+    __tablename__ = 'referral_bonuses'  # Fixed table name
+    
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
-    amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
-    type = db.Column(db.String(50))  # e.g. 'referral', 'signup', etc.
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    type = db.Column(db.String(50))  # 'direct', 'indirect', 'level_bonus'
     status = db.Column(db.String(20), default='active')
-
-    # optional metadata for auditability
     payment_id = db.Column(db.Integer, db.ForeignKey('payments.id'), nullable=True, index=True)
     referred_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
-    level = db.Column(db.Integer, nullable=True)
+    level = db.Column(db.Integer, nullable=False)  # 1-20
+    referrer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    
+    # Add these new fields
+    qualifying_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Amount that triggered bonus
+    bonus_percentage = db.Column(db.Numeric(5, 4), nullable=False)  # Actual percentage applied
+    calculated_on = db.Column(db.DateTime, default=db.func.now())
+    transaction_reference = db.Column(db.String(120), index=True)  # Link to original transaction
+    
+    # Network tracking
+    network_path = db.Column(db.String(500))  # Store the referral path as string (e.g., "1->5->12")
+    is_paid_out = db.Column(db.Boolean, default=False)
+    paid_out_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    referrer = db.relationship('User', foreign_keys=[referrer_id], backref='referral_earnings')
+    referred_user = db.relationship('User', foreign_keys=[referred_id], backref='referred_by_me')
+    payment = db.relationship('Payment', backref='referral_bonus')
+    
+    __table_args__ = (
+        Index('idx_bonus_level_payout', 'level', 'is_paid_out'),
+        Index('idx_bonus_calculated', 'calculated_on'),
+    )
 
 class Referral(db.Model, BaseMixin):
     __tablename__ = 'referrals'
 
     id = db.Column(db.Integer, primary_key=True)
-    referrer_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    referrer_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True) # who referred
     referred_email = db.Column(db.String(120))
-    referred_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    referred_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True) # who was referred
     reward_issued = db.Column(db.Boolean, default=False)
-    ReferralBonus = db.Column(db.Integer, default=False)
-    referrer = db.relationship('User', back_populates='referrals', foreign_keys=[referrer_id])
+    ReferralBonus = db.Column(db.Integer, default=0)
+    
+    status = db.Column(db.String(20), default='pending')  
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    completed_at = db.Column(db.DateTime, nullable=True)
 
+    referrer = db.relationship('User', foreign_keys=[referrer_id], backref='referrals_made')
+    referred = db.relationship('User', foreign_keys=[referred_id], backref='referrals_received')
+
+    
 # ===========================================================
 # AUDITING & WEBHOOKS
 # ===========================================================
@@ -343,7 +443,7 @@ class LoginAttempt(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ===========================================================
-# IDEMPOTENCY KEY TRACKING
+#   ------------IDEMPOTENCY KEY TRACKING
 # ===========================================================
 
 class IdempotencyKey(db.Model, BaseMixin):
@@ -364,3 +464,95 @@ class IdempotencyKey(db.Model, BaseMixin):
         now = datetime.utcnow()
         db.session.query(IdempotencyKey).filter(IdempotencyKey.expires_at < now).delete()
         db.session.commit()
+
+class ReferralNetwork(db.Model, BaseMixin):
+    """Tracks hierarchical relationships up to 20 levels"""
+    __tablename__ = 'referral_network'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ancestor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)  # Parent/upper level user
+    descendant_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)  # Child/lower level user
+    depth = db.Column(db.Integer, nullable=False)  # Level distance (1-20)
+    path_length = db.Column(db.Integer, nullable=False)  # Direct path length
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp)
+    
+    # Index for efficient tree traversal
+    __table_args__ = (
+        Index('idx_network_ancestor_depth', 'ancestor_id', 'depth'),
+        Index('idx_network_descendant_ancestor', 'descendant_id', 'ancestor_id'),
+        UniqueConstraint('ancestor_id', 'descendant_id', name='uq_network_relationship'),
+            #-- Indexes for performance
+ 
+    )
+
+class ReferralBonusPlan(db.Model):
+    """Configurable bonus percentages for each level (1-20)"""
+    __tablename__ = 'referral_bonus_plan'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    level = db.Column(db.Integer, nullable=False, unique=True)  # 1 to 20
+    bonus_percentage = db.Column(db.Numeric(5, 4), nullable=False)  # e.g., 0.10 for 10%
+    minimum_qualifying_amount = db.Column(db.Numeric(18, 2), default=0)  # Min package amount to qualify
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    __table_args__ = (
+        db.CheckConstraint('level >= 1 AND level <= 20', name='chk_level_range'),
+        db.CheckConstraint('bonus_percentage >= 0 AND bonus_percentage <= 1', name='chk_bonus_range'),
+    )
+
+class NetworkSnapshot(db.Model):
+    """Periodic snapshots of network growth for analytics"""
+    __tablename__ = 'network_snapshots'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    snapshot_date = db.Column(db.Date, nullable=False, index=True)
+    
+    # Network metrics
+    total_downline = db.Column(db.Integer, default=0)
+    active_downline = db.Column(db.Integer, default=0)
+    direct_referrals = db.Column(db.Integer, default=0)
+    network_investment = db.Column(db.Numeric(18, 2), default=0)
+    
+    # Level-wise breakdown (store as JSON for flexibility)
+    level_breakdown = db.Column(db.JSON)  # {1: 5, 2: 25, 3: 120, ...}
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'snapshot_date', name='uq_daily_snapshot'),
+    )
+
+class BonusPayoutQueue(db.Model):
+    """Queue for processing bonus payouts"""
+    __tablename__ = 'bonus_payout_queue'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    referral_bonus_id = db.Column(db.Integer, db.ForeignKey('referral_bonuses.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Numeric(18, 2), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, processing, completed, failed
+    attempt_count = db.Column(db.Integer, default=0)
+    next_attempt = db.Column(db.DateTime, nullable=True)
+    last_error = db.Column(db.Text)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    
+    __table_args__ = (
+        Index('idx_pqueue_status_attempt', 'status', 'next_attempt'),
+
+
+    )
+
+# Add these indexes to ensure performance with large networks
+additional_indexes = [
+    # For network traversal
+    Index('idx_network_ancestor_depth_desc', 'ancestor_id', 'depth', 'descendant_id'),
+    Index('idx_network_descendant_depth', 'descendant_id', 'depth'),
+    
+    # For bonus calculations
+    Index('idx_user_network_stats', 'user_id', 'total_network_size', 'network_total_investment'),
+    Index('idx_bonus_calculation', 'level', 'status', 'calculated_on'),
+    
+    # For reporting
+    Index('idx_snapshot_user_date', 'user_id', 'snapshot_date'),
+]
+

@@ -26,3 +26,6 @@ try:
         print("✅ Connection successful! Database time:", now)
 except Exception as e:
     print("❌ Connection failed:", e)
+
+
+

@@ -7,7 +7,6 @@ import requests
 import os
 import re
 
-
 def safe_marz_headers():
     """
     Returns HTTP headers required to call Marz endpoints securely.
@@ -22,14 +21,11 @@ def safe_marz_headers():
         "Content-Type": "application/json"
     }
 
-
 def validate_email(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def validate_phone(phone):
     return re.match(r'^\+?\d{9,15}$', phone)
-
-
 
 def get_marz_authorization_header():
     API_KEY = "your_api_key_here"  
@@ -38,11 +34,6 @@ def get_marz_authorization_header():
     credentials = f"{API_KEY}:{SECRET}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
     return f"Basic {encoded_credentials}"
-
-
-
-
-
 
 def get_marz_authorization_header():
     MARZ_API_KEY = os.environ.get('MARZ_API_KEY')
@@ -57,7 +48,7 @@ def get_marz_authorization_header():
 
 try:
     auth_header = get_marz_authorization_header()
-    print("✅ Authorization header generated successfully")
+    
 except ValueError as e:
     print(f"❌ Error: {e}")
 

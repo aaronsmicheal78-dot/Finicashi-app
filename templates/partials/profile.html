@@ -58,11 +58,19 @@
                     </div>
                     
                     <div class="detail-item">
-                        <span class="detail-label">Balance: UGX.</span>
+                        <span class="detail-label">Available Balance: UGX.</span>
                         <span class="detail-value" id="balance"></span>
                     </div>
+                     <div class="detail-item">
+                        <span class="detail-label"> Actual Balance: UGX.</span>
+                        <span class="detail-value" id=" actual-balance"></span>
+                    </div>
                     <div class="detail-item">
-                        <span class="detail-label">Bonus: UGX.</span>
+                        <span class="detail-label"> Referral Bonus: UGX.</span>
+                        <span class="detail-value" id="referral-bonus"></span>
+                    </div>
+                       <div class="detail-item">
+                        <span class="detail-label">Investment Bonus: UGX.</span>
                         <span class="detail-value" id="bonus"></span>
                     </div>
                     <div class="detail-item">
@@ -129,6 +137,48 @@
                 </div>
                     </div>
             </section>
+
+
+
+
+             <!-- Columns 2: Dashboard Content -->
+            <section class="dashboard-content">
+                <!-- Hero Section for Dynamic Content -->
+                <div class="dashboard-hero">
+                    <h1 class="hero-title">Your Financial Growth Journey</h1>
+                    <p class="hero-subtitle">Track your investments, monitor your returns, and grow your wealth with Finicashi's premium investment packages</p>
+                    
+                    <div class="hero-graphics">
+                        <div class="hero-graphic-item">
+                            <div class="graphic-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="graphic-value">15.2%</div>
+                            <div class="graphic-label">Avg. Return</div>
+                        </div>
+                        <div class="hero-graphic-item">
+                            <div class="graphic-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="graphic-value">UGX 1.25M</div>
+                            <div class="graphic-label">Total Balance</div>
+                        </div>
+                        <div class="hero-graphic-item">
+                            <div class="graphic-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="graphic-value">15</div>
+                            <div class="graphic-label">Referrals</div>
+                        </div>
+                        <div class="hero-graphic-item">
+                            <div class="graphic-icon">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <div class="graphic-value">Gold</div>
+                            <div class="graphic-label">Current Package</div>
+                        </div>
+                    </div>
+                </div>
                 </div>
             <!-- Columns 2 & 3: Investment Packages -->
             <section class="packages-container">
@@ -255,6 +305,24 @@
                             <button class="package-btn">Invest Now</button>
                         </div>
                     </div>
+
+                     <!-- Group Registration Buttons -->
+<div class="group-registration-container">
+    <div class="group-buttons">
+        <button class="group-btn group-5" onclick="openGroupModal('group5')">
+         <!---- <span class="group-icon">👥</span>  --->  
+            <span class="group-title">Register as Group of 5</span>
+            <span class="group-subtitle">Standard Benefits</span>
+        </button>
+        
+        <button class="group-btn group-10" onclick="openGroupModal('group10')">
+            <span class="group-icon">👨‍👩‍👧‍👦</span>
+            <span class="group-title">Register as Group of 10</span>
+            <span class="group-subtitle">Double Benefits & Premium Rewards</span>
+        </button>
+    </div>
+</div>
+
                 </div>
             </section>
         </main>

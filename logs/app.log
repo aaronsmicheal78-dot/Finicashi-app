@@ -1,1 +1,133 @@
 2025-11-08 10:42:06,104 INFO: Database initialized: postgresql+pg8000://finicashi_db_user:8OCk4GypHpsh3KQH3oPq7bBSVylwVD96@dpg-d433kjmuk2gs738mgej0-a.oregon-postgres.render.com/finicashi_db [in c:\Users\user\Desktop\fin_final\extensions.py:74]
+2025-11-14 15:17:56,995 WARNING: Invalid referrer: Referrer is not verified [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:189]
+2025-11-14 15:20:24,027 WARNING: Invalid referrer: Referrer is not verified [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:189]
+2025-11-14 16:09:18,646 ERROR: Closure table insertion error: type object 'ReferralTreeHelper' has no attribute 'is_descendant' [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:57]
+2025-11-14 16:38:22,228 ERROR: Closure table insertion error: type object 'ReferralTreeHelper' has no attribute 'is_descendant' [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:57]
+2025-11-14 17:21:27,681 ERROR: Closure table insertion error: type object 'ReferralTreeHelper' has no attribute 'is_descendant' [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:60]
+2025-11-14 17:46:53,771 ERROR: [SIGNUP ERROR] type object 'ReferralTreeHelper' has no attribute 'add_user' [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:148]
+2025-11-14 17:50:44,205 ERROR: [SIGNUP ERROR] type object 'ReferralTreeHelper' has no attribute 'add_user' [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:148]
+2025-11-14 17:52:40,362 ERROR: [SIGNUP ERROR] type object 'ReferralTreeHelper' has no attribute 'add_user' [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:148]
+2025-11-14 17:55:32,701 ERROR: [SIGNUP ERROR] type object 'ReferralTreeHelper' has no attribute 'add_user' [in C:\Users\user\Desktop\fin_final\blueprints\auth.py:148]
+2025-11-14 18:09:53,207 ERROR: SQLAlchemyError during add_user_to_network:
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 134, in add_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in C:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:211]
+2025-11-14 18:09:54,643 ERROR: [SIGNUP] Referral tree insertion failed for user 49 [in C:\Users\user\Desktop\fin_final\blueprints\auth.py:124]
+2025-11-14 18:25:30,603 ERROR: SQLAlchemyError during add_user_to_network:
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 145, in add_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:223]
+2025-11-14 18:25:32,025 ERROR: [SIGNUP] Referral tree insertion failed for user 50 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:124]
+2025-11-14 18:38:30,242 ERROR: SQLAlchemyError during add_user_to_network:
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 145, in add_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:223]
+2025-11-14 18:44:08,674 ERROR: SQLAlchemyError during add_user_to_network:
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 145, in add_new_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:223]
+2025-11-14 18:45:55,960 ERROR: SQLAlchemyError during add_user_to_network:
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 145, in add_new_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:223]
+2025-11-14 18:45:57,396 ERROR: [SIGNUP] Referral tree insertion failed for user 54 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 18:47:02,214 ERROR: SQLAlchemyError during add_user_to_network:
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 145, in add_new_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:223]
+2025-11-14 18:47:03,650 ERROR: [SIGNUP] Referral tree insertion failed for user 55 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 19:11:00,277 ERROR: SQLAlchemyError during add_new_user:
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 58, in add_new_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+ [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:122]
+2025-11-14 19:11:01,671 ERROR: [SIGNUP] Referral tree insertion failed for user 56 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 19:22:33,154 ERROR: [SIGNUP] Referral tree insertion failed for user 58 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 19:31:03,826 ERROR: Referral tree insertion failed [in c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py:89]
+Traceback (most recent call last):
+  File "c:\Users\user\Desktop\fin_final\bonus\refferral_tree.py", line 41, in add_new_user
+    with db.session.begin():
+         ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\scoping.py", line 443, in begin
+    return self._proxied.begin(nested=nested)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\fin_final\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1941, in begin
+    raise sa_exc.InvalidRequestError(
+        "A transaction is already begun on this Session."
+    )
+sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.
+2025-11-14 19:31:05,208 ERROR: [SIGNUP] Referral tree insertion failed for user 59 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 19:36:24,566 ERROR: [SIGNUP] Referral tree insertion failed for user 60 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 19:40:30,139 ERROR: [SIGNUP] Referral tree insertion failed for user 61 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 19:46:18,465 ERROR: [SIGNUP] Referral tree insertion failed for user 62 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-14 20:00:42,097 ERROR: [SIGNUP] Referral tree insertion failed for user 65 [in c:\Users\user\Desktop\fin_final\blueprints\auth.py:132]
+2025-11-15 17:34:41,400 INFO: Cleaned up processing flag for purchase 112 [in C:\Users\user\Desktop\fin_final\bonus\validation.py:462]

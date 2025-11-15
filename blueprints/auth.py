@@ -1,7 +1,7 @@
 
-from flask import request, jsonify, session, render_template, Blueprint
+from flask import request, jsonify, session, render_template, Blueprint, current_app
 from werkzeug.security import check_password_hash, generate_password_hash
-from models import User, Transaction, Bonus
+from models import User, Transaction, Bonus, Referral, Wallet, UserProfile, KycStatus
 import re, secrets, string
 from utils import validate_email, validate_phone 
 from flask import Blueprint, jsonify, request, session
@@ -10,9 +10,11 @@ import logging
 import string
 import secrets
 from flask_login import login_user
+import traceback
 
 
 
+#==================================================================================================================
 
 bp = Blueprint("auth", __name__, url_prefix="")
 
@@ -30,101 +32,147 @@ def validate_phone(phone):
 #===========================================================================
 #      SIGN UP ROUTE.
 #==============================================================================
-# blueprints/auth.py
-# =============================================
-# Authentication Blueprint for Signup, Login, Logout
-# =============================================
 @bp.route("/api/signup", methods=["POST"])
 def signup():
+    
     """
-    Create a new user account with proper error handling and transactions
+    Create new user + integrate them into the referral tree.
+    Uses safer validation, atomic transaction, and full tree integration.
     """
     try:
-        data = request.get_json()
-        
-        print(f"✅ Received signup data: {data}")
-        
+        data = request.get_json(silent=True)
         if not data:
-            return jsonify({"error": "No JSON data received"}), 400
+            return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-        # Fix field names to match frontend
-        username = data.get("fullName", "").strip()
+        full_name = data.get("fullName", "").strip()
         email = data.get("email", "").strip().lower()
         phone = data.get("phone", "").strip()
         password = data.get("password", "")
+        referral_code = data.get("referralCode", "").strip().upper()
 
-        print(f"✅ Parsed fields - username: '{username}', email: '{email}', phone: '{phone}', password: {'*' * len(password)}")
-
-        # Validation
-        if not all([username, email, phone, password]):
+        # -----------------------------------------
+        #  BASIC VALIDATION
+        # -----------------------------------------
+        if not full_name or not email or not phone or not password:
             return jsonify({"error": "All fields are required"}), 400
 
         if len(password) < 6:
             return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-        # Check for existing user within transaction
-        existing_user = User.query.filter(
+        # Ensure user does not already exist
+        exists = User.query.filter(
             (User.email == email) | (User.phone == phone)
         ).first()
-        
-        if existing_user:
-            print(f"❌ User already exists: {existing_user.email} or {existing_user.phone}")
-            return jsonify({"error": "Email or phone already exists"}), 400
 
-        print("✅ No existing user found, creating new user...")
+        if exists:
+            return jsonify({"error": "Email or phone already registered"}), 400
 
-        # Generate referral code 
-        def generate_referral_code(length=8):
-            characters = string.ascii_uppercase + string.digits
-            for attempt in range(10):  # Safety limit to prevent infinite loops
-                code = ''.join(secrets.choice(characters) for _ in range(length))
+        # -----------------------------------------
+        #  HANDLE REFERRAL CODE
+        # -----------------------------------------
+        referrer = None
+        if referral_code:
+            referrer = User.query.filter_by(referral_code=referral_code).first()
+
+            if not referrer:
+                return jsonify({"error": "Invalid referral code"}), 400
+
+            if referrer.phone == phone:
+                return jsonify({"error": "Cannot use your own referral code"}), 400
+
+        # -----------------------------------------
+        #  GENERATE UNIQUE REFERRAL CODE
+        # -----------------------------------------
+        def generate_referral_code(L=8):
+            chars = string.ascii_uppercase + string.digits
+            for _ in range(10):
+                code = ''.join(secrets.choice(chars) for _ in range(L))
                 if not User.query.filter_by(referral_code=code).first():
                     return code
-            # Fallback if no unique code found after 10 attempts
-            return ''.join(secrets.choice(characters) for _ in range(length))
+            # fallback
+            return ''.join(secrets.choice(chars) for _ in range(L))
 
-       #  Create user with proper session management
-        new_user = User(
-            username=username,
-            email=email,
-            phone=phone,
-            referral_code=generate_referral_code()
-        )
-        new_user.set_password(password)
+        # -----------------------------------------
+        #  BEGIN ATOMIC TRANSACTION
+        # -----------------------------------------
+        with db.session.begin_nested():
 
-        db.session.add(new_user)
+            new_user = User(
+                username=full_name,
+                email=email,
+                phone=phone,
+                referral_code=generate_referral_code(),
+                referred_by=referrer.id if referrer else None,
+                referral_code_used=referral_code if referrer else None,
+                network_depth=0,
+                direct_referrals_count=0,
+                total_network_size=0
+            )
+            new_user.set_password(password)
+
+            db.session.add(new_user)
+            db.session.flush()  # get new_user.id
+            
+            # -------------------------------------
+            #  REFERRAL TREE LOGIC
+            # -------------------------------------
+            from bonus.refferral_tree import ReferralTreeHelper
+            if referrer:
+               
+
+                added = ReferralTreeHelper.add_new_user(new_user.id, referrer.id)
+
+
+                if not added:
+                    current_app.logger.error(
+                            f"[SIGNUP] Referral tree insertion failed for user {new_user.id}"
+                        )
+                    raise Exception("Referral tree error")
+
+                    # Increase referrer's direct referral count
+                if referrer.direct_referrals_count is None:
+                   referrer.direct_referrals_count = 0   
+                   referrer.direct_referrals_count += 1
+            else:                
+                # Initialize standalone user in referral network
+                added = ReferralTreeHelper.initialize_standalone_user(new_user.id)
+                
+                if not added:
+                    current_app.logger.error(
+                        f"[SIGNUP] Standalone user initialization failed for user {new_user.id}"
+                    )
+                    raise Exception("Referral tree initialization error")
+                
+        # Commit DB if all operations succeeded
         db.session.commit()
 
-         #offer signup bonus
-        signup_bonus = Bonus(
-        user_id=new_user.id,
-        amount=5000,          
-        type="signup",
-        status="active")
-
- 
-        db.session.add(signup_bonus)
-        db.session.commit()
-
+        # Success response
         return jsonify({
-            "message": "Signup successful!",
+            "status": "success",
+            "message": "Signup successful",
             "user": {
                 "id": new_user.id,
                 "username": new_user.username,
-                "email": new_user.email
+                "email": new_user.email,
+                "phone": new_user.phone,
+                "referral_code": new_user.referral_code
             }
         }), 201
-
     except Exception as e:
-        db.session.rollback()            #    Critical for failed transactions
-        print(f"❌ Signup error: {str(e)}")
-        import traceback
-        traceback.print_exc()            #   This will show the full stack trace
-        return jsonify({"error": "Internal server error"}), 500
+        db.session.rollback()
+        print("\n\n=== SIGNUP ERROR ===")
+        print(str(e))
+        traceback.print_exc()
+        print("=== END ERROR ===\n\n")
+        return jsonify({"error": "Signup failed. Please try again."}), 500
+   
+# =============================================
+# Authentication Blueprint for Signup, Login
+# =============================================
 
-# # --------------------------------------------------
-# #      2️⃣ Login Route
-# # --------------------------------------------------
+ # --------------------------------------------------
+ #      2️⃣ Login Route
+ # --------------------------------------------------
 @bp.route("/api/login", methods=["POST"])
 def login():
    
@@ -140,19 +188,17 @@ def login():
     email_or_phone = data.get("email_or_phone", "").strip().lower()
     password = data.get("password", "")
 
-    # ✅ Validate input
+    
     if not email_or_phone or not password:
         return jsonify({"error": "Email/Phone and password are required"}), 400
 
-    # ✅ Find user by email or phone
+    
     user = User.query.filter(
-        (User.email == email_or_phone) | (User.phone == email_or_phone)
-    ).first()
+        (User.email == email_or_phone) | (User.phone == email_or_phone)).first()
 
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    # ✅ Set session
     session["user_id"] = user.id
 
     return jsonify({

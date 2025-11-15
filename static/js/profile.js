@@ -2,7 +2,40 @@
     // Application State
    
 
- 
+   // Group Modal Functions
+function openGroupModal(groupType) {
+    const modal = document.getElementById(groupType + 'Modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.querySelector('.group-modal').classList.add('active');
+    }, 10);
+}
+
+function closeGroupModal(groupType) {
+    const modal = document.getElementById(groupType + 'Modal');
+    modal.querySelector('.group-modal').classList.remove('active');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+function registerGroup(size) {
+    // Redirect to registration page with group size parameter
+    window.location.href = `/register?group_size=${size}`;
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('group-modal-overlay')) {
+        const modals = document.querySelectorAll('.group-modal-overlay');
+        modals.forEach(modal => {
+            modal.querySelector('.group-modal').classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        });
+    }
+});
 document.addEventListener("DOMContentLoaded", () => {
   // Fetch logged-in user data from API
   fetch("/user/profile")
@@ -12,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
     //  const userData = res
     })
     .then(user => {
+        console.log("User data:", user);
+    console.log("Packages:", user.packages);
       document.getElementById("memberSince").textContent = user.memberSince;
       document.getElementById("isVerified").textContent = user.isVerified;
       document.getElementById("isActive").textContent = user.isActive;
@@ -22,13 +57,32 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("referral_code").textContent = user.referralCode;
       document.getElementById("balance").textContent = user.balance;
       document.getElementById("bonus").textContent = user.bonus;
-      
+    
+
+            if (user.packages && user.packages.length > 0) {
+        // Display all package names
+        const packageNames = user.packages.map(pkg => pkg.name).join(', ');
+        document.getElementById("package").textContent = packageNames;
+        
+        // Or display just the first/main package
+        // document.getElementById("package").textContent = user.packages[0].name;
+      } else {
+        document.getElementById("package").textContent = "No active package";
+      }
     })
+    .catch(error => {
+      console.error("Error fetching user profile:", error);
+      document.getElementById("package").textContent = "Error loading package";
+    });
+//});
+      
+      
+   })
     .catch(err => {
       console.error("Error fetching profile:", err);
       document.getElementById("username").textContent = "Error loading profile";
     });
-    });
+   // });
 
 
     // Referral System
@@ -215,3 +269,5 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+
+        

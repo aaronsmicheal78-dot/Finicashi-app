@@ -108,7 +108,30 @@ document.addEventListener("click", async (event) => {
 });
 
 
+// Fetch current user with all relationships
+async function fetchCurrentUser() {
+    try {
+        const response = await fetch('/api/user/current');
+        if (!response.ok) throw new Error('Failed to fetch user');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        return null;
+    }
+}
 
+// Usage in updating user profile with bonus, user data, package
+async function loadUserProfile() {
+    const userData = await fetchCurrentUser();
+    if (userData) {
+        updateDashboard(userData);
+        displayPackages(userData.packages);
+        updateBonusDisplay(userData.bonus);
+    }
+}
+
+// Call after payment completion, login, or page refresh
+document.addEventListener('DOMContentLoaded', loadUserProfile);
 
 
 

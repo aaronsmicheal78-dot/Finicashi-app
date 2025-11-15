@@ -20,6 +20,8 @@ def create_app():
         app.jinja_env.auto_reload = True
         app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
         app.config['DEBUG'] = True
+        app.config["PROPAGATE_EXCEPTIONS"] = True
+        app.config["DEBUG"] = True
     # ------------------------------------------------------------------------------------------
     # Basic logging setup
     if not app.debug:
