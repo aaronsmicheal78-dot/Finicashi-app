@@ -230,7 +230,7 @@ class BonusCalculationHelper:
                 'referrer_id': referrer_id,                 # FK → referrer
                 'referred_id': original_payer_id,           # FK → original payer
                 'payment_id': payment.id,                    # FK → payment
-             #   'purchase_id': getattr(payment, 'id', None),# For validation
+               'purchase_id': (payment.id),# For validation
                 'level': level,                              # 1-20
                 'bonus_amount': float(bonus_amount),        # Validation expects this key
                 'amount': float(bonus_amount),              # For logging / legacy code

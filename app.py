@@ -16,13 +16,13 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    if app.config.get("DEBUG", True):
+    if app.config.get("DEBUG", False):
         app.config['TEMPLATES_AUTO_RELOAD'] = True
         app.jinja_env.auto_reload = True
         app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
         app.config['DEBUG'] = True
         app.config["PROPAGATE_EXCEPTIONS"] = True
-        app.config["DEBUG"] = True
+        app.config["DEBUG"] = False
     
     # ------------------------------------------------------------------------------------------
     # SIMPLIFIED LOGGING - No rotation to avoid permission errors
