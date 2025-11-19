@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional, Tuple, Set
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import current_app
 from sqlalchemy import text, func, and_, or_, case
 from models import User, Referral, ReferralBonus, Payment, AuditLog, LoginAttempt, Wallet
@@ -171,7 +171,7 @@ class AuditFraudHelper:
             hours = hours or AuditFraudHelper.FRAUD_THRESHOLDS['rapid_creation_hours']
             max_accounts = max_accounts or AuditFraudHelper.FRAUD_THRESHOLDS['max_accounts_per_ip']
             
-            cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
             
             # Multi-vector detection: IP, device fingerprint, email pattern, etc.
             queries = {
@@ -432,7 +432,7 @@ class AuditFraudHelper:
             total_amount = sum(Decimal(str(b.amount)) for b in bonuses)
             
             # Enhanced pattern analysis
-            recent_bonuses = [b for b in bonuses if b.created_at > datetime.utcnow() - timedelta(days=7)]
+            recent_bonuses = [b for b in bonuses if b.created_at > datetime.now(timezone.utc) - timedelta(days=7)]
             high_value_bonuses = [b for b in bonuses if b.amount > AuditFraudHelper.FRAUD_THRESHOLDS['suspicious_amount_threshold']]
             
             # Time-based analysis
@@ -710,7 +710,7 @@ class AuditFraudHelper:
         """
         Run all enhanced fraud detection checks with reporting
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         
         audit_results = {
             'timestamp': start_time.isoformat(),
@@ -757,7 +757,7 @@ class AuditFraudHelper:
         # Generate overall recommendations
         audit_results['recommendations'] = AuditFraudHelper._generate_audit_recommendations(audit_results)
         
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         audit_results['execution_time_seconds'] = (end_time - start_time).total_seconds()
         
         current_app.logger.info(
@@ -844,7 +844,7 @@ class AuditFraudHelper:
                 'bonus_audit': bonus_audit,
                 'referral_count': referral_count,
                 'login_anomalies': login_anomalies,
-                'last_updated': datetime.utcnow().isoformat()
+                'last_updated': datetime.now(timezone.utc).isoformat()
             }
             
         except Exception as e:

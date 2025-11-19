@@ -107,11 +107,10 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-
 // Fetch current user with all relationships
 async function fetchCurrentUser() {
     try {
-        const response = await fetch('/api/user/current');
+        const response = await fetch('/user/profile');
         if (!response.ok) throw new Error('Failed to fetch user');
         return await response.json();
     } catch (error) {
@@ -120,363 +119,82 @@ async function fetchCurrentUser() {
     }
 }
 
+// Format currency helper
+function formatCurrency(amount) {
+    if (amount === undefined || amount === null) return '0';
+    return new Intl.NumberFormat('en-UG').format(amount);
+}
+
+// Update dashboard with user data
+function updateDashboard(userData) {
+    console.log("Updating dashboard with:", userData);
+    
+    // Update balance displays if elements exist
+    const availableBalanceElement = document.getElementById("available-balance");
+    const actualBalanceElement = document.getElementById("actual-balance");
+    const bonusElement = document.getElementById("bonus");
+    const referralBonusElement = document.getElementById("referral-bonus");
+    
+    if (availableBalanceElement) {
+        // Try different possible field names
+        const availableBalance = userData.availableBalance || userData.balance || 0;
+        availableBalanceElement.textContent = formatCurrency(availableBalance);
+    }
+    
+    if (actualBalanceElement) {
+        // Try different possible field names
+        const actualBalance = userData.actualBalance || userData.balance || 0;
+        actualBalanceElement.textContent = formatCurrency(actualBalance);
+    }
+    
+    if (bonusElement) {
+        bonusElement.textContent = formatCurrency(userData.bonus || 0);
+    }
+    
+    if (referralBonusElement) {
+        // If you have a separate referral bonus field
+        const referralBonus = userData.referralBonus || userData.bonus || 0;
+        referralBonusElement.textContent = formatCurrency(referralBonus);
+    }
+}
+
+// Display user packages
+function displayPackages(packages) {
+    const packageElement = document.getElementById("package");
+    if (!packageElement) return;
+    
+    if (packages && packages.length > 0) {
+        const packageNames = packages.map(pkg => pkg.name).join(', ');
+        packageElement.textContent = packageNames;
+    } else {
+        packageElement.textContent = "No active package";
+    }
+}
+
+// Update bonus display
+function updateBonusDisplay(bonus) {
+    const bonusElement = document.getElementById("bonus");
+    if (bonusElement) {
+        bonusElement.textContent = formatCurrency(bonus || 0);
+    }
+}
+
 // Usage in updating user profile with bonus, user data, package
 async function loadUserProfile() {
     const userData = await fetchCurrentUser();
     if (userData) {
+        console.log("User data for payments:", userData);
         updateDashboard(userData);
         displayPackages(userData.packages);
         updateBonusDisplay(userData.bonus);
     }
 }
 
-// Call after payment completion, login, or page refresh
-document.addEventListener('DOMContentLoaded', loadUserProfile);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // --- Event delegation for dynamic modals ---
-// document.addEventListener("click", async (event) => {
-//   const payButton = event.target.closest(".pay-btn");
-//   if (!payButton) return;
-
-//   const modal = payButton.closest(".payment-modal");
-//   if (!modal) return;
-    
-//    //const phoneInput= modal.querySelector(".phone-input");
-//    //const amountInput = modal.querySelector(".amount-input");
-//   // Extract modal attributes and input
-//   let amount = modal.getAttribute("data-amount");
-//   const packageName = modal.getAttribute("data-package");
-//   const phoneInput = modal.querySelector(".phone-input");
-  
-//   if (!phoneInput) {
-//     alert("Missing phone input field.");
-//     return;
-//   }
-
-
-
-//   const phone = phoneInput.value.trim();
-
-//   // --- Phone validation ---
-//   const phoneRegex = /^(?:\+2567|07)\d{8}$/;
-//   if (!phone) {
-//     alert("Please enter your phone number.");
-//     phoneInput.focus();
-//     return;
-//   }
-//   if (!phoneRegex.test(phone)) {
-//     alert("Invalid phone number format. Use +2567XXXXXXXX or 07XXXXXXXX.");
-//     phoneInput.focus();
-//     return;
-//   }
-
-//   // --- Determine if deposit ---
-//   const isDeposit = packageName?.toLowerCase() === "deposit";
-
-//   // For deposit, override amount from input field if available
-//   if (isDeposit) {
-//     const inputAmount = parseInt(phoneInput.value, 10); // or use separate deposit input
-//     if (!isNaN(inputAmount) && inputAmount > 0) {
-//       amount = inputAmount;
-//     }
-//   }
-
-//   const parsedAmount = parseInt(amount, 10);
-//   if (isNaN(parsedAmount) || parsedAmount <= 0) {
-//     alert("Invalid payment amount.");
-//     return;
-//   }
-
-//   // --- Prepare payload ---
-//   const payload = {
-//     phone: phone,
-//     amount: parsedAmount,
-//     payment_type: isDeposit ? "deposit" : "package",
-//   };
-//   if (!isDeposit) payload.package = packageName.toLowerCase();
-
-//   console.log("📦 Payment payload:", payload);
-
-//   // --- Send request ---
-//   try {
-//     payButton.disabled = true;
-//     payButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...`;
-
-//     const response = await fetch("/payments/initiate", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify(payload),
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       console.error("❌ Backend error:", data);
-//       alert(data.error || "Payment initiation failed.");
-//       return;
-//     }
-
-//     if (data.checkout_url) {
-//       window.location.href = data.checkout_url;
-//     } else {
-//       alert("Payment initiated successfully. Please wait for confirmation.");
-//     }
-
-//   } catch (err) {
-//     console.error("⚠️ Network/server error:", err);
-//     alert("Network or server error. Please try again later.");
-//   } finally {
-//     payButton.disabled = false;
-//     payButton.textContent = "Pay Now";
-//   }
-// });
-
-// payments.js
-// document.addEventListener("DOMContentLoaded", () => {
-//   const modals = document.querySelectorAll(".payment-modal");
-
-//   modals.forEach((modal) => {
-//     const payButton = modal.querySelector(".pay-btn");
-//     const phoneInput = modal.querySelector(".phone-input");
-//     const amount = modal.getAttribute("data-amount");
-//     const packageName = modal.getAttribute("data-package");
-
-//     if (!payButton || !amount || !packageName) {
-//       console.warn(`⚠️ Missing configuration in modal: ${modal.id}`);
-//       return;
-//     }
-
-//     payButton.addEventListener("click", async (e) => {
-//       e.preventDefault();
-
-//       // -------------------------------
-//       // 🧩 Basic validation
-//       // -------------------------------
-//       if (!phoneInput || !phoneInput.value.trim()) {
-//         alert("Please enter your phone number.");
-//         phoneInput?.focus();
-//         return;
-//       }
-
-//       const phone = phoneInput.value.trim();
-//       const phoneRegex = /^(?:\+256|0)?7\d{8}$/;
-
-//       if (!phoneRegex.test(phone)) {
-//         alert("Invalid phone number. Use +2567XXXXXXXX or 07XXXXXXXX.");
-//         phoneInput.focus();
-//         return;
-//       }
-
-//       const parsedAmount = parseInt(amount, 10);
-//       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-//         alert("Invalid payment amount.");
-//         return;
-//       }
-
-//       // -------------------------------
-//       // 💰 Prepare payment payload
-//       // -------------------------------
-//       const payload = {
-//         phone: phone,
-//         amount: parsedAmount,
-//         type: packageName.toLowerCase() === "deposit" ? "deposit" : "package",
-//       };
-
-//       if (payload.type === "package") {
-//         payload.package = packageName.toLowerCase();
-//       }
-
-//       console.log("🚀 Sending payment payload:", payload);
-
-//       // -------------------------------
-//       // 🔄 Send to backend
-//       // -------------------------------
-//       try {
-//         payButton.disabled = true;
-//         payButton.textContent = "Processing...";
-
-//         const res = await fetch("/payments/initiate", {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify(payload),
-//         });
-
-//         const data = await res.json();
-
-//         if (!res.ok) {
-//           console.error("❌ Backend error:", data);
-//           alert(data.error || "Payment initiation failed.");
-//           return;
-//         }
-
-//         console.log("✅ Payment response:", data);
-
-//         if (data.checkout_url) {
-//           window.location.href = data.checkout_url;
-//         } else {
-//           alert("Payment initiated successfully. Please wait for confirmation.");
-//         }
-
-//       } catch (err) {
-//         console.error("⚠️ Network/server error:", err);
-//         alert("Network or server error. Please try again.");
-//       } finally {
-//         payButton.disabled = false;
-//         payButton.textContent = "Pay Now";
-//       }
-//     });
-//   });
-// });
-
-// // // payments.js
-// document.addEventListener("DOMContentLoaded", () => {
-//   // Select all payment modals
-//   const modals = document.querySelectorAll(".payment-modal");
-
-//   // Loop through each modal and attach submit listener
-//   modals.forEach((modal) => {
-//     const payButton = modal.querySelector(".pay-btn");
-
-//     if (!payButton) {
-//       console.warn("Pay button missing in modal:", modal.id);
-//       return;
-//     }
-
-//     payButton.addEventListener("click", async (event) => {
-//       event.preventDefault();
-
-//       // Extract modal data attributes
-//       const amount = modal.getAttribute("data-amount");
-//       const packageName = modal.getAttribute("data-package");
-//       const phoneInput = modal.querySelector(".phone-input");
-
-//       // Validate presence of elements
-//       if (!amount || !packageName) {
-//         alert("Payment configuration error. Please refresh the page.");
-//         console.error("Missing data attributes in modal:", modal.id);
-//         return;
-//       }
-
-//       if (!phoneInput) {
-//         alert("Missing phone input field.");
-//         return;
-//       }
-
-//       const phone = phoneInput.value.trim();
-
-//       // -------------------------------
-//       // 1️⃣ Frontend VALIDATION
-//       // -------------------------------
-
-//       // Check if phone is provided
-//       if (!phone) {
-//         alert("Please enter your phone number.");
-//         phoneInput.focus();
-//         return;
-//       }
-
-//       // Basic Ugandan phone number validation
-//       const phoneRegex = /^(?:\+256|0)?7\d{8}$/;
-//       if (!phoneRegex.test(phone)) {
-//         alert("Invalid phone number format. Use +2567XXXXXXXX or 07XXXXXXXX.");
-//         phoneInput.focus();
-//         return;
-//       }
-
-//       // Ensure amount is valid integer
-//       const parsedAmount = parseInt(amount);
-//       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-//         alert("Invalid payment amount.");
-//         return;
-//       }
-    
-//       const payload = {
-//         amount: parsedAmount,
-//         package: packageName.toLowerCase(),
-//         phone: phone
-//       };
-     
-
-//       console.log("Sending payment payload:", payload);
-
-//       try {
-    
-//         payButton.disabled = true;
-//         payButton.textContent = "Processing...";
-
-//         const response = await fetch('/payments/initiate', {
-//           method: "POST",
-//           headers: {
-//             "Content-Type": "application/json",
-//           },
-//           body: JSON.stringify(payload)
-//         });
-
-//         // Parse backend response
-//         const data = await response.json();
-
-//         // -------------------------------
-//         // 3️⃣ HANDLE RESPONSE
-//         // -------------------------------
-//         if (!response.ok) {
-//           alert(data.error || "Payment initiation failed.");
-//           console.error("Backend error:", data);
-//           return;
-//         }
-
-//         console.log("Payment initiated successfully:", data);
-
-//         // Redirect if checkout URL is provided (from MarzPay or gateway)
-//         if (data.checkout_url) {
-//           window.location.href = data.checkout_url;
-//         } else {
-//           // No redirect — backend will confirm async
-//           alert("Payment initiated successfully. Please wait for confirmation.");
-//         }
-
-//       } catch (error) {
-//         // -------------------------------
-//         // 4️⃣ HANDLE NETWORK ERRORS
-//         // -------------------------------
-//         console.error("Network or server error:", error);
-//         alert("Network or server error. Please try again later.");
-//       }
-//     });
-//   });
-// });
-
-
+// Add real-time polling
+function startBalancePolling() {
+    // Refresh every 3 seconds for real-time updates
+    setInterval(loadUserProfile, 3000);
+}
 
 //===========================================================================
 //
@@ -509,8 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Prepare data for API
         const withdrawalData = {
             phone_number: phone,
-            amount: parseInt(amount),
-            narration: 'Cash Out - Finicashi'
+            amount: parseInt(amount)
+     
         };
         // Send request to Flask backend
         makeWithdrawalRequest(withdrawalData);
@@ -518,18 +236,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function validateInputs(phone, amount) {
         // Validate phone number
-        const cleanedPhone = phone.replace(/\s+/g, '');
-        const phoneRegex = /^(256|0)(7[0-9]|20)[0-9]{7}$/;
+        // const cleanedPhone = phone.replace(/\s+/g, '');
+        // const phoneRegex = /^(256|0)(7[0-9]|20)[0-9]{7}$/;
         
-        if (!cleanedPhone) {
-            alert('Please enter your phone number');
-            return false;
-        }
+        // if (!cleanedPhone) {
+        //     alert('Please enter your phone number');
+        //     return false;
+        // }
         
-        if (!phoneRegex.test(cleanedPhone)) {
-            alert('Please enter a valid Ugandan phone number (e.g., 256771234567 or 0771234567)');
-            return false;
-        }
+        // if (!phoneRegex.test(cleanedPhone)) {
+        //     alert('Please enter a valid Ugandan phone number (e.g., 256771234567 or 0771234567)');
+        //     return false;
+        // }
 
         // Validate amount
         const amountNum = parseInt(amount);
@@ -555,14 +273,14 @@ document.addEventListener('DOMContentLoaded', function() {
     async function makeWithdrawalRequest(data) {
         // Convert phone to 256 format if it's in local format
         let phoneNumber = data.phone_number;
-        if (phoneNumber.startsWith('0')) {
-            phoneNumber = '256' + phoneNumber.substring(1);
-        }
+        // if (phoneNumber.startsWith('0')) {
+        //     phoneNumber = '256' + phoneNumber.substring(1);
+        // }
 
         const payload = {
             phone_number: phoneNumber,
-            amount: data.amount,
-            narration: data.narration
+            amount: data.amount
+   //        
         };
 
         try {
@@ -577,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(payload),
-              credentials: "include",
+             // credentials: "include",
             });
 
             const result = await response.json();

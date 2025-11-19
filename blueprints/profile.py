@@ -1,6 +1,6 @@
 
 from flask import Blueprint, jsonify, session, render_template, redirect, url_for,g, current_app
-from models import User
+from models import User, db, Package
 
 bp = Blueprint('profile',__name__, url_prefix="")
 
@@ -9,16 +9,32 @@ bp = Blueprint('profile',__name__, url_prefix="")
 # ----------------------------------------------------------------------------------
 @bp.route("/user/profile", methods=["GET"])
 def get_user_profile():
+    
   
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
     user = User.query.get(user_id)
+    
     if not user:
         return jsonify({"error": "User not found"}), 404
-
     return jsonify(user.to_dict()), 200
+
+# @bp.route('/user/profile')
+# def get_user_profile():
+#     user = current_user
+#     print(f"User type: {type(user)}")
+#     print(f"User methods: {[method for method in dir(user) if not method.startswith('_')]}")
+    
+#     # Test if to_dict exists
+#     if hasattr(user, 'to_dict'):
+#         print("to_dict method exists")
+#         result = user.to_dict()
+#         return jsonify(result), 200python app.py
+#     else:
+#         print("to_dict method DOES NOT exist")
+#         return jsonify({"error": "to_dict method not found"}), 500
 
 #==========================================================================
 # THIS IS THE PROFILE PAGE FOR USERS
@@ -116,25 +132,25 @@ def get_user_network(user_id):
 #     return jsonify([user.to_dict() for user in users])
 # #====================================================================================================
 # #======================================================================================================
-# @bp.route('/api/user/current', methods=['GET'])
-# def get_current_user():
-#     """Get current user with all relationships (optimized)"""
-#     user_id = session.get('user_id')
-#     if not user_id:
-#         return jsonify({"error": "Unauthorized"}), 401
+@bp.route('/api/user/current', methods=['GET'])
+def get_current_user():
+    """Get current user with all relationships (optimized)"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
 
-#     #  EAGER LOADING - Prevents N+1 queries
-#     user = User.query.options(
-#         db.joinedload(User.wallet),
-#         db.joinedload(User.bonuses),
-#         db.joinedload(User.packages).joinedload(Package.catalog)
-#     ).filter_by(id=user_id).first()
+    #  EAGER LOADING - Prevents N+1 queries
+    user = User.query.options(
+        db.joinedload(User.wallet),
+        db.joinedload(User.bonuses),
+        db.joinedload(User.packages).joinedload(Package.catalog)
+    ).filter_by(id=user_id).first()
 
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-#     return jsonify(user.to_dict())
-# #=======================================================================================================
+    return jsonify(user.to_dict())
+#=======================================================================================================
 
 
 

@@ -15,7 +15,7 @@ from sqlalchemy import and_
 import requests 
 from extensions import db, SessionLocal
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import base64
 import logging
 from decimal import Decimal
@@ -31,19 +31,22 @@ from blueprints.package_helpers import PackagePurchaseValidator
 bp = Blueprint("payments", __name__)  
 logger = logging.getLogger(__name__)
 
+
+
+
 #=============================================================================================
 #      PAYMENT INITIATION ENDPOINT
 #============================================================================================
 @bp.route("/payments/callback", methods=['POST'])
 def payment_callback():
-    print("=== MARZ CALLBACK TRIGGERED ===") 
-
     data = request.get_json(silent=True) or {}
+    print(f"🔍 RAW CALLBACK DATA: {json.dumps(data, indent=2)}") 
     if not data:
         return jsonify({"error": "No JSON data"}), 400
 
     transaction = data.get("transaction", {})
     status = transaction.get("status", "completed").lower()
+    print(f"🔄 MARZ STATUS: {status}")
     reference = (
         data.get("transaction", {}).get("reference") or
         data.get("reference")
@@ -62,135 +65,29 @@ def payment_callback():
         payment = Payment.query.filter_by(external_ref=ext_uuid).first()
     
     if not payment:
-        print(f"No matching payment for reference {reference} / ext {ext_uuid}")
-        return jsonify({"status": "ignored"}), 200
+       print(f"No matching payment for reference {reference} / ext {ext_uuid}")
+       return jsonify({"status": "ignored"}), 200
     
-    # Debug print - NOW payment is guaranteed to exist
-    print(f"🔍 DEBUG: Payment ID: {payment.id}, Status: {payment.status}, Type: {payment.payment_type}")
-    print(f"🔍 DEBUG: Callback status: {status}")
-    
-    # Process NEW successful payments
     if status in ("success", "completed", "paid", "sandbox"):
-        print("🔄 Processing new successful payment...")
-        
-        # Update payment status to completed
         payment.status = PaymentStatus.COMPLETED.value
+        print(f"🔄 Updated payment status from {payment.status} to {PaymentStatus.COMPLETED.value}") 
         payment.verified = True
-        payment.updated_at = datetime.utcnow()
+        payment.updated_at = datetime.now(timezone.utc)
         payment.provider = data.get("transaction", {}).get("provider")
         payment.external_ref = data.get("transaction", {}).get("uuid")
         payment.raw_response = json.dumps(data)
         payment.provider_reference = transaction.get("provider_reference")
+        print(f"🔍 Checking payment type: {payment.payment_type}")
+        db.session.commit()  
+        print(f"✅ Payment status updated to: {payment.status}")  
         
-        db.session.commit()  # Commit payment status first
-        
-        # NOW process package and bonuses
         if payment.payment_type == "package":
-            print("🎯 Starting package and bonus processing...")
-            
-            description = (
-                data.get("transaction", {}).get("description") or
-                data.get("description", "")
-            )
-            package = None
-            if "payment_for_" in description:
-                package = description.replace("payment_for_", "").strip()
-                package_catalog = PackageCatalog.query.filter(
-                    db.func.lower(PackageCatalog.name) == package.lower()
-                ).first()
-                
-            print(f"Extracted package name: {package}")
-            if payment.user_id and package:
-                user = User.query.get(payment.user_id)
-                
-                print(f"Payment user_id: {payment.user_id}")
-                if user:
-                    package_catalog = PackageCatalog.query.filter_by(name=package).first()
-                print(f"Package catalog found: {package_catalog}")
-                if package_catalog:
-                    print(f"Package catalog ID: {package_catalog.id}, Duration: {package_catalog.duration_days}")
-                    
-                    new_package = Package(
-                        user_id = user.id,
-                        catalog_id = package_catalog.id,
-                        package=package_catalog.name,
-                        type="purchased",
-                        status='active',
-                        activated_at=datetime.utcnow(),
-                        expires_at=datetime.utcnow() + timedelta(days=package_catalog.duration_days)
-                    )
-                    db.session.add(new_package)
-                    db.session.commit()
-
-                    # NOW process bonuses
-                    try:
-                        from bonus.validation import BonusValidationHelper
-                        from bonus.bonus_calculation import BonusCalculationHelper
-                        from bonus.bonus_payment import BonusPaymentHelper
-                        from bonus.refferral_tree import ReferralTreeHelper
-                        
-                        print("🔄 Starting 20-level bonus processing...")
-                        
-                        # 1. Check if we can process bonuses for this purchase
-                        can_process, process_message, validation_result = BonusValidationHelper.can_process_bonuses(payment.id)
-                        
-                        if not can_process:
-                            print(f"⚠️ Bonus processing skipped: {process_message}")
-                            return jsonify({"status": "ok", "bonus_status": "skipped", "message": process_message}), 200
-                        else:
-                            print("✅ Pre-validation passed, calculating multi-level bonuses...")
-                            
-                            # 2. Calculate bonuses
-                            success, bonus_calculations, calc_message, audit_info = BonusCalculationHelper.calculate_all_bonuses_secure(payment)
-                            
-                            if not success and not bonus_calculations:
-                                print(f"❌ Bonus calculation failed: {calc_message}")
-                                BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-                                return jsonify({"status": "ok", "bonus_status": "calculation_failed", "message": calc_message}), 200
-                            else:
-                                print(f"📊 Calculation complete: {len(bonus_calculations)} bonuses calculated")
-                                
-                                # 3. Validate bonuses
-                                valid_bonuses, invalid_bonuses, batch_validation = BonusValidationHelper.validate_bonus_batch(bonus_calculations)
-                                
-                                print(f"✅ Valid bonuses: {len(valid_bonuses)}, Invalid: {len(invalid_bonuses)}")
-                                
-                                # 4. Store valid bonuses
-                                bonus_ids = []
-                                if valid_bonuses:
-                                    for bonus_data in valid_bonuses:
-                                        bonus = ReferralBonus(**bonus_data)
-                                        db.session.add(bonus)
-                                        db.session.flush()
-                                        bonus_ids.append(bonus.id)
-                                    
-                                    db.session.commit()
-                                    
-                                    # 5. Queue for payout
-                                    for bonus_id in bonus_ids:
-                                        BonusPaymentHelper.queue_bonus_payout(bonus_id)
-                                    
-                                    total_bonus_amount = sum(Decimal(str(b['amount'])) for b in valid_bonuses)
-                                    print(f"🎉 Successfully created {len(valid_bonuses)} bonus records!")
-                                    
-                                    BonusValidationHelper.cleanup_processing_flag(payment.id, success=True)
-                                    return jsonify({
-                                        "status": "ok", 
-                                        "bonus_status": "success",
-                                        "bonuses_created": len(valid_bonuses),
-                                        "levels": len(set(b['level'] for b in valid_bonuses)),
-                                        "total_amount": str(total_bonus_amount)
-                                    }), 200
-                                else:
-                                    print("ℹ️ No valid bonuses to create")
-                                    BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-                                    return jsonify({"status": "ok", "bonus_status": "no_valid_bonuses"}), 200
-
-                    except Exception as e:
-                        BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-                        logger.error(f"Multi-level bonus distribution failed: {e}")
-                        print(f"❌ Multi-level bonus error: {e}")
-                        return jsonify({"status": "ok", "bonus_status": "error", "message": str(e)}), 200
+            from bonus.payment_processor import process_package_purchase
+            success, message = process_package_purchase(payment)
+            if success:
+                return jsonify({"status": "ok", "bonus_status": "success", "message": message}), 200
+            else:
+                return jsonify({"status": "ok", "bonus_status": "error", "message": message}), 200
         
         elif payment.payment_type == "deposit":
             user = User.query.get(payment.user_id)
@@ -199,18 +96,23 @@ def payment_callback():
                 print(f"Deposit completed: Added {payment.amount} to user {user.id} actual balance")
                 db.session.commit()
                 return jsonify({"status": "ok", "message": "Deposit processed"}), 200
-    
+        
     else:
         # Handle failed payments
         print(f"❌ Payment failed with status: {status}")
         payment.status = PaymentStatus.FAILED.value
-        payment.updated_at = datetime.utcnow()
+        payment.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         return jsonify({"status": "ok", "message": "Payment marked as failed"}), 200
     
     return jsonify({"status": "ok"}), 200
+#========================================================================================================
+#========================================================================================================
+
+#=====================================================================================================================
 @bp.route("/payments/initiate", methods=['POST'])
 def initiate_payment():
+    print("DATA RECIEVED: SILENTLY PROCESSING")
     try:
         user_id = session.get("user_id")
         if not user_id:
@@ -232,11 +134,12 @@ def initiate_payment():
         phone = validated["phone"]
         payment_type = validated["payment_type"]          
         package_obj = validated.get("package_obj")  
-        package_id = package_obj.id if package_obj else None
+        package_id = package_obj.id if package_obj and payment_type == "package" else None
 
         # FIX: Validate that package exists for package payments
-        if payment_type == "package" and not package_obj:
-            return jsonify({"error": "Package not found"}), 400
+        if payment_type == "package":
+            if not package_obj:
+               return jsonify({"error": "Package not found"}), 400
 
         payment = None
 
@@ -261,26 +164,25 @@ def initiate_payment():
                 payment.balance_type_used = "actual_balance" 
                 
                 db.session.add(payment)
-                db.session.flush() 
-            
-                new_package = Package(
-                    user_id=user.id,
-                    catalog_id=package_obj.id,
-                    package=package_obj.name,
-                    type="purchased",
-                    status='active',
-                    activated_at=datetime.utcnow(),
-                    expires_at=datetime.utcnow() + timedelta(days=package_obj.duration_days)
-                )
-                db.session.add(new_package)
-            
-                try:
-                    print(f"Processing referral bonus for internal balance package purchase: {payment.id}")
-                    #distribute_referral_bonus(payment, db.session)
-                except Exception as e:
-                    logger.error(f"Bonus distribution failed for internal payment: {e}")
+                db.session.commit()  # Commit payment first
                 
-                db.session.commit()
+                # USE THE HELPER FOR PACKAGE + BONUS PROCESSING
+                try:
+                    from bonus.payment_processor import process_package_purchase
+                    print(f"🔄 Processing package and bonuses for internal purchase: {payment.id}")
+                    success, message = process_package_purchase(payment)
+                    
+                    if success:
+                        print(f"✅ Internal purchase bonuses processed: {message}")
+                        bonus_status = "success"
+                    else:
+                        print(f"⚠️ Internal purchase bonuses failed: {message}")
+                        bonus_status = "error"
+                        
+                except Exception as e:
+                    logger.error(f"Bonus processing failed for internal payment: {e}")
+                    bonus_status = "error"
+                    message = str(e)
                 
                 return jsonify({
                     "reference": payment.reference,
@@ -290,7 +192,8 @@ def initiate_payment():
                     "message": "Package purchased using account balance",
                     "new_actual_balance": user.actual_balance,
                     "available_balance": user.available_balance,
-                    "referral_bonus_processed": True  
+                    "referral_bonus_processed": bonus_status == "success",
+                    "bonus_message": message
                 }), 200
             
             else:
@@ -324,7 +227,6 @@ def initiate_payment():
                     return jsonify({"error": "Invalid response from payment gateway"}), 500
 
         elif payment_type == "deposit":
-          
             existing_response = handle_existing_payment(user, amount, payment_type)
             if existing_response:
                 return existing_response
@@ -355,433 +257,310 @@ def initiate_payment():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Payment initiation error: {e}")
-        return jsonify({"error": "Payment processing failed"}), 500
+        return jsonify({"error": "Payment processing failed"}), 500 
+
 
 #=======================================================================================================
 #                   ------------------------------------------------------
 #---------------------WEBHOOK CALLBACK ENDPOINT FOR PAYMENT INITIATION--------------------------------------
 #=========================================================================================================
-#@bp.route("/payments/callback", methods=['POST'])
-#def payment_callback():
-    print("=== MARZ CALLBACK TRIGGERED ===") 
-    print(f"Payment ID: {payment.id if payment else 'None'}")
-    print(f"Payment Status: {payment.status if payment else 'None'}")
-    print(f"Payment Type: {payment.payment_type if payment else 'None'}")
-    print(f"Callback Status: {status}")
-        
-    
-    data = request.get_json(silent=True) or {}
-    if not data:
-       
-        return jsonify({"error": "No JSON data"}), 400
 
-    transaction = data.get("transaction", {})
-    status = transaction.get("status", "completed").lower()
-  
-    reference = (
-        data.get("transaction", {}).get("reference") or
-        data.get("reference")
-    )
-    ext_uuid = transaction.get("uuid") or data.get("uuid")
-    
-    if not reference and not ext_uuid:
-        return jsonify({"error": "Missing reference"}), 400
-    
-    payment = None
-    if reference:
-       payment = Payment.query.filter_by(reference=reference).first()
-    
-    if not payment and ext_uuid:
-        payment = Payment.query.filter_by(external_ref=ext_uuid).first()
-        return jsonify({"status": "ignored"}), 200
-    
-    if not payment:
-        print(f"No matching payment for reference {reference} / ext {ext_uuid}")
-        return jsonify({"status": "ignored"}), 200
-    # Process NEW successful payments
-    if status in ("success", "completed", "paid", "sandbox"):
-        print("🔄 Processing new successful payment...")
-        
-        # Update payment status to completed
-        payment.status = PaymentStatus.COMPLETED.value
-        payment.verified = True
-        payment.updated_at = datetime.utcnow()
-        payment.provider = data.get("transaction", {}).get("provider")
-        payment.external_ref = data.get("transaction", {}).get("uuid")
-        payment.raw_response = json.dumps(data)
-        payment.provider_reference = transaction.get("provider_reference")
-        
-        db.session.commit()  # Commit payment status first
-        
-        # NOW process package and bonuses
-        if payment.payment_type == "package":
-            print("🎯 Starting package and bonus processing...")
-            
-            description = (
-                data.get("transaction", {}).get("description") or
-                data.get("description", "")
-            )
-            package = None
-            if "payment_for_" in description:
-                package = description.replace("payment_for_", "").strip()
-                package_catalog = PackageCatalog.query.filter(
-                    db.func.lower(PackageCatalog.name) == package.lower()
-                ).first()
-                
-            print(f"Extracted package name: {package}")
-            if payment.user_id and package:
-                user = User.query.get(payment.user_id)
-                
-                print(f"Payment user_id: {payment.user_id}")
-                if user:
-                    package_catalog = PackageCatalog.query.filter_by(name=package).first()
-                print(f"Package catalog found: {package_catalog}")
-                if package_catalog:
-                    print(f"Package catalog ID: {package_catalog.id}, Duration: {package_catalog.duration_days}")
-                    
-                    new_package = Package(
-                        user_id = user.id,
-                        catalog_id = package_catalog.id,
-                        package=package_catalog.name,
-                        type="purchased",
-                        status='active',
-                        activated_at=datetime.utcnow(),
-                        expires_at=datetime.utcnow() + timedelta(days=package_catalog.duration_days)
-                    )
-                    db.session.add(new_package)
-                    db.session.commit()
 
-                    # NOW process bonuses (your existing bonus code here)
-                    # COMPLETE MULTI-LEVEL BONUS PROCESSING - REPLACING OLD DIRECT REFERRAL
-                    try:
-                        # Fix the imports - use the correct module names from your snippets
-                        from bonus.validation import BonusValidationHelper
-                        from bonus.bonus_calculation import BonusCalculationHelper
-                        from bonus.bonus_payment import BonusPaymentHelper
-                        from bonus.refferral_tree import ReferralTreeHelper
-                        
-                        print("🔄 Starting 20-level bonus processing...")
-                        
-                        # 1. Check if we can process bonuses for this purchase (with locking)
-                        can_process, process_message, validation_result = BonusValidationHelper.can_process_bonuses(payment.id)
-                        
-                        if not can_process:
-                            print(f"⚠️ Bonus processing skipped: {process_message}")
-                            current_app.logger.warning(f"Bonus processing skipped for payment {payment.id}: {process_message}")
-                            return jsonify({"status": "ok"}), 200  # ADD THIS RETURN
-                        else:
-                            print("✅ Pre-validation passed, calculating multi-level bonuses...")
-                            
-                            # 2. Calculate bonuses for all 20 levels (includes internal validation)
-                            success, bonus_calculations, calc_message, audit_info = BonusCalculationHelper.calculate_all_bonuses_secure(payment)
-                            
-                            if not success and not bonus_calculations:
-                                print(f"❌ Bonus calculation failed: {calc_message}")
-                                current_app.logger.error(f"Bonus calculation failed for payment {payment.id}: {calc_message}")
-                                
-                                # Still cleanup processing flag even on failure
-                                BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-                                return jsonify({"status": "ok"}), 200  # ADD THIS RETURN
-                            else:
-                                print(f"📊 Calculation complete: {len(bonus_calculations)} bonuses calculated across {audit_info.get('eligible_ancestors', 0)} levels")
-                                
-                                # 3. Validate the calculated bonuses
-                                valid_bonuses, invalid_bonuses, batch_validation = BonusValidationHelper.validate_bonus_batch(bonus_calculations)
-                                
-                                print(f"✅ Valid bonuses: {len(valid_bonuses)}, Invalid: {len(invalid_bonuses)}")
-                                
-                                # 4. Store valid bonuses
-                                bonus_ids = []
-                                if valid_bonuses:
-                                    for bonus_data in valid_bonuses:
-                                        bonus = ReferralBonus(**bonus_data)
-                                        db.session.add(bonus)
-                                        db.session.flush()  # Get the bonus ID
-                                        bonus_ids.append(bonus.id)
-                                    
-                                    db.session.commit()
-                                    
-                                    # 5. Queue bonuses for payment processing
-                                    for bonus_id in bonus_ids:
-                                        BonusPaymentHelper.queue_bonus_payout(bonus_id)
-                                    
-                                    # 6. Log successful processing
-                                    total_bonus_amount = sum(Decimal(str(b['amount'])) for b in valid_bonuses)
-                                    current_app.logger.info(
-                                        f"Multi-level bonuses processed for payment {payment.id}: "
-                                        f"{len(valid_bonuses)} valid bonuses created across {len(set(b['level'] for b in valid_bonuses))} levels, "
-                                        f"Total amount: {total_bonus_amount}"
-                                    )
-                                    
-                                    print(f"🎉 Successfully created {len(valid_bonuses)} bonus records across {len(set(b['level'] for b in valid_bonuses))} levels!")
-                                else:
-                                    print("ℹ️ No valid bonuses to create")
-                                
-                                # 7. Log invalid bonuses for investigation
-                                if invalid_bonuses:
-                                    current_app.logger.warning(
-                                        f"Invalid bonuses for payment {payment.id}: {len(invalid_bonuses)} records failed validation"
-                                    )
-                                
-                                # 8. Cleanup processing flag
-                                BonusValidationHelper.cleanup_processing_flag(payment.id, success=len(valid_bonuses) > 0)
-                                
-                                return jsonify({"status": "ok"}), 200  # ADD THIS RETURN
+from decimal import Decimal
+import uuid
+import os
+import requests
+from flask import jsonify, request, session, Blueprint
+from .withdraw_helpers import (
+    WithdrawalProcessor, 
+    WithdrawalQueryHelper,
+    WithdrawalConfig,
+    WithdrawalException
+)
 
-                    except Exception as e:
-                        # Critical error handling - cleanup processing flag
-                        BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-                        logger.error(f"Multi-level bonus distribution failed: {e}")
-                        print(f"❌ Multi-level bonus error: {e}")
-                        # Return 200 even on error so Marz doesn't retry
-                        return jsonify({"status": "ok"}), 200
-#     if payment.status == PaymentStatus.COMPLETED.value:
-        
-#         print("Payment already processed:", payment.reference)
-#         if payment.payment_type == "package":
-#             try:
-#                if status in ("success", "completed", "paid", "sandbox"):
-#                 print("🔄 Processing new successful payment...")
-#                 payment.status = PaymentStatus.COMPLETED.value
-#                 payment.verified = True
-#                # distribute_referral_bonus(payment, db.session)
 
-#                else:
-#                 payment.status = PaymentStatus.FAILED.value
-
-#             except Exception as e:
-#                   logger.error(f"Bonus distribution failed: {e}")
-        
-#             payment.updated_at = datetime.utcnow()
-#             payment.provider = data.get("transaction", {}).get("provider")
-#             payment.external_ref = data.get("transaction", {}).get("uuid")
-#             payment.raw_response = json.dumps(data)
-#             payment.provider_reference = transaction.get("provider_reference")
-
-#             db.session.commit()
-#             description = (
-#                 data.get("transaction", {}).get("description") or
-#                 data.get("description", "")
-#             )
-#             package = None
-#             if "payment_for_" in description:
-#                 package = description.replace("payment_for_", "").strip()
-#                 package_catalog = PackageCatalog.query.filter(
-#                 db.func.lower(PackageCatalog.name) == package.lower()
-#             ).first()
-#             print(f"Extracted package name: {package}")
-#             if payment.user_id and package:
-#                 user = User.query.get(payment.user_id)
-                
-#                 print(f"Payment user_id: {payment.user_id}")
-#                 if user:
-#                    package_catalog = PackageCatalog.query.filter_by(name=package).first()
-#                 print(f"Package catalog found: {package_catalog}")
-#                 if package_catalog:
-#                     print(f"Package catalog ID: {package_catalog.id}, Duration: {package_catalog.duration_days}")
-                
-#                     new_package = Package(
-#                         user_id = user.id,
-#                         catalog_id = package_catalog.id,
-#                         package=package_catalog.name,
-#                         type="purchased",
-#                         status='active',
-#                         activated_at=datetime.utcnow(),
-#                         expires_at=datetime.utcnow() + timedelta(days=package_catalog.duration_days)
-#                         )
-#                     db.session.add(new_package)
-#                     db.session.commit()
-
-#                     # ... after package creation and commit (around line 279) ...
-
-# # COMPLETE MULTI-LEVEL BONUS PROCESSING - REPLACING OLD DIRECT REFERRAL
-#                 try:
-#                     from bonus.validation import BonusValidationHelper
-#                     from bonus.bonus_calculation import BonusCalculationHelper
-#                     from bonus.bonus_payment import BonusPaymentHelper
-#                     from bonus.refferral_tree import ReferralTreeHelper
-#                     print("🔄 Starting 20-level bonus processing...")
-                    
-#                     # 1. Check if we can process bonuses for this purchase (with locking)
-#                     can_process, process_message, validation_result = BonusValidationHelper.can_process_bonuses(payment.id)
-                    
-#                     if not can_process:
-#                         print(f"⚠️ Bonus processing skipped: {process_message}")
-#                         current_app.logger.warning(f"Bonus processing skipped for payment {payment.id}: {process_message}")
-#                     else:
-#                         print("✅ Pre-validation passed, calculating multi-level bonuses...")
-                        
-#                         # 2. Calculate bonuses for all 20 levels (includes internal validation)
-#                         success, bonus_calculations, calc_message, audit_info = BonusCalculationHelper.calculate_all_bonuses_secure(payment)
-                        
-#                         if not success and not bonus_calculations:
-#                             print(f"❌ Bonus calculation failed: {calc_message}")
-#                             current_app.logger.error(f"Bonus calculation failed for payment {payment.id}: {calc_message}")
-                            
-#                             # Still cleanup processing flag even on failure
-#                             BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-#                         else:
-#                             print(f"📊 Calculation complete: {len(bonus_calculations)} bonuses calculated across {audit_info.get('eligible_ancestors', 0)} levels")
-                            
-#                             # 3. Validate the calculated bonuses
-#                             valid_bonuses, invalid_bonuses, batch_validation = BonusValidationHelper.validate_bonus_batch(bonus_calculations)
-                            
-#                             print(f"✅ Valid bonuses: {len(valid_bonuses)}, Invalid: {len(invalid_bonuses)}")
-                            
-#                             # 4. Store valid bonuses
-#                             bonus_ids = []
-#                             if valid_bonuses:
-#                                 for bonus_data in valid_bonuses:
-#                                     bonus = ReferralBonus(**bonus_data)
-#                                     db.session.add(bonus)
-#                                     db.session.flush()  # Get the bonus ID
-#                                     bonus_ids.append(bonus.id)
-                                
-#                                 db.session.commit()
-                                
-#                                 # 5. Queue bonuses for payment processing
-#                                 for bonus_id in bonus_ids:
-#                                     BonusPaymentHelper.queue_bonus_payout(bonus_id)
-                                
-#                                 # 6. Log successful processing
-#                                 total_bonus_amount = sum(Decimal(str(b['amount'])) for b in valid_bonuses)
-#                                 current_app.logger.info(
-#                                     f"Multi-level bonuses processed for payment {payment.id}: "
-#                                     f"{len(valid_bonuses)} valid bonuses created across {len(set(b['level'] for b in valid_bonuses))} levels, "
-#                                     f"Total amount: {total_bonus_amount}"
-#                                 )
-                                
-#                                 print(f"🎉 Successfully created {len(valid_bonuses)} bonus records across {len(set(b['level'] for b in valid_bonuses))} levels!")
-#                             else:
-#                                 print("ℹ️ No valid bonuses to create")
-                            
-#                             # 7. Log invalid bonuses for investigation
-#                             if invalid_bonuses:
-#                                 current_app.logger.warning(
-#                                     f"Invalid bonuses for payment {payment.id}: {len(invalid_bonuses)} records failed validation"
-#                                 )
-#                                 # Log first few errors for debugging
-#                                 for invalid in invalid_bonuses[:5]:
-#                                     current_app.logger.debug(
-#                                         f"Invalid bonus - User: {invalid.get('ancestor_id')}, "
-#                                         f"Level: {invalid.get('level')}, "
-#                                         f"Error: {invalid.get('validation_error', 'Unknown error')}"
-#                                     )
-                            
-#                             # 8. Cleanup processing flag
-#                             BonusValidationHelper.cleanup_processing_flag(payment.id, success=len(valid_bonuses) > 0)
-
-#                 except Exception as e:
-#                     # Critical error handling - cleanup processing flag
-#                     BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
-#                     logger.error(f"Multi-level bonus distribution failed: {e}")
-#                     print(f"❌ Multi-level bonus error: {e}")
-#                     # Don't re-raise - package creation should not be affected by bonus errors
-#                     return jsonify({"status": "ok"}), 200
-#         elif payment.payment_type == "deposit":
-           
-#             user = User.query.get(payment.user_id)
-#             if user:
-#                 user.actual_balance += payment.amount
-#                 print(f"Deposit completed: Added {payment.amount} to user {user.id} actual balance")
-#                 db.session.commit()
-    
-#     return jsonify({"status": "ok"}), 200
-#========================================================================================================================
-#=======================================================================================================================    
-#============================================================================
-#      WITHDRAWAL ENDPOINT
-#============================================================================
-
+# MarzPay configuration
+MARZ_BASE_URL = os.environ.get("MARZ_BASE_URL", "https://api.marzpay.com/v1")
+#=================================================================================================================
 @bp.route("/payments/withdraw", methods=["POST"])
 def withdraw():
+    """
+    Main withdrawal endpoint with MarzPay integration
+    """
     if not request.is_json:
-         return jsonify({"error": "Request must be JSON"}), 400
+        return jsonify({"error": "Request must be JSON"}), 400
 
     data = request.get_json()
     amount = data.get("amount")
-    phone = data.get("phone") or data.get("phone_number")
-    narration = data.get("narration", "Cash Out")
-
-    if not amount or not phone:
-        return jsonify({"error": "Amount and phone number are required"}), 400
-
-    try:
-        amount = Decimal(amount)
-    except:
-        return jsonify({"error": "Invalid amount format"}), 400
-
-    if amount < 5000:
-        return jsonify({"error": "Minimum withdrawal is UGX 5,000"}), 400
-
+    phone_number = data.get("phone") or data.get("phone_number")
    
-    phone_regex = re.compile(r"^\+2567\d{8}$")
-    if not phone_regex.match(phone):
-        return jsonify({"error": "Invalid phone number"}), 400
-
-
+    if not amount or not phone_number:
+        return jsonify({"error": "Amount and phone number are required"}), 400
+    
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
 
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    merchant_reference = str(uuid.uuid4())
-
-    withdrawal = Withdrawal(
-        user_id=user.id,
-        amount=float(amount),
-        phone=phone,
-        status="pending",
-        transaction_id=None
-    )
-
-    db.session.add(withdrawal)
-    db.session.commit()
-
-    CALL_BACK_URL = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/withdraw/callback"
-    
-    payload = {
-        "reference": str(merchant_reference),
-        "amount": int(amount),
-        "phone_number": f"+256{phone.strip()[-9:]}",  
-        "country": "UG",
-        "description": "customer_withdraw",
-        "callback_url": CALL_BACK_URL,
-
-    }
-    headers = {
-        "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
-        "Content-Type": "application/json"
-    }
     try:
-        response = requests.post(f"{MARZ_BASE_URL}/send-money", json=payload, headers=headers, timeout=10)
-        print("MarzPay response status:", response.status_code, "body:", response.text, flush=True)
+        # Convert amount to Decimal for processing
+        amount_decimal = Decimal(str(amount))
+        
+        # Step 1: Process withdrawal internally (validate, deduct balances, create record)
+        success, message, withdrawal_data = WithdrawalProcessor.process_withdrawal_request(
+            user_id, amount_decimal, phone_number
+        )
+        
+        if not success:
+            return jsonify({"error": message}), 400
+
+        # Step 2: Generate merchant reference and prepare MarzPay payload
+        merchant_reference = withdrawal_data['external_ref']  # Use the same ref from withdrawal record
+        
+        CALL_BACK_URL = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/withdraw/callback"
+        
+        # Format phone number for MarzPay (UG format)
+        formatted_phone = phone_number.strip()
+        if formatted_phone.startswith('0'):
+            formatted_phone = f"+256{formatted_phone[1:]}"
+        elif formatted_phone.startswith('256'):
+            formatted_phone = f"+{formatted_phone}"
+        elif not formatted_phone.startswith('+'):
+            formatted_phone = f"+256{formatted_phone[-9:]}"
+        
+        payload = {
+            "reference": merchant_reference,
+            "amount": int(amount),  # MarzPay expects integer amount
+            "phone_number": formatted_phone,  
+            "country": "UG",
+            "description": "customer_withdraw",
+            "callback_url": CALL_BACK_URL,
+        }
+        
+        headers = {
+            "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
+            "Content-Type": "application/json"
+        }
+
+        # Step 3: Call MarzPay API
+        print(f"Calling MarzPay API for withdrawal {merchant_reference}", flush=True)
+        response = requests.post(
+            f"{MARZ_BASE_URL}/send-money", 
+            json=payload, 
+            headers=headers, 
+            timeout=30
+        )
+        
+        print(f"MarzPay response status: {response.status_code}, body: {response.text}", flush=True)
         response.raise_for_status()
         marz_data = response.json()
 
-       
-        return jsonify({
-        "message": "Withdrawal request created successfully",
-        "withdrawal_id": withdrawal.id,
-        "marz_response": marz_data
-    }), 200
+        # Step 4: Update withdrawal status based on MarzPay response
+        if marz_data.get('status') in ['success', 'pending', 'processing']:
+            # Withdrawal successfully submitted to MarzPay
+            WithdrawalProcessor.complete_withdrawal(withdrawal_data['withdrawal_id'])
+            
+            return jsonify({
+                "success": True,
+                "message": "Withdrawal request submitted successfully",
+                "withdrawal_id": merchant_reference,
+                "marz_response": marz_data,
+                "net_amount": str(withdrawal_data.get('net_amount', amount)),
+                "fee": str(withdrawal_data.get('fee', '0'))
+            }), 200
+        else:
+            # MarzPay returned non-success status
+            raise Exception(f"MarzPay returned status: {marz_data.get('status')}")
 
     except requests.exceptions.RequestException as e:
-        print("MarzPay request error:", str(e), flush=True)
+        print(f"MarzPay request error: {str(e)}", flush=True)
+        
+        # Reverse the withdrawal since MarzPay failed
+        if 'withdrawal_data' in locals():
+            WithdrawalProcessor.fail_withdrawal(
+                withdrawal_data['withdrawal_id'],
+                user_id,
+                amount_decimal,
+                withdrawal_data.get('balances', {})
+            )
         
         return jsonify({
-        "error": "Gateway failed",
-        "details": str(e)
-    }), 502  
-#=====================================================================================================
-#
-#-----------------WITHDRAW CALLBACK ENDPOINT------------------------------------
+            "error": "Payment gateway temporarily unavailable",
+            "details": "Your funds have been refunded. Please try again later."
+        }), 502
+        
+    except WithdrawalException as e:
+        print(f"Withdrawal processing error: {str(e)}", flush=True)
+        return jsonify({"error": str(e)}), 400
+        
+    except Exception as e:
+        print(f"Unexpected error in withdrawal: {str(e)}", flush=True)
+        
+        # Attempt to reverse on any unexpected error
+        if 'withdrawal_data' in locals():
+            WithdrawalProcessor.fail_withdrawal(
+                withdrawal_data['withdrawal_id'],
+                user_id,
+                amount_decimal,
+                withdrawal_data.get('balances', {})
+            )
+        
+        return jsonify({
+            "error": "Withdrawal processing failed",
+            "details": "Your funds have been refunded. Please try again."
+        }), 500
 
-@bp.route('/withdraw/callback', methods=['POST'])
+
+@bp.route("/withdraw/callback", methods=["POST"])
 def withdraw_callback():
+    """
+    MarzPay webhook callback for withdrawal status updates
+    """
+    try:
+        data = request.get_json()
+        print(f"MarzPay callback received: {data}", flush=True)
+        
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+        
+        reference = data.get('reference')
+        status = data.get('status')
+        external_txid = data.get('transaction_id')
+        
+        if not reference:
+            return jsonify({"error": "No reference provided"}), 400
+        
+        # Find withdrawal by reference
+        withdrawal = WithdrawalQueryHelper.get_withdrawal_by_ref(reference)
+        if not withdrawal:
+            print(f"Withdrawal not found for reference: {reference}", flush=True)
+            return jsonify({"error": "Withdrawal not found"}), 404
+        
+        # Update withdrawal status based on MarzPay callback
+        if status in ['success', 'completed']:
+            WithdrawalProcessor.complete_withdrawal(withdrawal.id, external_txid)
+            print(f"Withdrawal {withdrawal.id} marked as completed", flush=True)
+            
+        elif status in ['failed', 'rejected']:
+            WithdrawalProcessor.fail_withdrawal(
+                withdrawal.id,
+                withdrawal.user_id,
+                withdrawal.amount,
+                {
+                    'actual_deducted': withdrawal.actual_balance_deducted,
+                    'available_deducted': withdrawal.available_balance_deducted,
+                    'previous_actual': withdrawal.previous_actual_balance,
+                    'previous_available': withdrawal.previous_available_balance
+                }
+            )
+            print(f"Withdrawal {withdrawal.id} marked as failed", flush=True)
+            
+        elif status in ['pending', 'processing']:
+            # No status change needed, already in processing
+            pass
+        
+        return jsonify({"status": "callback processed"}), 200
+        
+    except Exception as e:
+        print(f"Error processing MarzPay callback: {str(e)}", flush=True)
+        return jsonify({"error": "Callback processing failed"}), 500
+
+
+@bp.route("/payments/withdraw/history", methods=["GET"])
+def withdrawal_history():
+    """
+    Get user's withdrawal history
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "User not authenticated"}), 401
+    
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        withdrawals = WithdrawalQueryHelper.get_user_withdrawals(user_id, limit)
+        
+        withdrawal_list = []
+        for withdrawal in withdrawals:
+            withdrawal_list.append({
+                'id': withdrawal.id,
+                'amount': str(withdrawal.amount),
+                'net_amount': str(withdrawal.net_amount) if withdrawal.net_amount else None,
+                'fee': str(withdrawal.fee) if withdrawal.fee else None,
+                'phone': withdrawal.phone,
+                'status': withdrawal.status,
+                'external_ref': withdrawal.external_ref,
+                'external_txid': withdrawal.external_txid,
+                'created_at': withdrawal.created_at.isoformat() if withdrawal.created_at else None,
+                'updated_at': withdrawal.updated_at.isoformat() if withdrawal.updated_at else None
+            })
+        
+        return jsonify({
+            "success": True,
+            "withdrawals": withdrawal_list,
+            "total": len(withdrawal_list)
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching withdrawal history: {str(e)}", flush=True)
+        return jsonify({"error": "Failed to fetch withdrawal history"}), 500
+
+
+@bp.route("/payments/withdraw/limits", methods=["GET"])
+def withdrawal_limits():
+    """
+    Get withdrawal limits and configuration
+    """
+    return jsonify({
+        "success": True,
+        "limits": {
+            "min_withdrawal": str(WithdrawalConfig.MIN_WITHDRAWAL),
+            "max_withdrawal": str(WithdrawalConfig.MAX_WITHDRAWAL),
+            "processing_fee_percent": str(WithdrawalConfig.PROCESSING_FEE_PERCENT),
+            "hold_period_hours": WithdrawalConfig.HOLD_PERIOD_HOURS
+        }
+    }), 200
+
+
+@bp.route("/payments/withdraw/<withdrawal_id>", methods=["GET"])
+def get_withdrawal_status(withdrawal_id):
+    """
+    Get specific withdrawal status
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "User not authenticated"}), 401
+    
+    try:
+        withdrawal = Withdrawal.query.filter_by(
+            id=withdrawal_id, 
+            user_id=user_id
+        ).first()
+        
+        if not withdrawal:
+            return jsonify({"error": "Withdrawal not found"}), 404
+        
+        return jsonify({
+            "success": True,
+            "withdrawal": {
+                'id': withdrawal.id,
+                'amount': str(withdrawal.amount),
+                'net_amount': str(withdrawal.net_amount) if withdrawal.net_amount else None,
+                'fee': str(withdrawal.fee) if withdrawal.fee else None,
+                'phone': withdrawal.phone,
+                'status': withdrawal.status,
+                'external_ref': withdrawal.external_ref,
+                'external_txid': withdrawal.external_txid,
+                'created_at': withdrawal.created_at.isoformat() if withdrawal.created_at else None,
+                'updated_at': withdrawal.updated_at.isoformat() if withdrawal.updated_at else None
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching withdrawal status: {str(e)}", flush=True)
+        return jsonify({"error": "Failed to fetch withdrawal status"}), 500
+
+#==================================================================================================
+@bp.route('////////withdraw/callbacksss--///', methods=['POST'])
+def withdraw_callback_original():
     try:
         # Get the callback data from Marz
         callback_data = request.get_json()
@@ -870,3 +649,7 @@ def withdraw_callback():
         print(f"Error processing callback: {str(e)}", flush=True)
         db.session.rollback()
         return jsonify({"error": "Internal server error processing callback"}), 500
+
+
+
+

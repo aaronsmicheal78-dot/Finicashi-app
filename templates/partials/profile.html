@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Header -->
     <header class="dashboard-header">
-        <div class="dashboard-header">
+      
         <div class="logo">
             <div class="logo-icon">Fc</div>
             <div class="logo-text">Finicashi</div>
@@ -40,8 +40,9 @@
             <!-- Column 1: User Profile -->
             <section class="profile-column">
                 <div class="profile-header">
-                    <div class="profile-avatar">
-                        <i class="fas fa-user"></i>
+                    
+                        <img class="profile-photo"src="{{ url_for('static', filename='images/FincashPro.png') }}" alt="Logo">
+
                     </div>
                     <h2 class="username">Welcome Back!</h2>
                     <p class="profile-username" id="username"></p>
@@ -59,11 +60,11 @@
                     
                     <div class="detail-item">
                         <span class="detail-label">Available Balance: UGX.</span>
-                        <span class="detail-value" id="balance"></span>
+                        <span class="detail-value" id="available-balance"></span>
                     </div>
                      <div class="detail-item">
                         <span class="detail-label"> Actual Balance: UGX.</span>
-                        <span class="detail-value" id=" actual-balance"></span>
+                        <span class="detail-value" id="actual-balance"></span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label"> Referral Bonus: UGX.</span>
@@ -140,46 +141,6 @@
 
 
 
-
-             <!-- Columns 2: Dashboard Content -->
-            <section class="dashboard-content">
-                <!-- Hero Section for Dynamic Content -->
-                <div class="dashboard-hero">
-                    <h1 class="hero-title">Your Financial Growth Journey</h1>
-                    <p class="hero-subtitle">Track your investments, monitor your returns, and grow your wealth with Finicashi's premium investment packages</p>
-                    
-                    <div class="hero-graphics">
-                        <div class="hero-graphic-item">
-                            <div class="graphic-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="graphic-value">15.2%</div>
-                            <div class="graphic-label">Avg. Return</div>
-                        </div>
-                        <div class="hero-graphic-item">
-                            <div class="graphic-icon">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div class="graphic-value">UGX 1.25M</div>
-                            <div class="graphic-label">Total Balance</div>
-                        </div>
-                        <div class="hero-graphic-item">
-                            <div class="graphic-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="graphic-value">15</div>
-                            <div class="graphic-label">Referrals</div>
-                        </div>
-                        <div class="hero-graphic-item">
-                            <div class="graphic-icon">
-                                <i class="fas fa-gem"></i>
-                            </div>
-                            <div class="graphic-value">Gold</div>
-                            <div class="graphic-label">Current Package</div>
-                        </div>
-                    </div>
-                </div>
-                </div>
             <!-- Columns 2 & 3: Investment Packages -->
             <section class="packages-container">
                 <div class="packages-header">

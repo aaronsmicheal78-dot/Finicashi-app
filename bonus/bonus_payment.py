@@ -1,10 +1,11 @@
 from decimal import Decimal
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import current_app
 from sqlalchemy import text
 from extensions import db
-from models import ReferralBonus, Wallet, Transaction, BonusPayoutQueue, AuditLog
+from models import ReferralBonus, Wallet, Transaction, BonusPayoutQueue, AuditLog, Payment
+
 
 class BonusPaymentHelper:
     """Production-grade bonus payment handler with transaction safety"""
@@ -86,7 +87,7 @@ class BonusPaymentHelper:
             wallet.balance = new_balance
             
             # Create transaction record with unique reference
-            transaction_ref = f"BONUS_{bonus_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+            transaction_ref = f"BONUS_{bonus_id}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
             transaction = Transaction(
                 wallet_id=wallet.id,
                 type='referral_bonus',
@@ -96,7 +97,7 @@ class BonusPaymentHelper:
                 metadata={
                     'bonus_id': bonus_id,
                     'user_id': user_id,
-                    'processed_at': datetime.utcnow().isoformat()
+                    'processed_at': datetime.now(timezone.utc).isoformat()
                 }
             )
             db.session.add(transaction)
@@ -130,7 +131,7 @@ class BonusPaymentHelper:
             pending_bonuses = ReferralBonus.query.filter_by(
                 payment_id=payment_id, 
                 status='pending'
-            ).with_for_update(skip_locked=True).all()  # Skip locked rows for concurrent processing
+            ).with_for_update(skip_locked=True).all()  
             
             if not pending_bonuses:
                 return True, "No pending bonuses found", stats
@@ -153,7 +154,7 @@ class BonusPaymentHelper:
                             'level': bonus.level,
                             'amount': float(bonus.amount),
                             'error': message,
-                            'timestamp': datetime.utcnow().isoformat()
+                            'timestamp': datetime.now(timezone.utc).isoformat()
                         })
                         current_app.logger.warning(f"Bonus {bonus.id} failed: {message}")
                     
@@ -164,7 +165,7 @@ class BonusPaymentHelper:
                     error_info = {
                         'bonus_id': bonus.id,
                         'error': f"Unexpected error: {str(e)}",
-                        'timestamp': datetime.utcnow().isoformat()
+                        'timestamp': datetime.now(timezone.utc).isoformat()
                     }
                     stats['errors'].append(error_info)
                     current_app.logger.error(f"Unexpected error processing bonus {bonus.id}: {str(e)}")
@@ -205,7 +206,7 @@ class BonusPaymentHelper:
                     'payment_id': bonus.payment_id,
                     'qualifying_amount': float(bonus.qualifying_amount) if bonus.qualifying_amount else 0,
                     'bonus_percentage': float(bonus.bonus_percentage) if bonus.bonus_percentage else 0,
-                    'processed_at': datetime.utcnow().isoformat(),
+                    'processed_at': datetime.now(timezone.utc).isoformat(),
                     'type': 'referral_bonus'
                 }
             )
@@ -244,7 +245,7 @@ class BonusPaymentHelper:
             # Calculate initial attempt time with jitter
             base_delay = timedelta(minutes=2)
             jitter = timedelta(seconds=30)  # Add jitter for load distribution
-            next_attempt = datetime.utcnow() + base_delay + jitter
+            next_attempt = datetime.now(timezone.utc) + base_delay + jitter
             
             # Insert with conflict handling
             try:
@@ -285,7 +286,7 @@ class BonusPaymentHelper:
             'failed': 0,
             'retry_scheduled': 0,
             'errors': [],
-            'start_time': datetime.utcnow(),
+            'start_time': datetime.now(timezone.utc),
             'batch_size': batch_size
         }
         
@@ -293,7 +294,7 @@ class BonusPaymentHelper:
             # Get queue items ready for processing (with skip_locked for concurrent processing)
             pending_payouts = BonusPayoutQueue.query.filter(
                 BonusPayoutQueue.status == 'pending',
-                BonusPayoutQueue.next_attempt <= datetime.utcnow(),
+                BonusPayoutQueue.next_attempt <= datetime.now(timezone.utc),
                 BonusPayoutQueue.attempt_count < BonusPayoutQueue.max_attempts
             ).with_for_update(skip_locked=True).limit(batch_size).all()
             
@@ -309,7 +310,7 @@ class BonusPaymentHelper:
                     with db.session.begin_nested():
                         payout.status = 'processing'
                         payout.attempt_count += 1
-                        payout.last_attempt = datetime.utcnow()
+                        payout.last_attempt = datetime.now(timezone.utc)
                     
                     # Process the payout
                     success, message = BonusPaymentHelper.approve_bonus(payout.referral_bonus_id)
@@ -318,7 +319,7 @@ class BonusPaymentHelper:
                         # Mark as completed
                         with db.session.begin_nested():
                             payout.status = 'completed'
-                            payout.processed_at = datetime.utcnow()
+                            payout.processed_at = datetime.now(timezone.now)
                             payout.last_error = None
                         stats['succeeded'] += 1
                         
@@ -329,7 +330,7 @@ class BonusPaymentHelper:
                         next_attempt_delay = BonusPaymentHelper._calculate_next_attempt_delay(
                             payout.attempt_count
                         )
-                        next_attempt = datetime.utcnow() + next_attempt_delay
+                        next_attempt = datetime.now(timezone.utc) + next_attempt_delay
                         
                         with db.session.begin_nested():
                             payout.status = 'failed'
@@ -352,7 +353,7 @@ class BonusPaymentHelper:
                         'payout_id': payout.id,
                         'bonus_id': payout.referral_bonus_id,
                         'error': f"Processing error: {str(e)}",
-                        'timestamp': datetime.utcnow().isoformat()
+                        'timestamp': datetime.now(timezone.utc).isoformat()
                     }
                     stats['errors'].append(error_info)
                     current_app.logger.error(f"Error processing payout {payout.id}: {str(e)}")
@@ -360,7 +361,7 @@ class BonusPaymentHelper:
             # Final commit for all processed items
             db.session.commit()
             
-            stats['end_time'] = datetime.utcnow()
+            stats['end_time'] = datetime.now(timezone.utc)
             stats['duration_seconds'] = (stats['end_time'] - stats['start_time']).total_seconds()
             stats['success_rate'] = stats['succeeded'] / stats['processed'] if stats['processed'] > 0 else 0
             
@@ -421,7 +422,7 @@ class BonusPaymentHelper:
                 
                 # Update bonus status
                 bonus.status = 'cancelled'
-                bonus.cancelled_at = datetime.utcnow()
+                bonus.cancelled_at = datetime.now(timezone.utc)
                 
                 # Remove from queue if present
                 queue_entry = BonusPayoutQueue.query.filter_by(
@@ -441,7 +442,7 @@ class BonusPaymentHelper:
                         'bonus_id': bonus_id,
                         'reason': reason,
                         'cancelled_by': cancelled_by,
-                        'cancelled_at': datetime.utcnow().isoformat()
+                        'cancelled_at': datetime.now(timezone.utc).isoformat()
                     }
                 )
                 db.session.add(audit_log)
@@ -454,3 +455,11 @@ class BonusPaymentHelper:
             db.session.rollback()
             current_app.logger.error(f"Error cancelling bonus {bonus_id}: {str(e)}")
             return False
+        
+
+
+
+
+
+
+

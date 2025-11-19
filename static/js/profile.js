@@ -42,30 +42,39 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(res => {
       if (!res.ok) throw new Error("Unauthorized or error");
       return res.json();
-    //  const userData = res
     })
     .then(user => {
-        console.log("User data:", user);
-    console.log("Packages:", user.packages);
-      document.getElementById("memberSince").textContent = user.memberSince;
-      document.getElementById("isVerified").textContent = user.isVerified;
-      document.getElementById("isActive").textContent = user.isActive;
-      document.getElementById("referralLink").textContent = user.referralLink;
-      document.getElementById("username").textContent = user.username;
-      document.getElementById("email").textContent = user.email;
-      document.getElementById("phone").textContent = user.phone;
-      document.getElementById("referral_code").textContent = user.referralCode;
-      document.getElementById("balance").textContent = user.balance;
-      document.getElementById("bonus").textContent = user.bonus;
-    
+      console.log("User data:", user);
+      console.log("Packages:", user.packages);
+      
+      // Helper function to format currency
+      const formatCurrency = (amount) => {
+        if (amount === undefined || amount === null) return '0';
+        return new Intl.NumberFormat('en-UG').format(amount);
+      };
 
-            if (user.packages && user.packages.length > 0) {
-        // Display all package names
+      // Set user details
+      document.getElementById("memberSince").textContent = user.memberSince ? new Date(user.memberSince).toLocaleDateString() : 'N/A';
+      document.getElementById("isVerified").textContent = user.isVerified ? 'Yes' : 'No';
+      document.getElementById("isActive").textContent = user.isActive ? 'Active' : 'Inactive';
+      document.getElementById("referralLink").textContent = user.referralLink || 'N/A';
+      document.getElementById("username").textContent = user.username || 'N/A';
+      document.getElementById("email").textContent = user.email || 'N/A';
+      document.getElementById("phone").textContent = user.phone || 'N/A';
+      document.getElementById("referral_code").textContent = user.referralCode || 'N/A';
+      
+      // Format and set balance values
+      document.getElementById("available-balance").textContent = formatCurrency(user.availableBalance);
+      document.getElementById("actual-balance").textContent = formatCurrency(user.actualBalance);
+      document.getElementById("bonus").textContent = formatCurrency(user.bonus);
+      
+      // Fix: Add referral bonus display (you mentioned this in HTML but not in JS)
+      document.getElementById("referral-bonus").textContent = formatCurrency(user.referralBonus || 0);
+
+      // Handle packages
+      if (user.packages && user.packages.length > 0) {
         const packageNames = user.packages.map(pkg => pkg.name).join(', ');
         document.getElementById("package").textContent = packageNames;
-        
-        // Or display just the first/main package
-        // document.getElementById("package").textContent = user.packages[0].name;
       } else {
         document.getElementById("package").textContent = "No active package";
       }
@@ -74,54 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error fetching user profile:", error);
       document.getElementById("package").textContent = "Error loading package";
     });
-//});
-      
-      
-   })
-    .catch(err => {
-      console.error("Error fetching profile:", err);
-      document.getElementById("username").textContent = "Error loading profile";
-    });
-   // });
-
-
-    // Referral System
-    const ReferralManager = {
-        init() {
-            if (!DOM.elements.copyLinkBtn) return;
-            
-            DOM.elements.copyLinkBtn.addEventListener('click', () => this.copyReferralLink());
-        },
-        
-        async copyReferralLink() {
-            if (!DOM.elements.referralLink) {
-                UI.showError('Referral link not available');
-                return;
-            }
-            
-            const link = DOM.elements.referralLink.textContent;
-            
-            try {
-                await navigator.clipboard.writeText(link);
-                UI.showSuccess('Referral link copied to clipboard!');
-            } catch (error) {
-                console.error('Failed to copy referral link:', error);
-                
-                // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = link;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    UI.showSuccess('Referral link copied to clipboard!');
-                } catch (fallbackError) {
-                    UI.showError('Failed to copy referral link');
-                }
-                document.body.removeChild(textArea);
-            }
-        }
-    };
+});
 
     // User Controls
     const UserControls = {
@@ -169,58 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     };
-document.addEventListener('DOMContentLoaded', () => {
-  const buttons = document.querySelectorAll('.pay-btn-modal');
 
-  buttons.forEach(button => {
-    button.addEventListener('click', async (event) => {
-      // 1️⃣ Identify the modal (not the package card)
-      const modal = event.target.closest('.payment-modal');
-
-      // 2️⃣ Get amount and phone number from modal
-      const amount = modal.getAttribute('data-amount');
-      const phoneInput = modal.querySelector('.phone-input');
-      const phone = phoneInput.value.trim();
-
-      // 3️⃣ Validate phone
-      const phoneRegex = /^(?:\+256|0)?7\d{8}$/;
-      if (!phoneRegex.test(phone)) {
-        alert("Please enter a valid phone number (Ugandan format)");
-        return;
-      }
-
-      // 4️⃣ Prepare payload
-      const payload = { amount: parseInt(amount), phone };
-
-      try {
-        // 5️⃣ Send to backend
-        const response = await fetch('/payments/initiate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.error || "Payment initiation failed.");
-          return;
-        }
-
-        // 6️⃣ Redirect or inform
-        if (data.checkout_url) {
-          window.location.href = data.checkout_url;
-        } else {
-          alert("Payment initiated. Please wait for confirmation.");
-        }
-
-      } catch (error) {
-        console.error('Error:', error);
-        alert("Network or server error. Try again later.");
-      }
-    });
-  });
-});
 
 //================================================================================
 // POLICY DOCUMENT JS
@@ -269,5 +180,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+// });
+document.addEventListener("DOMContentLoaded", () => {
+    const waBtn = document.getElementById("share-whatsapp");
+    const referralSpan = document.getElementById("referralLink");
+    const copyBtn = document.getElementById("copy-link");
 
-        
+    // Copy button logic
+    copyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(referralSpan.textContent);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => copyBtn.textContent = "Copy", 1500);
+    });
+
+    // WhatsApp share logic
+    waBtn.addEventListener("click", () => {
+        const link = referralSpan.textContent;
+        const message = encodeURIComponent(`Join Finicashi using my referral link: ${link}`);
+        const whatsappURL = `https://wa.me/?text=${message}`;
+
+        window.open(whatsappURL, "_blank");
+    });
+});

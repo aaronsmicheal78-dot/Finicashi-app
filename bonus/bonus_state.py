@@ -28,7 +28,7 @@ class BonusStateHelper:
                     'status': bonus.status,
                     'created_at': bonus.created_at.isoformat() if bonus.created_at else None,
                     'paid_at': bonus.paid_at.isoformat() if bonus.paid_at else None,
-                    'purchase_id': bonus.payment_id,
+                 #   'purchase_id': bonus.payment_id,
                     'bonus_percentage': float(bonus.bonus_percentage) if bonus.bonus_percentage else 0,
                     'qualifying_amount': float(bonus.qualifying_amount) if bonus.qualifying_amount else 0,
                     'referred_user_id': getattr(bonus, 'referred_id', None)

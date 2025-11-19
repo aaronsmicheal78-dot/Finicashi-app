@@ -1,5 +1,5 @@
 # models.py — Canonical Flask-SQLAlchemy models (production-ready)
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import enum
 from flask_sqlalchemy import SQLAlchemy
@@ -111,11 +111,15 @@ class User(db.Model, BaseMixin):
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
     
+
+
     def to_dict(self, include_packages=True, include_bonus=True):
         """Serialize user for JSON responses with optimized queries."""
+        print(f"DEBUG to_dict: actual_balance={self.actual_balance}, available_balance={self.available_balance}")
         base_url = "https://finicashi-app.onrender.com/"
         referral_link = f"{base_url}{self.referral_code}" if self.referral_code else None
         
+        # 1. First create the basic dictionary
         result = {
             "id": self.id,
             "role": self.role,
@@ -127,25 +131,35 @@ class User(db.Model, BaseMixin):
             "memberSince": self.member_since.isoformat() if self.member_since else None,
             "isActive": self.is_active,
             "isVerified": self.is_verified,
-            "balance": float(self.wallet.balance) if self.wallet else 0,
+          #  "actual_balance" : float(self.actual_balance) if self.actual_balance is not None else 0.0,
+          #  "available_balance" : float(self.available_balance) if self.available_balance is not None else 0.0,
+            "actualBalance": float(self.actual_balance) if hasattr(self, 'actual_balance') else Decimal("0"),
+            "availableBalance": float(self.available_balance) if hasattr(self, 'available_balance') else Decimal("0"),
         }
-
-
-
         
+        # 2. THEN add additional fields OUTSIDE the dict literal
+        # FIXED: Use Python list filtering instead of SQLAlchemy query methods
+        if hasattr(self, 'referrals') and self.referrals:
+            active_referrals = [ref for ref in self.referrals if getattr(ref, 'status', None) == 'active']
+            result["referralBonus"] = float(sum(ref.bonus_amount for ref in active_referrals if hasattr(ref, 'bonus_amount')))
+        else:
+            result["referralBonus"] = 0  
 
         if include_bonus and hasattr(self, 'bonuses'):
-            result["bonus"] = float(self.bonuses.filter_by(status='active')
-                                .with_entities(db.func.sum(Bonus.amount))
-                                .scalar() or 0)
+            # Since bonuses is a 'dynamic' relationship, it should work with filter_by
+            try:
+                result["bonus"] = float(self.bonuses.filter_by(status='active')
+                                    .with_entities(db.func.sum(Bonus.amount))
+                                    .scalar() or 0)
+            except AttributeError:
+                # Fallback to Python filtering if it's a list
+                active_bonuses = [b for b in self.bonuses if getattr(b, 'status', None) == 'active']
+                result["bonus"] = float(sum(b.amount for b in active_bonuses if hasattr(b, 'amount')))
         else:
             result["bonus"] = 0
-        
- 
+
         if include_packages and hasattr(self, 'packages'):
-           
             active_packages = [p for p in self.packages if getattr(p, 'status', None) == 'active']
-            
             result["packages"] = [
                 {
                     "id": p.id,
@@ -155,16 +169,27 @@ class User(db.Model, BaseMixin):
                     "bonus_percentage": float(p.catalog.bonus_percentage) if p.catalog and p.catalog.bonus_percentage else 0,
                     "duration_days": p.catalog.duration_days if p.catalog else None,
                     "activated_at": p.activated_at.isoformat() if getattr(p, 'activated_at', None) else None,
-                    "expires_at": p.expires_at.isoformat() if getattr(p, 'expires_at', None) else None,
-                    "days_remaining": (p.expires_at - datetime.utcnow()).days if getattr(p, 'expires_at', None) else None
+                    "expires_at": (
+                        (p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at).isoformat()
+                        if getattr(p, 'expires_at', None) else None
+                    ),
+                    "days_remaining": (
+                        ((p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at)
+                        - datetime.now(timezone.utc)).days
+                        if getattr(p, 'expires_at', None) else None
+                    )
                 }
                 for p in active_packages
             ]
         else:
             result["packages"] = []
         
+        print(f"DEBUG: Final result keys: {list(result.keys())}")
+        print(f"DEBUG: actualBalance in result: {'actualBalance' in result}")
+        print(f"DEBUG: availableBalance in result: {'availableBalance' in result}")
+        
         return result
-# ===========================================================
+   #========================================================
 # USER PROFILE
 # ===========================================================
 
@@ -246,7 +271,8 @@ class Payment(db.Model):
 
     user = db.relationship('User', backref=db.backref('payments', lazy=True))
     package_catalog = db.relationship('PackageCatalog', backref='payments')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    purchase_id = db.Column(db.String(100), nullable=True)
     
     __table_args__ = (
        
@@ -332,13 +358,21 @@ class ReferralBonus(db.Model, BaseMixin):
     referred_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     level = db.Column(db.Integer, nullable=False)  # 1-20
     referrer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
+    bonus_amount = db.Column(db.Float, nullable=False)
+    ancestor_id = db.Column(db.Integer, nullable=True)
+    amount = db.column_property(bonus_amount)
+   
+
     
     # Add these new fields
     qualifying_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Amount that triggered bonus
     bonus_percentage = db.Column(db.Numeric(5, 4), nullable=False)  # Actual percentage applied
     calculated_on = db.Column(db.DateTime, default=db.func.now())
     transaction_reference = db.Column(db.String(120), index=True)  # Link to original transaction
+    security_hash = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    processing_id = db.Column(db.String(64), unique=False, nullable=True, index=True)
+    threat_level = db.Column(db.String(50), default='low')
+
     
     # Network tracking
     network_path = db.Column(db.String(500))  # Store the referral path as string (e.g., "1->5->12")
@@ -353,7 +387,9 @@ class ReferralBonus(db.Model, BaseMixin):
     __table_args__ = (
         Index('idx_bonus_level_payout', 'level', 'is_paid_out'),
         Index('idx_bonus_calculated', 'calculated_on'),
+       db.UniqueConstraint('payment_id', 'user_id', 'level', name='unique_payment_user_level'),
     )
+    
 
 class Referral(db.Model, BaseMixin):
     __tablename__ = 'referrals'
@@ -403,7 +439,7 @@ class WebhookEvent(db.Model, BaseMixin):
         self.processed = True
         self.status = 'success' if success else 'failed'
         self.remarks = remarks
-        self.processed_at = datetime.utcnow()
+        self.processed_at = datetime.now(timezone.utc)
 
 # ===========================================================
 # SUPPORT & SESSIONS
@@ -433,14 +469,14 @@ class LoginSession(db.Model, BaseMixin):
 
     def end_session(self):
         self.is_active = False
-        self.logout_time = datetime.utcnow()
+        self.logout_time = datetime.now(timezone.utc)
 
 class LoginAttempt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     ip_address = db.Column(db.String(45))
     success = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
 # ===========================================================
 #   ------------IDEMPOTENCY KEY TRACKING

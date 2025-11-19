@@ -108,10 +108,23 @@ def signup():
                 direct_referrals_count=0,
                 total_network_size=0
             )
-            new_user.set_password(password)
+            new_user.set_password(password)    
+           
 
             db.session.add(new_user)
-            db.session.flush()  # get new_user.id
+            db.session.flush()  
+
+            signup_bonus = Bonus(
+                user_id=new_user.id,
+                type="signup",
+                amount=5000,
+                status="active")  
+
+            db.session.add(signup_bonus)
+           
+            current_app.logger.info(
+                f"Successfully added bonus {signup_bonus} for {new_user.id}")
+
             
             # -------------------------------------
             #  REFERRAL TREE LOGIC
@@ -234,6 +247,7 @@ def check_session():
         "authenticated": True,
         "user": user.to_dict()
     }), 200
+
 
 
 

@@ -295,7 +295,7 @@ class ReferralTreeHelper:
     def build_referral_path(user_id: int) -> List[int]:
         """Build the complete referral path from root to user"""
         try:
-            ancestors = ReferralTreeHelper.get_ancestors(user_id, 20)
+            ancestors = ReferralTreeHelper.get_ancestors_optimized(user_id, 20)
             path = [ancestor['user_id'] for ancestor in ancestors]
             path.reverse()  # Root first, then descendants
             path.append(user_id)  # Add current user at the end
@@ -389,7 +389,7 @@ class ReferralTreeHelper:
         """
         try:
             # Get ancestors (upline)
-            ancestors = ReferralTreeHelper.get_ancestors(user_id, 20)
+            ancestors = ReferralTreeHelper.get_ancestors_optimized(user_id, 20)
             
             # Get direct descendants (level 1 downline)
             direct_descendants_query = text("""

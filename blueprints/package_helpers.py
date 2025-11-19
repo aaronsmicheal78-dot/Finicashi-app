@@ -1,6 +1,6 @@
 # package_helpers.py
 from models import db, User, Package, PackageCatalog, Payment, PaymentStatus
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 
 
@@ -49,7 +49,7 @@ class PackagePurchaseValidator:
                 phone=phone,
                 payment_type="package",
                 status=PaymentStatus.COMPLETED.value,
-                reference=f"PKG_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{user.id}",
+                reference=f"PKG_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{user.id}",
                 raw_response=json.dumps({
                     "method": "internal_balance",
                     "balance_type": "actual_balance",
@@ -68,8 +68,8 @@ class PackagePurchaseValidator:
                 package=package.name,
                 type="purchased",
                 status='active',
-                activated_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(days=package.duration_days)
+                activated_at=datetime.now(timezone.utc),
+                expires_at=datetime.now(timezone.utc) + timedelta(days=package.duration_days)
             )
             
             db.session.add(new_package)
