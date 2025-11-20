@@ -112,11 +112,11 @@ class WithdrawalValidator:
             if amount_dec > total_balance:
                 return False, "Insufficient balance"
             
-            # 5️⃣ Available/mature balance check
-            if not WithdrawalValidator._is_available_balance_mature(user):
-                available_now = Decimal(str(WithdrawalValidator._get_mature_available_balance(user)))
-                if amount_dec > available_now:
-                    return False, "Patiently, Your balance is still on hold for 24 hours. Thank you"
+            # # 5️⃣ Available/mature balance check
+            # if not WithdrawalValidator._is_available_balance_mature(user):
+            #     available_now = Decimal(str(WithdrawalValidator._get_mature_available_balance(user)))
+            #     if amount_dec > available_now:
+            #         return False, "Patiently, Your balance is still on hold for 24 hours. Thank you"
             
             # 6️⃣ Duplicate pending withdrawals check
             five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
@@ -297,6 +297,7 @@ class WithdrawalRecordManager:
             # Calculate net amount after fees
             fee = WithdrawalConfig.calculate_fee(amount)
             net_amount = amount - fee
+            reference=str(uuid.uuid4())
             
             withdrawal = Withdrawal(
                 user_id=user_id,
@@ -305,7 +306,7 @@ class WithdrawalRecordManager:
                 fee=fee,
                 phone=phone,
                 status="pending",
-                reference=str(uuid.uuid4()),
+                reference=reference,
                 external_ref=None,
                 actual_balance_deducted=balance_details.get('actual_deducted', Decimal('0')),
                 available_balance_deducted=balance_details.get('available_deducted', Decimal('0')),
@@ -419,8 +420,8 @@ class WithdrawalProcessor:
                 WithdrawalNotifier.notify_withdrawal_failure(user_id, amount, record_msg)
                 return False, "Withdrawal processing failed. Please try again.", None
 
-            reference_value = withdrawal.reference
-            print(f"🔍 Reference type: {type(reference_value)}, value: {reference_value}")
+            
+           # print(f"🔍 Reference type: {type(reference_value)}, value: {reference_value}")
             db.session.commit()
             
             # Step 5: Notify Success
@@ -431,7 +432,7 @@ class WithdrawalProcessor:
                 'external_ref': withdrawal.external_ref,
                 'net_amount': withdrawal.net_amount,
                 'fee': withdrawal.fee,
-                'reference': reference_value,
+                'reference': withdrawal.reference,
                 'balances': {
                     'new_actual_balance': balance_details['actual_balance'],
                     'new_available_balance': balance_details['available_balance']

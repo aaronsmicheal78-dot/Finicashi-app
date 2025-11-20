@@ -326,7 +326,7 @@ def withdraw():
             return jsonify({"error": message}), 400
 
        
-        merchant_reference = withdrawal_data['reference_value']  
+        merchant_reference = withdrawal_data['reference']  
         
         CALL_BACK_URL = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/withdraw/callback"
         
@@ -339,7 +339,7 @@ def withdraw():
             formatted_phone = f"+256{formatted_phone[-9:]}"
         
         payload = {
-            "reference": merchant_reference,
+            "reference": withdrawal_data['reference'],
             "amount": int(amount), 
             "phone_number": formatted_phone,  
             "country": "UG",
@@ -445,9 +445,10 @@ def withdraw_callback():
         # Get references - SAME AS PAYMENT
         reference = (
             transaction.get("reference") or
-            data.get("reference")
+            data.get("reference")  
         )
-        
+        provider_reference = data.get("ptovider_reference") or transaction.get("provider_reference")
+
         ext_uuid = transaction.get("uuid") or data.get("uuid")
         
         status = transaction.get("status", "").lower()
@@ -468,11 +469,16 @@ def withdraw_callback():
             withdrawal = Withdrawal.query.filter_by(external_ref=ext_uuid).first()
             if withdrawal:
                 print(f"✅ Found withdrawal by external UUID: {ext_uuid}")
+
+        if not withdrawal and provider_reference:
+            withdrawal = Withdrawal.query.filter_by(reference=provider_reference).first()
+            if withdrawal:
+                print(f"✅ Found withdrawal by provider_reference: {provider_reference}")
         
         if not withdrawal:
             print(f"❌ No withdrawal found for reference={reference}")
             return jsonify({"status": "ignored"}), 200
-        
+    
         print(f"🎯 Processing withdrawal ID: {withdrawal.id}, current status: {withdrawal.status}")
         
         # Store MarzPay's reference if we don't have it
