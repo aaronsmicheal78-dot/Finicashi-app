@@ -69,17 +69,29 @@ def payment_callback():
        return jsonify({"status": "ignored"}), 200
     
     if status in ("success", "completed", "paid", "sandbox"):
-        payment.status = PaymentStatus.COMPLETED.value
-        print(f"🔄 Updated payment status from {payment.status} to {PaymentStatus.COMPLETED.value}") 
-        payment.verified = True
-        payment.updated_at = datetime.now(timezone.utc)
-        payment.provider = data.get("transaction", {}).get("provider")
-        payment.external_ref = data.get("transaction", {}).get("uuid")
-        payment.raw_response = json.dumps(data)
-        payment.provider_reference = transaction.get("provider_reference")
-        print(f"🔍 Checking payment type: {payment.payment_type}")
-        db.session.commit()  
-        print(f"✅ Payment status updated to: {payment.status}")  
+        try:
+            from sqlalchemy.exc import SQLAlchemyError
+            old_status = payment.status
+            payment.status = PaymentStatus.COMPLETED.value
+            print(f"🔄 Updated payment status from {old_status} to {payment.status}") 
+            payment.verified = True
+            payment.updated_at = datetime.now(timezone.utc)
+            payment.provider = data.get("transaction", {}).get("provider")
+            payment.external_ref = data.get("transaction", {}).get("uuid")
+            payment.raw_response = json.dumps(data)
+            payment.provider_reference = transaction.get("provider_reference")
+            print(f"🔍 Checking payment type: {payment.payment_type}")
+            db.session.add(payment)
+            db.session.commit()  
+            print(f"✅ Payment status updated to: {payment.status}") 
+            current_payment = Payment.query.get(payment.id)
+            current_app.logger.info(f"DB payment status: {current_payment.status}")
+ 
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Failed to commit payment update: {e}")
+
         
         if payment.payment_type == "package":
             from bonus.payment_processor import process_package_purchase
@@ -313,12 +325,11 @@ def withdraw():
         if not success:
             return jsonify({"error": message}), 400
 
-        # Step 2: Generate merchant reference and prepare MarzPay payload
-        merchant_reference = withdrawal_data['external_ref']  # Use the same ref from withdrawal record
+       
+        merchant_reference = withdrawal_data['reference_value']  
         
         CALL_BACK_URL = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/withdraw/callback"
         
-        # Format phone number for MarzPay (UG format)
         formatted_phone = phone_number.strip()
         if formatted_phone.startswith('0'):
             formatted_phone = f"+256{formatted_phone[1:]}"
@@ -329,7 +340,7 @@ def withdraw():
         
         payload = {
             "reference": merchant_reference,
-            "amount": int(amount),  # MarzPay expects integer amount
+            "amount": int(amount), 
             "phone_number": formatted_phone,  
             "country": "UG",
             "description": "customer_withdraw",
@@ -347,7 +358,7 @@ def withdraw():
             f"{MARZ_BASE_URL}/send-money", 
             json=payload, 
             headers=headers, 
-            timeout=30
+            timeout=60
         )
         
         print(f"MarzPay response status: {response.status_code}, body: {response.text}", flush=True)
@@ -408,62 +419,88 @@ def withdraw():
             "error": "Withdrawal processing failed",
             "details": "Your funds have been refunded. Please try again."
         }), 500
+    
+#=================================================================================================
+#=================================================================================================
 
+import logging
+from flask import request, jsonify
+from datetime import datetime, timezone
 
+logger = logging.getLogger(__name__)
+#===================================================================================================
 @bp.route("/withdraw/callback", methods=["POST"])
 def withdraw_callback():
-    """
-    MarzPay webhook callback for withdrawal status updates
-    """
+    print("MARZ WITHDRAW CALLBACK RECEIVED")
+    
     try:
         data = request.get_json()
-        print(f"MarzPay callback received: {data}", flush=True)
-        
+        print(f"RAW CALLBACK DATA: {json.dumps(data, indent=2)}")
         if not data:
             return jsonify({"error": "No data received"}), 400
         
-        reference = data.get('reference')
-        status = data.get('status')
-        external_txid = data.get('transaction_id')
+        # EXACT SAME LOGIC AS PAYMENT CALLBACK
+        transaction = data.get("transaction", {})
         
-        if not reference:
-            return jsonify({"error": "No reference provided"}), 400
+        # Get references - SAME AS PAYMENT
+        reference = (
+            transaction.get("reference") or
+            data.get("reference")
+        )
         
-        # Find withdrawal by reference
-        withdrawal = WithdrawalQueryHelper.get_withdrawal_by_ref(reference)
+        ext_uuid = transaction.get("uuid") or data.get("uuid")
+        
+        status = transaction.get("status", "").lower()
+        print(f"🔄 MARZ WITHDRAW STATUS: {status}")
+        print(f"🔍 Checking references: reference={reference}, ext_uuid={ext_uuid}")
+
+        # SIMPLE SEARCH - SAME AS PAYMENT
+        withdrawal = None
+        
+        # Try by reference (your UUID) first
+        if reference:
+            withdrawal = Withdrawal.query.filter_by(reference=reference).first()
+            if withdrawal:
+                print(f"✅ Found withdrawal by reference: {reference}")
+        
+        # Try by external UUID
+        if not withdrawal and ext_uuid:
+            withdrawal = Withdrawal.query.filter_by(external_ref=ext_uuid).first()
+            if withdrawal:
+                print(f"✅ Found withdrawal by external UUID: {ext_uuid}")
+        
         if not withdrawal:
-            print(f"Withdrawal not found for reference: {reference}", flush=True)
-            return jsonify({"error": "Withdrawal not found"}), 404
+            print(f"❌ No withdrawal found for reference={reference}")
+            return jsonify({"status": "ignored"}), 200
         
-        # Update withdrawal status based on MarzPay callback
-        if status in ['success', 'completed']:
-            WithdrawalProcessor.complete_withdrawal(withdrawal.id, external_txid)
-            print(f"Withdrawal {withdrawal.id} marked as completed", flush=True)
-            
+        print(f"🎯 Processing withdrawal ID: {withdrawal.id}, current status: {withdrawal.status}")
+        
+        # Store MarzPay's reference if we don't have it
+        if not withdrawal.external_ref and ext_uuid:
+            withdrawal.external_ref = ext_uuid
+            db.session.commit()
+            print(f"💾 Stored external_ref: {ext_uuid}")
+        
+        # Process status (your existing logic)
+        if withdrawal.status in ["completed", "failed"]:
+            print(f"⏭️ Withdrawal {withdrawal.id} already {withdrawal.status}. Skipping.")
+            return jsonify({"status": "ok"}), 200
+        
+        if status in ['success', 'completed', 'approved', 'paid', 'sandbox']:
+            print(f"✅ Completing withdrawal ID: {withdrawal.id}")
+            WithdrawalProcessor.complete_withdrawal(withdrawal.id, reference or ext_uuid)
+        
         elif status in ['failed', 'rejected']:
-            WithdrawalProcessor.fail_withdrawal(
-                withdrawal.id,
-                withdrawal.user_id,
-                withdrawal.amount,
-                {
-                    'actual_deducted': withdrawal.actual_balance_deducted,
-                    'available_deducted': withdrawal.available_balance_deducted,
-                    'previous_actual': withdrawal.previous_actual_balance,
-                    'previous_available': withdrawal.previous_available_balance
-                }
-            )
-            print(f"Withdrawal {withdrawal.id} marked as failed", flush=True)
-            
-        elif status in ['pending', 'processing']:
-            # No status change needed, already in processing
-            pass
+            print(f"❌ Failing withdrawal ID: {withdrawal.id}")
+            WithdrawalProcessor.fail_withdrawal(withdrawal.id, withdrawal.user_id, withdrawal.amount, {...})
         
         return jsonify({"status": "callback processed"}), 200
-        
+    
     except Exception as e:
-        print(f"Error processing MarzPay callback: {str(e)}", flush=True)
+        print(f"💥 Error processing MarzPay callback: {e}")
         return jsonify({"error": "Callback processing failed"}), 500
 
+#===============================================================================================================
 
 @bp.route("/payments/withdraw/history", methods=["GET"])
 def withdrawal_history():

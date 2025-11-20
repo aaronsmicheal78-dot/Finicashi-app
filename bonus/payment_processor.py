@@ -43,9 +43,11 @@ def process_package_purchase(payment):
     user = User.query.get(payment.user_id)
     if not user:
         print(f"❌ User {payment.user_id} not found")
+
         return False, "User not found"
-        
+    print("SESSION USER REFERRER:", user.referred_by)    
     print(f"✅ User found: {user.id}")
+    print("SESSION USER REFERRER:", user.referred_by)
     print(f"✅ Package: {package_catalog.name}, Duration: {package_catalog.duration_days}")
     
     # Create user package
@@ -61,10 +63,12 @@ def process_package_purchase(payment):
     db.session.add(new_package)
     db.session.commit()
     print("✅ Package created for user")
+    print("SESSION USER REFERRER:", user.referred_by)
 
     # Process bonuses
     try:
         print("🔄 Starting 20-level bonus processing...")
+        print("SESSION USER REFERRER:", user.referred_by)
         
         # Check for existing bonuses using payment.id
         existing_bonuses = ReferralBonus.query.filter_by(payment_id=payment.id).count()
@@ -74,20 +78,24 @@ def process_package_purchase(payment):
 
         # 1. Check if we can process bonuses for this purchase
         can_process, process_message, validation_result = BonusValidationHelper.can_process_bonuses(payment.id)
-        
+        print("SESSION USER REFERRER:", user.referred_by)
+
         if not can_process:
             print(f"⚠️ Bonus processing skipped: {process_message}")
             BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
             return False, f"Bonus processing skipped: {process_message}"
         else:
             print("✅ Pre-validation passed, calculating multi-level bonuses...")
+            print("SESSION USER REFERRER:", user.referred_by)
             
             # 2. Calculate bonuses
             success, bonus_calculations, calc_message, audit_info = BonusCalculationHelper.calculate_all_bonuses_secure(payment)
-            
+            print("SESSION USER REFERRER:", user.referred_by)
             if not success or not bonus_calculations:
+                print("SESSION USER REFERRER:", user.referred_by)
                 print(f"❌ Bonus calculation failed: {calc_message}")
                 BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
+                print("SESSION USER REFERRER:", user.referred_by)
                 return False, f"Bonus calculation failed: {calc_message}"
             
             print(f"📊 Calculation complete: {len(bonus_calculations)} bonuses calculated")
@@ -100,8 +108,13 @@ def process_package_purchase(payment):
             # 4. Store valid bonuses
             bonus_ids = []
             if valid_bonuses:
+                from bonus.config import generate_security_hash
                 for bonus_data in valid_bonuses:
+                    if 'purchase_id' in bonus_data:
+                        bonus_data['payment_id'] = bonus_data.pop('purchase_id')                   
                     bonus = ReferralBonus(**bonus_data)
+                    if not bonus.security_hash:
+                        bonus.security_hash = generate_security_hash(bonus.user_id, bonus.bonus_amount, bonus.payment_id)
                     db.session.add(bonus)
                     db.session.flush()
                     bonus_ids.append(bonus.id)

@@ -175,9 +175,11 @@
                      
                     <div class="form-group">
                         <label class="form-label" for="hero-code">Referral Code (Optional)</label>
-                        <input type="text" id="hero-code" class="form-input" placeholder="Enter your Referral Code(Optional)" required>
+                        <input type="text" id="hero-code" class="form-input" placeholder="Enter your Referral Code(Optional)" (optional)>
                     </div>
-                    
+
+    
+
 
                     <div class="form-group">
                         <label class="form-label" for="hero-password">Password</label>
@@ -333,6 +335,22 @@ document.addEventListener("DOMContentLoaded", function() {
     loginForm.addEventListener("submit", window.FincashProLogin.handleLogin);
   }
 });
+document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = params.get("ref");
+
+    if (referralCode) {
+        const input = document.getElementById("hero-code");
+        if (input) {
+            input.value = referralCode.toUpperCase();
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => 
+    (document.getElementById('hero-code').value = new URLSearchParams(window.location.search).get('ref') || '')
+);
+
 
 </script>
 

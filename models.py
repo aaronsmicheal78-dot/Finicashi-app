@@ -117,8 +117,7 @@ class User(db.Model, BaseMixin):
         """Serialize user for JSON responses with optimized queries."""
         print(f"DEBUG to_dict: actual_balance={self.actual_balance}, available_balance={self.available_balance}")
         base_url = "https://finicashi-app.onrender.com/"
-        referral_link = f"{base_url}{self.referral_code}" if self.referral_code else None
-        
+        referral_link = f"{base_url}?ref={self.referral_code}"         
         # 1. First create the basic dictionary
         result = {
             "id": self.id,
@@ -311,6 +310,17 @@ class Withdrawal(db.Model, BaseMixin):
     actual_balance_deducted = db.Column(db.Float, default=0.0)
     available_balance_deducted = db.Column(db.Float, default=0.0)
     hold_period_applied = db.Column(db.Boolean, default=False) 
+    reference = db.Column(db.String(255), nullable=True)
+    external_ref = db.Column(db.String(128), index=True)
+    net_amount = db.Column(db.Numeric(precision=18, scale=2), nullable=True)
+    #provider_reference = db.Column(db.String(255), nullable=True)
+    net_amount = db.Column(
+    db.Numeric(18, 2),   # or db.DECIMAL(18, 2)
+    nullable=True,
+    index=True
+)
+
+
 
 # ===========================================================
 # BONUS & REFERRALS

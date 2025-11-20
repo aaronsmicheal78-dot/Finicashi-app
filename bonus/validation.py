@@ -195,38 +195,71 @@ class BonusValidationHelper:
                 'details': str(e)
             })
             return False, f"Validation system error: {str(e)}", validation_details
-
+        
     @staticmethod
-    def validate_purchase(purchase_id: int) -> Tuple[bool, str]:
+    def validate_purchase(payment_id: int) -> Tuple[bool, str]:
         """
-        FIXED VERSION: Properly handles unset bonus fields
+        Validate purchase using Payment record.
         """
         try:
-            purchase = Payment.query.get(purchase_id)
-            if not purchase:
-                return False, "Purchase not found"
+            payment = Payment.query.get(payment_id)  # now passing actual Payment.id
+            if not payment:
+                return False, "Payment not found"
             
             # Payment status check
-            if purchase.status != 'completed':
-                return False, f"Purchase status is {purchase.status}, not completed"
+            if payment.status != 'completed':
+                return False, f"Purchase status is {payment.status}, not completed"
             
             # Amount validation
-            if not purchase.amount or purchase.amount <= 0:
+            if not payment.amount or payment.amount <= 0:
                 return False, "Invalid purchase amount"
 
             # Currency validation
-            if getattr(purchase, 'currency', 'UGX') != 'UGX':
-                return False, f"Unsupported currency: {purchase.currency}"
+            if getattr(payment, 'currency', 'UGX') != 'UGX':
+                return False, f"Unsupported currency: {payment.currency}"
             
             # Minimum amount check
-            if purchase.amount < Decimal('10000'):
+            if payment.amount < Decimal('10000'):
                 return False, "Purchase amount below minimum for bonuses"
             
             return True, "Valid purchase for bonus processing"
             
         except Exception as e:
-            current_app.logger.error(f"Purchase validation error for {purchase_id}: {str(e)}")
+            current_app.logger.error(f"Purchase validation error for {payment_id}: {str(e)}")
             return False, f"Purchase validation error: {str(e)}"
+
+
+    # @staticmethod
+    # def validate_purchase(payment_id: int) -> Tuple[bool, str]:
+    #     """
+    #     FIXED VERSION: Properly handles unset bonus fields
+    #     """
+    #     try:
+    #         purchase = Payment.query.get(payment_id)
+    #         if not purchase:
+    #             return False, "Purchase not found"
+            
+    #         # Payment status check
+    #         if purchase.status != 'completed':
+    #             return False, f"Purchase status is {purchase.status}, not completed"
+            
+    #         # Amount validation
+    #         if not payment_id.amount or payment_id.amount <= 0:
+    #             return False, "Invalid purchase amount"
+
+    #         # Currency validation
+    #         if getattr(purchase, 'currency', 'UGX') != 'UGX':
+    #             return False, f"Unsupported currency: {purchase.currency}"
+            
+    #         # Minimum amount check
+    #         if purchase.amount < Decimal('10000'):
+    #             return False, "Purchase amount below minimum for bonuses"
+            
+    #         return True, "Valid purchase for bonus processing"
+            
+    #     except Exception as e:
+    #         current_app.logger.error(f"Purchase validation error for {payment_id}: {str(e)}")
+    #         return False, f"Purchase validation error: {str(e)}"
 
     @staticmethod
     def validate_user_eligibility(user_id: int, level: int) -> Tuple[bool, str]:

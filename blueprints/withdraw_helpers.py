@@ -6,6 +6,7 @@ from typing import Tuple, Dict, Optional
 from sqlalchemy import and_, or_
 from models import db, User, Withdrawal, ReferralBonus, Transaction
 
+
 logger = logging.getLogger(__name__)
 
 # ==========================================================
@@ -15,7 +16,7 @@ class WithdrawalConfig:
     MIN_WITHDRAWAL = Decimal("5000")
     MAX_WITHDRAWAL = Decimal("1000000")
     HOLD_PERIOD_HOURS = 24
-    PROCESSING_FEE_PERCENT = Decimal("1.0")  # 1% fee
+    PROCESSING_FEE_PERCENT = Decimal("1.0")  
     ACTUAL_BALANCE_THRESHOLD = Decimal("10000")
     
     @staticmethod
@@ -74,30 +75,31 @@ class BalanceLockManager:
 # ==========================================================
 #                  WITHDRAWAL VALIDATOR
 # ==========================================================
+
 class WithdrawalValidator:
     @staticmethod
     def validate_withdrawal_request(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str]:
         """
-        Comprehensive withdrawal validation
+        Comprehensive withdrawal validation with Decimal-safe arithmetic.
         """
         try:
-            # Basic validations
+            # 1️⃣ Basic phone validation
             if not phone or len(phone.strip()) < 10:
                 return False, "Valid phone number is required"
             
-            # Amount validation
+            # 2️⃣ Amount validation
             try:
                 amount_dec = Decimal(str(amount))
-            except:
+            except Exception:
                 return False, "Invalid amount format"
-            
-            if amount_dec < WithdrawalConfig.MIN_WITHDRAWAL:
+
+            if amount_dec < Decimal(str(WithdrawalConfig.MIN_WITHDRAWAL)):
                 return False, f"Minimum withdrawal is {WithdrawalConfig.MIN_WITHDRAWAL} UGX"
             
-            if amount_dec > WithdrawalConfig.MAX_WITHDRAWAL:
+            if amount_dec > Decimal(str(WithdrawalConfig.MAX_WITHDRAWAL)):
                 return False, f"Maximum withdrawal is {WithdrawalConfig.MAX_WITHDRAWAL} UGX"
             
-            # User validation
+            # 3️⃣ User validation
             user = User.query.get(user_id)
             if not user:
                 return False, "User not found"
@@ -105,33 +107,36 @@ class WithdrawalValidator:
             if not user.is_active:
                 return False, "Account is inactive"
             
-            # Balance validation
-            total_balance = (user.actual_balance or Decimal('0')) 
+            # 4️⃣ Balance validation (Decimal-safe)
+            total_balance = Decimal(str(user.actual_balance or 0))
             if amount_dec > total_balance:
                 return False, "Insufficient balance"
             
-            # Check if available balance is mature
+            # 5️⃣ Available/mature balance check
             if not WithdrawalValidator._is_available_balance_mature(user):
-                available_now = WithdrawalValidator._get_mature_available_balance(user)
+                available_now = Decimal(str(WithdrawalValidator._get_mature_available_balance(user)))
                 if amount_dec > available_now:
                     return False, "Patiently, Your balance is still on hold for 24 hours. Thank you"
             
-            # Check for duplicate pending withdrawals
+            # 6️⃣ Duplicate pending withdrawals check
+            five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
             recent_pending = Withdrawal.query.filter(
                 Withdrawal.user_id == user_id,
                 Withdrawal.status.in_(['pending', 'processing']),
-                Withdrawal.created_at >= datetime.now(timezone.utc) - timedelta(minutes=5)
+                Withdrawal.created_at >= five_minutes_ago
             ).first()
             
             if recent_pending:
                 return False, "You have a pending withdrawal. Please wait for it to complete."
             
+            # ✅ Passed all checks
             return True, "Validation passed"
-            
+        
         except Exception as e:
             logger.error(f"Withdrawal validation error: {e}")
             return False, "Validation failed"
-
+#============================================================================================
+#============================================================================================
     @staticmethod
     def _is_available_balance_mature(user: User) -> bool:
         """Check if all available balance is mature (24h old)"""
@@ -156,20 +161,23 @@ class WithdrawalValidator:
         recent_transactions = db.session.query(
             db.func.sum(Transaction.amount).label('total')
         ).filter(
-          #  Transaction.user_id == user.id,
             Transaction.type == 'credit',
-            Transaction.created_at >= hold_cutoff,
-            Transaction.balance_type == 'available'
+            Transaction.created_at >= hold_cutoff
         ).scalar() or Decimal('0')
+        
+        # Convert any float results to Decimal
+        recent_bonuses = Decimal(str(recent_bonuses))
+        recent_transactions = Decimal(str(recent_transactions))
         
         return recent_bonuses + recent_transactions
 
     @staticmethod
     def _get_mature_available_balance(user: User) -> Decimal:
         """Calculate amount of available balance that's mature and withdrawable now"""
-        total_available = user.available_balance or Decimal('0')
+        total_available = Decimal(str(user.available_balance or '0'))
         immature_amount = WithdrawalValidator._get_immature_balance_amount(user)
         return max(total_available - immature_amount, Decimal('0'))
+
 
 # ==========================================================
 #                  BALANCE MANAGER
@@ -178,7 +186,7 @@ class BalanceManager:
     @staticmethod
     def process_withdrawal(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str, Optional[Dict]]:
         """
-        Deduct from actual_balance first, then available_balance
+        Deduct from actual_balance first, then mature available_balance
         Returns: (success, message, balance_details)
         """
         try:
@@ -188,9 +196,9 @@ class BalanceManager:
 
             amount_dec = Decimal(str(amount))
             
-            # Get current balances
-            actual_balance = user.actual_balance if user.actual_balance is not None else Decimal('0')
-            available_balance = user.available_balance if user.available_balance is not None else Decimal('0')
+            # Get current balances as Decimal
+            actual_balance = Decimal(str(user.actual_balance or '0'))
+            available_balance = Decimal(str(user.available_balance or '0'))
             
             # Calculate mature available balance
             mature_available = WithdrawalValidator._get_mature_available_balance(user)
@@ -204,7 +212,7 @@ class BalanceManager:
             actual_deducted = Decimal('0')
             available_deducted = Decimal('0')
             
-            # Strategy: Deduct from actual balance first, then mature available balance
+            # Deduct from actual balance first
             if actual_balance > 0:
                 deduct_from_actual = min(actual_balance, remaining_amount)
                 actual_deducted = deduct_from_actual
@@ -217,13 +225,13 @@ class BalanceManager:
                 user.available_balance = available_balance - remaining_amount
                 remaining_amount = Decimal('0')
             
-            # Final check
+            # Safety check
             if remaining_amount > 0:
-                # This shouldn't happen due to prior validation, but just in case
-                BalanceManager._reverse_deduction(user, actual_deducted, available_deducted)
+                # Reverse deduction in case of error
+                user.actual_balance += actual_deducted
+                user.available_balance += available_deducted
                 return False, "Insufficient balance after processing", None
             
-            # Prepare balance details
             balance_details = {
                 'actual_balance': user.actual_balance,
                 'available_balance': user.available_balance,
@@ -238,6 +246,7 @@ class BalanceManager:
         except Exception as e:
             logger.error(f"Balance processing error: {e}")
             return False, f"Balance processing failed: {str(e)}", None
+
 
     @staticmethod
     def _reverse_deduction(user: User, actual_deducted: Decimal, available_deducted: Decimal):
@@ -292,19 +301,20 @@ class WithdrawalRecordManager:
             withdrawal = Withdrawal(
                 user_id=user_id,
                 amount=amount,
-              #  net_amount=net_amount,
+                net_amount=net_amount,
                 fee=fee,
                 phone=phone,
-                status="processing",
-                external_ref=str(uuid.uuid4()),
+                status="pending",
+                reference=str(uuid.uuid4()),
+                external_ref=None,
                 actual_balance_deducted=balance_details.get('actual_deducted', Decimal('0')),
                 available_balance_deducted=balance_details.get('available_deducted', Decimal('0')),
-               # previous_actual_balance=balance_details.get('previous_actual', Decimal('0')),
-              #  previous_available_balance=balance_details.get('previous_available', Decimal('0'))
+                # previous_actual_balance=balance_details.get('previous_actual', Decimal('0')),
+                # previous_available_balance=balance_details.get('previous_available', Decimal('0'))
             )
             
             db.session.add(withdrawal)
-            db.session.flush()  # Get ID without committing
+            db.session.commit()  
             
             return True, withdrawal, "Withdrawal record created"
             
@@ -320,7 +330,7 @@ class WithdrawalRecordManager:
             if withdrawal:
                 withdrawal.status = status
                 if external_txid:
-                    withdrawal.external_txid = external_txid
+                   withdrawal.external_txid = external_txid
                 withdrawal.updated_at = datetime.now(timezone.utc)
                 db.session.commit()
                 return True
@@ -409,7 +419,8 @@ class WithdrawalProcessor:
                 WithdrawalNotifier.notify_withdrawal_failure(user_id, amount, record_msg)
                 return False, "Withdrawal processing failed. Please try again.", None
 
-            # Step 4: Final Commit - SINGLE COMMIT POINT
+            reference_value = withdrawal.reference
+            print(f"🔍 Reference type: {type(reference_value)}, value: {reference_value}")
             db.session.commit()
             
             # Step 5: Notify Success
@@ -420,6 +431,7 @@ class WithdrawalProcessor:
                 'external_ref': withdrawal.external_ref,
                 'net_amount': withdrawal.net_amount,
                 'fee': withdrawal.fee,
+                'reference': reference_value,
                 'balances': {
                     'new_actual_balance': balance_details['actual_balance'],
                     'new_available_balance': balance_details['available_balance']
@@ -496,38 +508,3 @@ class WithdrawalQueryHelper:
 # ==========================================================
 #                  USAGE EXAMPLE
 # ==========================================================
-"""
-# Example usage in your route:
-
-@app.route('/withdraw', methods=['POST'])
-def withdraw():
-    try:
-        user_id = get_current_user_id()  # Your auth helper
-        amount = request.json.get('amount')
-        phone = request.json.get('phone')
-        
-        success, message, withdrawal_data = WithdrawalProcessor.process_withdrawal_request(
-            user_id, Decimal(amount), phone
-        )
-        
-        if success:
-            return jsonify({
-                'success': True,
-                'message': message,
-                'withdrawal_id': withdrawal_data['withdrawal_id'],
-                'external_ref': withdrawal_data['external_ref'],
-                'net_amount': str(withdrawal_data['net_amount'])
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'message': message
-            }), 400
-            
-    except Exception as e:
-        logger.error(f"Withdrawal route error: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Internal server error'
-        }), 500
-"""

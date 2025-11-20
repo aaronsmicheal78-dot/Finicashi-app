@@ -11,9 +11,10 @@ import string
 import secrets
 from flask_login import login_user
 import traceback
+import logging
 
 
-
+logger = logging.getLogger(__name__)
 #==================================================================================================================
 
 bp = Blueprint("auth", __name__, url_prefix="")
@@ -75,7 +76,9 @@ def signup():
             referrer = User.query.filter_by(referral_code=referral_code).first()
 
             if not referrer:
-                return jsonify({"error": "Invalid referral code"}), 400
+                A = referral_code 
+                referrer = User.query.filter_by(referral_code=A)
+                logger.info(f"Referrer is {A}")
 
             if referrer.phone == phone:
                 return jsonify({"error": "Cannot use your own referral code"}), 400

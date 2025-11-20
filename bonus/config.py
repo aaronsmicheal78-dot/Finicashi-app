@@ -88,3 +88,10 @@ class BonusConfigHelper:
             
         except Exception as e:
             return False, f"Configuration validation error: {str(e)}"
+        
+import hashlib
+import secrets
+
+def generate_security_hash(user_id: int, payment_id: int, bonus_amount: float) -> str:
+    raw = f"{user_id}-{payment_id}-{bonus_amount}-{secrets.token_hex(8)}"
+    return hashlib.sha256(raw.encode()).hexdigest()

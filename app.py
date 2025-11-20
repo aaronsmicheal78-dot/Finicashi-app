@@ -159,7 +159,7 @@ app = create_app()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Changed to 5000 for standard Flask port
     debug_mode = app.config.get("DEBUG", True)
-    app.run(debug=debug_mode, host="0.0.0.0", port=port, use_reloader=False)  # Added use_reloader=False to prevent file locks
+    app.run(debug=debug_mode, host="0.0.0.0", port=port, use_reloader=True, threaded=True)  # Added use_reloader=False to prevent file locks
 
 #=======================================================================================================
 #------------------------THE END OF APP----------------------------------------------------------------

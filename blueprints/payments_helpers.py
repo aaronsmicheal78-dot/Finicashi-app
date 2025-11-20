@@ -2,7 +2,7 @@ import os, re, json, uuid, requests
 from flask import jsonify
 from models import db, Payment, PaymentStatus, PackageCatalog, TransactionType, Package
 
-REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '30'))
+REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '60'))
 MARZ_BASE_URL = 'https://wallet.wearemarz.com/api/v1'
 
 PACKAGE_MAP = {
