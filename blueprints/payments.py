@@ -215,28 +215,31 @@ def initiate_payment():
                     return jsonify({"error": "Failed to create payment record"}), 500
 
                 # FIX: Ensure send_to_marzpay returns proper format
-                marz_response = send_to_marzpay(payment, phone, amount, package_obj)
-                if isinstance(marz_response, tuple) and len(marz_response) == 2:
-                    marz_data, error = send_to_marzpay(payment, phone, amount, package_obj)
-                    if error:
-                        # Update payment status to failed
-                        payment.status = PaymentStatus.FAILED.value
-                        db.session.commit()
-                        return error
-                    db.session.commit()
-
-                    return jsonify({
-                        "reference": payment.reference,
-                        "status": payment.status,  # Use the status set by send_to_marzpay
-                        "payment_type": payment_type,
-                        "package": package_id,
-                        "checkout_url": marz_data.get("checkout_url") if marz_data else None
-                    }), 200
-                else:
-                    # Handle case where function doesn't return tuple
+                # marz_response = send_to_marzpay(payment, phone, amount, package_obj)
+                #if isinstance(marz_response, tuple) and len(marz_response) == 2:
+                marz_data, error = send_to_marzpay(payment, phone, amount, package_obj)
+                if error:
                     payment.status = PaymentStatus.FAILED.value
                     db.session.commit()
-                    return jsonify({"error": "Invalid response from payment gateway"}), 500
+                    return error
+                db.session.commit()
+                checkout_url = marz_data.get("checkout_url") if marz_data else None
+                if not checkout_url:
+                    payment.status = PaymentStatus.FAILED.value
+                    db.session.commit()
+                    return jsonify({"error": "No checkout URL returned from gateway"}), 500
+                return jsonify({
+                    "reference": payment.reference,
+                    "status": payment.status,  # Use the status set by send_to_marzpay
+                    "payment_type": payment_type,
+                    "package": package_id,
+                    "checkout_url": marz_data.get("checkout_url") if marz_data else None
+                }), 200
+            # else:
+            #     # Handle case where function doesn't return tuple
+            #     payment.status = PaymentStatus.FAILED.value
+            #     db.session.commit()
+            #     return jsonify({"error": "Invalid response from payment gateway"}), 500
 
         elif payment_type == "deposit":
             existing_response = handle_existing_payment(user, amount, payment_type)
@@ -328,7 +331,7 @@ def withdraw():
        
         merchant_reference = withdrawal_data['reference']  
         
-        CALL_BACK_URL = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/withdraw/callback"
+        CALL_BACK_URL = "https://finicashi-app.onrender.com/withdraw/callback"
         
         formatted_phone = phone_number.strip()
         if formatted_phone.startswith('0'):

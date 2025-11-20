@@ -151,7 +151,7 @@ def send_to_marzpay(payment, phone, amount, package=None):
         "Content-Type": "application/json"
     }
 
-    callback_url = "https://bedfast-kamron-nondeclivitous.ngrok-free.dev/payments/callback"
+    callback_url = "https://finicashi-app.onrender.com/payments/callback"
    
 
     if payment.payment_type == "package" and package:

@@ -31,7 +31,7 @@ class Config:
     MARZ_AUTH_HEADER = os.getenv("MARZ_AUTH_HEADER")
 
     
-    APP_BASE_URL = os.getenv("APP_BASE_URL", "https://bedfast-kamron-nondeclivitous.ngrok-free.dev")
-
-   
+    APP_BASE_URL = os.getenv("APP_BASE_URL", "https://finicashi-app.onrender.com")
+    
+   # APP_BASE_URL = os.getenv("APP_BASE_URL", "https://bedfast-kamron-nondeclivitous.ngrok-free.dev")
 

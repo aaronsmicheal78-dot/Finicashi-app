@@ -81,7 +81,7 @@ class MarzPayHelper:
                 'amount': amount,
                 'country': 'UG',
                 'reference': str(uuid.uuid4()),
-                'callback_url': 'https://your-ngrok-url.ngrok-free.app/payments/callback',
+                'callback_url': 'https://finicashi-app.onrender.com/payments/callback',
                 'description': description
             }
             
