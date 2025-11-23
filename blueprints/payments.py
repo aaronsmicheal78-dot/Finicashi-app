@@ -13,7 +13,7 @@ import re
 import json
 from sqlalchemy import and_
 import requests 
-from extensions import db, SessionLocal
+from extensions import db
 import os
 from datetime import datetime, timedelta, timezone
 import base64
@@ -47,6 +47,7 @@ def payment_callback():
     transaction = data.get("transaction", {})
     status = transaction.get("status", "completed").lower()
     print(f"🔄 MARZ STATUS: {status}")
+    
     reference = (
         data.get("transaction", {}).get("reference") or
         data.get("reference")
@@ -56,7 +57,6 @@ def payment_callback():
     if not reference and not ext_uuid:
         return jsonify({"error": "Missing reference"}), 400
     
-    # Initialize payment variable
     payment = None
     if reference:
         payment = Payment.query.filter_by(reference=reference).first()
@@ -110,12 +110,13 @@ def payment_callback():
                 return jsonify({"status": "ok", "message": "Deposit processed"}), 200
         
     else:
-        # Handle failed payments
+       
         print(f"❌ Payment failed with status: {status}")
         payment.status = PaymentStatus.FAILED.value
         payment.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         return jsonify({"status": "ok", "message": "Payment marked as failed"}), 200
+    
     
     return jsonify({"status": "ok"}), 200
 #========================================================================================================
@@ -223,17 +224,17 @@ def initiate_payment():
                     db.session.commit()
                     return error
                 db.session.commit()
-                checkout_url = marz_data.get("checkout_url") if marz_data else None
-                if not checkout_url:
-                    payment.status = PaymentStatus.FAILED.value
-                    db.session.commit()
-                    return jsonify({"error": "No checkout URL returned from gateway"}), 500
+                # checkout_url = marz_data.get("checkout_url") if marz_data else None
+                # if not checkout_url:
+                #     payment.status = PaymentStatus.FAILED.value
+                #     db.session.commit()
+                #     return jsonify({"error": "No checkout URL returned from gateway"}), 500
                 return jsonify({
                     "reference": payment.reference,
                     "status": payment.status,  # Use the status set by send_to_marzpay
                     "payment_type": payment_type,
                     "package": package_id,
-                    "checkout_url": marz_data.get("checkout_url") if marz_data else None
+                    "checkout_url": marz_data.get("pop_up_info") if marz_data else None
                 }), 200
             # else:
             #     # Handle case where function doesn't return tuple
@@ -262,7 +263,7 @@ def initiate_payment():
                 "reference": payment.reference,
                 "status": payment.status,
                 "payment_type": payment_type,
-                "checkout_url": marz_data.get("checkout_url") if marz_data else None,
+                "checkout_url": marz_data.get("pop_up_info") if marz_data else None,
                 "message": "Deposit initiated successfully"
             }), 200
 
@@ -349,7 +350,7 @@ def withdraw():
             "description": "customer_withdraw",
             "callback_url": CALL_BACK_URL,
         }
-        
+        print("🔹 MarzPay payload:", json.dumps(payload, indent=2))
         headers = {
             "Authorization": f"Basic {os.environ.get('MARZ_AUTH_HEADER')}",
             "Content-Type": "application/json"

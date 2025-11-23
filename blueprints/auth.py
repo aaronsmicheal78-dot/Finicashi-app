@@ -33,15 +33,17 @@ def validate_phone(phone):
 #===========================================================================
 #      SIGN UP ROUTE.
 #==============================================================================
-@bp.route("/api/signup", methods=["POST"])
+@bp.route("/api/signup", methods=["POST",])
 def signup():
     
     """
     Create new user + integrate them into the referral tree.
     Uses safer validation, atomic transaction, and full tree integration.
     """
+    print("SIGN-UP ROUTE HIT< PROCESSING REGISTRATION")
     try:
         data = request.get_json(silent=True)
+        
         if not data:
             return jsonify({"error": "Invalid or missing JSON body"}), 400
 

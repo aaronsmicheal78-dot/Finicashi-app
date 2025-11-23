@@ -1,12 +1,14 @@
                                                     
 import time                                                        
 from flask import current_app                                       
-from extensions import logger  
+
 import base64
 import requests                                    
 import os
 import re
 import uuid
+
+from logger import app_logger as logger
 
 def safe_marz_headers():
     """

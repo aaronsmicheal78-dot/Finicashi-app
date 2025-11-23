@@ -181,6 +181,8 @@ def send_to_marzpay(payment, phone, amount, package=None):
     }
     
    # print(f"Payload being sent to MarzPay: {payload}")
+    print("🔹 MarzPay payload:", json.dumps(payload, indent=2))
+
     
     try:
         resp = requests.post(f"{MARZ_BASE_URL}/collect-money", json=payload, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
@@ -188,7 +190,9 @@ def send_to_marzpay(payment, phone, amount, package=None):
 
         resp.raise_for_status()
         marz_data = resp.json()
-       
+        print("🔹 MarzPay response status:", resp.status_code)
+        print("🔹 MarzPay response body:", resp.text)
+
 
         status_map = {
             "confirmed": PaymentStatus.COMPLETED.value,
@@ -213,7 +217,12 @@ def send_to_marzpay(payment, phone, amount, package=None):
         payment.external_ref = marz_data.get("transaction_id")
 
         return marz_data, None
-
+    
+    except requests.HTTPError as e:
+        print("MarzPay HTTP error:", e)
+        print("Response body:", e.response.text)
+        return None, e
+    
     except requests.RequestException as e:
         print(f"MarzPay API Request Exception: {e}")
         payment.status = PaymentStatus.FAILED.value

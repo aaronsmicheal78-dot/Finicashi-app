@@ -1,5 +1,6 @@
 
         // 
+        
     const backgroundImages = [
             'https://www.mountaingorillalodge.com/wp-content/uploads/2025/05/Currency-bann.avif',
             'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
@@ -12,40 +13,48 @@
         ];
 
         // Initialize background slideshow
-        class HeroBackground {
-            constructor() {
-                this.currentSlide = 0;
-                this.slides = document.querySelectorAll('.background-slide');
-                this.init();
-            }
+       class HeroBackground {
+    constructor() {
+        this.currentSlide = 0;
+        this.slides = document.querySelectorAll('.background-slide');
+        this.init();
+    }
 
-            init() {
-                // Set background images
-                this.slides.forEach((slide, index) => {
-                    slide.style.backgroundImage = `url(${backgroundImages[index]})`;
-                });
-
-                // Start slideshow
-                this.startSlideshow();
+    init() {
+        // Only set images for existing slides
+        this.slides.forEach((slide, index) => {
+            if (backgroundImages[index]) {
+                slide.style.backgroundImage = `url(${backgroundImages[index]})`;
             }
+        });
 
-            startSlideshow() {
-                setInterval(() => {
-                    this.nextSlide();
-                }, 5000); // Change slide every 5 seconds
-            }
+        // Start slideshow
+        this.startSlideshow();
+    }
 
-            nextSlide() {
-                // Hide current slide
-                this.slides[this.currentSlide].classList.remove('active');
-                
-                // Move to next slide
-                this.currentSlide = (this.currentSlide + 1) % this.slides.length;
-                
-                // Show next slide
-                this.slides[this.currentSlide].classList.add('active');
-            }
-        }
+    startSlideshow() {
+        setInterval(() => {
+            this.nextSlide();
+        }, 5000);
+    }
+
+    nextSlide() {
+        // Hide current slide
+        this.slides[this.currentSlide].classList.remove('active');
+        
+        // Move to next slide
+        this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+        
+        // Show next slide
+        this.slides[this.currentSlide].classList.add('active');
+    }
+}
+
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    new HeroBackground();
+});
 
         // Registration Form Handler
         class HeeroRegistration {
@@ -72,126 +81,100 @@
             }}
 
  
-
-  class HeroRegistration {
-    constructor() {
-        this.handleRegistration = this.handleRegistration.bind(this);
-        this.init();
+document.getElementById('hero-registration-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    console.log('🔵 FORM SUBMISSION STARTED');
+    
+    const btn = this.querySelector('button[type="submit"]');
+    const messageBox = document.getElementById('registration-message');
+    
+    console.log('Button element:', btn);
+    console.log('Message box element:', messageBox);
+    
+    // Test 1: Immediate button text change
+    btn.textContent = 'Creating Account...';
+    btn.disabled = true;
+    console.log('Button text changed to:', btn.textContent);
+    
+    // Test 2: Immediate message display
+    if (messageBox) {
+        messageBox.textContent = 'Processing your registration...';
+        messageBox.style.display = 'block';
+        messageBox.style.backgroundColor = '#e7f3ff';
+        messageBox.style.color = '#004085';
+        messageBox.style.padding = '10px';
+        messageBox.style.borderRadius = '4px';
+        messageBox.style.margin = '10px 0';
+        console.log('Message box updated');
     }
-
-    init() {
-        document.addEventListener('DOMContentLoaded', () => {
-            const registrationForm = document.getElementById('hero-registration-form');
-            if (registrationForm) {
-                registrationForm.addEventListener('submit', this.handleRegistration);
-            }
-        });
-    }
-
-    async handleRegistration(event) {
-        event.preventDefault();
-        const registrationForm = event.target;
+    
+    try {
+        console.log('🟡 Making API request...');
         
-        // Show loading state
-        this.setLoadingState(true);
-
         const formData = {
-            fullName: document.getElementById('hero-full-name').value.trim(),
-            email: document.getElementById('hero-email').value.trim().toLowerCase(),
-            phone: document.getElementById('hero-phone').value.trim(),
+            fullName: document.getElementById('hero-full-name').value,
+            email: document.getElementById('hero-email').value,
+            phone: document.getElementById('hero-phone').value,
+            password: document.getElementById('hero-password').value,
             referralCode: document.getElementById('hero-code').value.trim(),
-            password: document.getElementById('hero-password').value
         };
-
-        // Enhanced validation
-        if (!this.validateForm(formData)) {
-            this.setLoadingState(false);
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/signup', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || `Signup failed with status ${response.status}`);
-            }
-
-            this.showMessage(data.message || 'Signup successful!', 'success');
-            registrationForm.reset();
-
-            // Redirect after success
-            setTimeout(() => { 
-                window.location.href = '/'; 
-            }, 1500);
-
-        } catch (error) {
-            console.error('Signup error:', error);
-            this.showMessage(
-                error.message || 'Network error. Please try again.', 
-                'error'
-            );
-        } finally {
-            this.setLoadingState(false);
-        }
-    }
-
-    validateForm(f) {
-        if (!f.fullName || !f.email || !f.phone || !f.password) {
-            this.showMessage('Please fill in all fields', 'error');
-            return false;
-        }
         
-        if (f.password.length < 6) {
-            this.showMessage('Password must be at least 6 characters', 'error');
-            return false;
+        const response = await fetch('/api/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        console.log('🟢 API Response:', data);
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(data.error || `Signup failed with status ${response.status}`);
         }
+
+        alert('✅ Registration Successful! Your account has been created.');
         
-        if (!this.isValidEmail(f.email)) {
-            this.showMessage('Please enter a valid email address', 'error');
-            return false;
-        }
-        
-        return true;
-    }
+        this.reset();
 
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    setLoadingState(isLoading) {
-        const submitBtn = document.querySelector('#hero-registration-form button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = isLoading;
-            submitBtn.textContent = isLoading ? 'Creating Account...' : 'Sign Up';
-        }
-    }
-
-    showMessage(msg, type) {
-        const msgBox = document.getElementById('registration-message');
-        if (!msgBox) return;
-
-        msgBox.textContent = msg;
-        msgBox.className = `message ${type}`;
-        msgBox.style.display = 'block';
-
+        // Redirect
         setTimeout(() => {
-            msgBox.textContent = '';
-            msgBox.className = '';
-            msgBox.style.display = 'none';
-        }, 5000);
-    }
-}
+            window.location.href = '/';
+        }, 2000);
 
+    } catch (error) {
+        console.error('🔴 ERROR:', error);
+        
+        // ERROR
+        btn.textContent = 'Sign Up';
+        btn.disabled = false;
+        btn.style.backgroundColor = ''; // Reset background
+        
+        if (messageBox) {
+            messageBox.textContent = error.message || 'Registration failed. Please try again.';
+            messageBox.style.backgroundColor = '#f8d7da';
+            messageBox.style.color = '#721c24';
+            messageBox.style.border = '1px solid #f5c6cb';
+        }
+        
+        // Also show alert as fallback
+        alert('Error: ' + (error.message || 'Registration failed'));
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get("ref");
+
+    if (ref) {
+        document.getElementById("hero-code").value = ref;
+    }
+});
+
+
+    
 new HeroRegistration();
 // toggle login password
 function togglePassword() {

@@ -1,295 +1,493 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="{{url_for('static', filename='css/profile.css')}}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{url_for('static', filename='css/profile.css')}}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Header -->
-    <header class="dashboard-header">
-      
-        <div class="logo">
-            <div class="logo-icon">Fc</div>
-            <div class="logo-text">Finicashi</div>
+
+
+ <div class="container">
+    <div class="layout">
+      <!-- Profile Column -->
+      <div class="profile-column">
+        <div class="profile-header">
+          <div class="avatar" id="avatarImg">
+            <img src="" alt="">
+          </div>
+          <div class="user-info">
+            <h2 class="username"><span id="username"></span></h2>
+            <div class="handle" >CODE: <span id="referral_code" ></span> </div>
+            <div class="user-id">USER ID:<span id="user-id"></span></div>
+          </div>
         </div>
-        
-        <div class="crypto-ticker">
-            <div class="ticker-wrapper">
+
+      <div class="crypto-ticker">
+        <div class="ticker-wrapper">
                 <span>BTC: $42,150</span>
                 <span>ETH: $2,850</span>
                 <span>UGX: 3,800/$</span>
                 <span>Gold: $1,980</span>
                   <span>USD: $1,980</span>
                    <span>EURO: $2,850</span>
+                   <span>POUND: $42,150</span>
+                    <span>UGX: 3,800/$</span>
+                <span>Gold: $1,980</span>
+                  <span>USD: $1,980</span>
+                   <span>EURO: $2,850</span>
                    <span>PUND: $42,150</span>
-            </div>
+              </div>
+        </div>   
+
+        <!-- Referral Card -->
+        <div class="card referral-card">
+          <h3>Invite friends • Earn instant bonuses</h3>
+          <div class="referral-link-container">
+            <input type="text" class="referral-link" id="referralLink" value="{{referralLink}}" readonly aria-label="">
+            <button class="copy-btn" id="copyRefBtn" aria-label="Copy referral link">
+              <i class="fas fa-copy" id="copy-link"></i> Copy
+            </button>
+          </div>
+          <div class="share-btns">
+            <button class="share-btn" id="shareWhatsappBtn" onclick="window.open('https://chat.whatsapp.com/Bbt4oWR43PhDrgqpMadedM?mode=hqrt2', '_blank')" aria-label="share on WhatsApp" >
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            <button class="share-btn" id="shareTelegramBtn" onclick="window.open('https://t.me/fincashiexplorer', '_blank')" aria-label="Share on Telegram">
+              <i class="fab fa-telegram-plane"></i> Telegram
+            </button>
+          </div>
         </div>
-        
-        <div class="user-controls">
-            <div class="notification-icon">
-                <i class="fas fa-bell"></i>
-            </div>
-            <div class="settings-icon">
-                <i class="fas fa-cog"></i>
-            </div>
-            <div class="user-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-        </div>
-    </header>
-    <!-- Main Content -->
-   <section class="dashboard-container"> 
-        <main class="dashboard-main">
-            <!-- Column 1: User Profile -->
-            <section class="profile-column">
-                <div class="profile-header">
-                    
-                        <img class="profile-photo"src="{{ url_for('static', filename='images/FincashPro.png') }}" alt="Logo">
-
-                    </div>
-                    <h2 class="username">Welcome Back!</h2>
-                    <p class="profile-username" id="username"></p>
-                </div>
-                
-                <div class="profile-details">
-                    <div class="detail-item">
-                        <span class="detail-label">Email:</span>
-                        <span class="detail-value" id="email"></span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Phone:</span>
-                        <span class="detail-value" id="phone"></span>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="detail-label">Available Balance: UGX.</span>
-                        <span class="detail-value" id="available-balance"></span>
-                    </div>
-                     <div class="detail-item">
-                        <span class="detail-label"> Actual Balance: UGX.</span>
-                        <span class="detail-value" id="actual-balance"></span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label"> Referral Bonus: UGX.</span>
-                        <span class="detail-value" id="referral-bonus"></span>
-                    </div>
-                       <div class="detail-item">
-                        <span class="detail-label">Investment Bonus: UGX.</span>
-                        <span class="detail-value" id="bonus"></span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Package:</span>
-                        <span class="detail-value" id="package"></span>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="detail-label">Joined:</span>
-                        <span class="detail-value" id="memberSince"></span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Status:</span>
-                        <span class="detail-value">
-                            <span class="status-badge status-verified"id="isVerified"></span>
-                            <span class="status-badge status-active" id="isActive">Active</span>
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="referral-section">
-                    <h3 class="referral-title">Referral Program</h3>
-                    <div class="referral-item">
-                        <span class="detail-label">Total Referrals:</span>
-                        <span class="detail-value"></span>
-                    </div>
-                    <div class="referral-item">
-                        <span class="detail-label">Referral Code:</span>
-                        <span class="detail-value" id="referral_code"></span>
-                    </div>
-                    <div class="referral-link">
-                        <span id="referralLink"></span>
-                        <button class="copy-btn" id="copy-link">Copy</button>
-                    </div>
-
-                   <div class="referral-note">
-                        <p style="font-size: 20px;">Share your referral-link and earn bonuses!</p>
-                    
-                           
-                                  <button class="package-btn" id="deposit">Deposit</button>                             
-        <!-- social handles -->
-<a href="#" class="social-channel-link" onclick="openSocialChannels()">
-    <span class="social-icons">
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI1Qzc1MCI+PHBhdGggZD0iTTE3LjQ3MiAxNC4zODVjLS4yMjYuODQ2LS4zNzEgMS4zMzEtMS40NzUgMi4yMjUtMS4zNTEgMS4xNzMtMi44MzMgMS4yNTktMy40MTMuMjY2LS42MTMtMS4wMzYtMi4yODUtMy4yMjctMi44MjQtMy44MjQtLjU0OC0uNjA3LS45ODUtLjUyMi0xLjM3NS4wNTMtLjM5LjU3NS0xLjUwOCAxLjc1OC0xLjUwOCAz4oCWMy4xOTcgNS4wMjIgNC4wMDMgNS4zNzcgOC4zNzcgMy42MjIgNC4zNzQtMS43NTUgNC40MTctMi45ODQgNC0zLjg3NHptLTUuNDcyLTkuMzg1Yy00LjQxNyAwLTggMy41ODMtOCA4czMuNTgzIDggOCA4IDgtMy41ODMgOC04LTMuNTgzLTgtOC04eiIvPjwvc3ZnPg==" alt="WhatsApp" class="social-icon">
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIj4NCjxwYXRoIGZpbGw9IiMyQTlDREUiIGQ9Ik0xMiwyQzYuNDgsMiwyLDYuNDgsMiwxMnM0LjQ4LDEwLDEwLDEwaDEwYzAsMCwwLDAsMCwwYzAsLTUuNTItNC40OC0xMC0xMC0xMFptMy45NCw4LjVoLTIuOTI5YzAsMS4zODEsMCwxLjk3Mi0wLjU3NCwyLjM3NmMtMC4zNjcsMC4zMjUtMC44ODcsMC4zNjQtMS4xODgsMC4zNjRjLTAuMzAxLDAtMC44MjEtMC4wMzktMS4xODgtMC4zNjRjLTAuNTc0LTAuNDA0LTAuNTc0LTAuOTk1LTAuNTc0LTIuMzc2YzAtMS4zODEsMC0xLjk3MiwwLjU3NC0yLjM3NmMwLjM2Ny0wLjMyNSwwLjg4Ny0wLjM2NCwxLjE4OC0wLjM2NGMwLjMwMSwwLDAuODIxLDAuMDM5LDEuMTg4LDAuMzY0QzE1Ljk0LDguNTI4LDE1Ljk0LDkuMTE5LDE1Ljk0LDEwLjV6Ii8+DQo8cGF0aCBmaWxsPSIjMkE5Q0RFIiBkPSJNMTcsMTZjMCwwLDAsMCwwLDBjLTAuODI3LDAtMS41LTAuNjczLTEuNS0xLjVzMC42NzMtMS41LDEuNS0xLjVjMC44MjcsMCwxLjUsMC42NzMsMS41LDEuNVMxNy44MjcsMTYsMTcsMTZ6Ii8+DQo8L3N2Zz4=" alt="Telegram" class="social-icon">
-    </span>
-    Join Our Community
-</a>
-
-
-<div class="social-links">
-    <a href="https://wa.me/your-number" target="_blank" class="social-link">
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI1Qzc1MCI+PHBhdGggZD0iTTE3LjQ3MiAxNC4zODVjLS4yMjYuODQ2LS4zNzEgMS4zMzEtMS40NzUgMi4yMjUtMS4zNTEgMS4xNzMtMi44MzMgMS4yNTktMy40MTMuMjY2LS42MTMtMS4wMzYtMi4yODUtMy4yMjctMi44MjQtMy44MjQtLjU0OC0uNjA3LS45ODUtLjUyMi0xLjM3NS4wNTMtLjM5LjU3NS0xLjUwOCAxLjc1OC0xLjUwOCAz4oCWMy4xOTcgNS4wMjIgNC4wMDMgNS4zNzcgOC4zNzcgMy42MjIgNC4zNzQtMS43NTUgNC40MTctMi45ODQgNC0zLjg3NHptLTUuNDcyLTkuMzg1Yy00LjQxNyAwLTggMy41ODMtOCA4czMuNTgzIDggOCA4IDgtMy41ODMgOC04LTMuNTgzLTgtOC04eiIvPjwvc3ZnPg==" alt="WhatsApp" class="social-icon">
-        WhatsApp
-    </a>
     
-    <a href="https://t.me/your-channel" target="_blank" class="social-link">
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzI5OTZkOCI+PHBhdGggZD0iTTEyIDBDNS4zNzMgMCAwIDUuMzczIDAgMTJzNS4zNzMgMTIgMTIgMTIgMTItNS4zNzMgMTItMTJTMTguNjI3IDAgMTIgMHptNS44OTQgOC4yMjEtNC4xMjkgMS45NTFjLS41MzEuMjQ2LS44ODcuNDA5LTEuMDY3LjY3OC0uMTc2LjI2My0uMTU5LjU0Ni0uMTE5Ljc3MWwtLjAwNi4wMDVsLjA2OC4wMjkuMDc0LjAzOGMuMTI4LjA2Ni4yOTkuMTU5LjQyMi4yMTcuMzUyLjE2Ni42NDUuMzA2IDEuMDI0LjU0OC4zNzcuMjQxLjc0OS41MDIgMS4wMzEuODc0LjI4Mi4zNzEuNDc0Ljc1My42MTggMS4yMzcuMTQ0LjQ4NC4yMzcgMS4wMTEuMzQ3IDEuNTU0LjEwOS41NDEuMjM0IDEuMTUzLjM3OCAxLjc0OGwuMDM0LjE0NGMuMDM2LjE1NS4wNzEuMzA2LjEwNi40NTUuMDM0LjE0OC4wNjguMjk0LjEwNC40MzUuMDM2LjE0LjA3My4yNzcuMTE2LjQwNS4wNDIuMTI4LjA4OS4yNDQuMTUyLjM0Ny4wNjIuMTAzLjEzOC4xOTMuMjM0LjI1OC4wOTYuMDY1LjIwOC4xMDcuMzM2LjEwNy4xMjggMCAuMjQtLjA0Mi4zMzYtLjEwNy4wOTYtLjA2NS4xNzItLjE1NS4yMzQtLjI1OC4wNjMtLjEwMy4xMS0uMjE5LjE1Mi0uMzQ3LjA0My0uMTI4LjA4LS4yNjUuMTE2LS40MDUuMDM2LS4xNDEuMDctLjI4Ny4xMDQtLjQzNS4wMzUtLjE0OS4wNy0uMy4xMDYtLjQ1NWwuMDM0LS4xNDRjLjE0NC0uNTk1LjI2OS0xLjIwNy4zNzgtMS43NDguMTA5LS41NDMuMi0xLjA3LjM0Ny0xLjU1NC4xNDQtLjQ4NC4zMzYtLjg2Ni42MTgtMS4yMzcuMjgyLS4zNzIuNjU0LS42MzMgMS4wMzEtLjg3NC4zNzktLjI0Mi42NzItLjM4MiAxLjAyNC0uNTQ4LjEyMy0uMDU4LjI5NC0uMTUxLjQyMi0uMjE3bC4wNzQtLjAzOC4wNjgtLjAyOS0uMDA2LS4wMDVjLjA0LS4yMjUuMDU3LS41MDgtLjExOS0uNzcxLS4xOC0uMjY5LS41MzYtLjQzMi0xLjA2Ny0uNjc4bC00LjEyOS0xLjk1MWMtLjE2OS0uMDgtLjMxNi0uMTItLjQ1MS0uMTItLjI4NSAwLS41MjUuMDk1LS42OTUuMjUtLjE3LjE1NS0uMjU1LjM2LS4yNTUuNTc5IDAgLjIxOC4wODUuNDI0LjI1NS41NzkuMTcuMTU1LjQxLjI1LjY5NS4yNS4xMzUgMCAuMjgyLS4wNC40NTEtLjEyeiIvPjwvc3ZnPg==" alt="Telegram" class="social-icon">
-        Telegram
-    </a>
-</div>
-<button class="package-btn" id="withdraw">Withdraw</button>                          
-<button class="logout " id="logout-btn">Logout</button>
-                </div>
-                    </div>
-            </section>
+  <!-- Compact Mobile Wallet Card -->
+     <div class="body">
+    <article class="wallet-card" role="region" aria-label="Personal Profits Wallet">
+        <div class="card-header">
+            <div class="wallet-title">
+                <div class="wallet-label">Personal Profits</div>
+                <div class="wallet-name">Active Wallet</div>
+            </div>
+            <div class="wallet-badge" aria-hidden="true">
+                <div class="wallet-icon">UGX</div>
+            </div>
+        </div>
 
+        <div class="balance-section">
+            <div class="wallet-amount-row" aria-live="polite">
+                <div class="currency" id="wallet-currency">UGX</div>
+                <div class="amount" id="wallet-balance">0.00</div>
+            </div>
+            
+            <div class="amount-change">+1% today</div>
+        </div>
 
-
-            <!-- Columns 2 & 3: Investment Packages -->
-            <section class="packages-container">
-                <div class="packages-header">
-                    <h2 class="packages-title">Investment Packages</h2>
-                    <p class="packages-subtitle">Choose from our premium investment options</p>
-                </div>
-                
-                <div class="packages-grid">
-                    <!-- Package 1 -->
-                    <div class="package-card" data-modal="modal-1" data-amount="10000" datapackage="bronze" data-description="Bronze Package - 5% ROI">
-                        <div class="package-header">
-                            <div>
-                                <h3 class="package-name">Bronze</h3>
-                                <div class="package-rate">5% ROI</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="package-price">UGX.10,000</div>
-                            <ul class="package-features">
-                                <li><i class="fas fa-check"></i> 30-day term</li>
-                                <li><i class="fas fa-check"></i> Daily returns</li>
-                                <li><i class="fas fa-check"></i> Basic support</li>
-                            </ul>
-                            <button class="package-btn" >Invest Now</button>
-                          
-                        
-                        </div>
-                    </div>
-
-                    <!-- Package 2 -->
-                    <div class="package-card" data-modal="modal-2" data-amount="20000" datapackage="silver" data-description="Silver Package - 6% ROI">
-                        <div class="package-header">
-                            <div>
-                                <h3 class="package-name">Silver</h3>
-                                <div class="package-rate">6% ROI</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="package-price">UGX. 20,000</div>
-                            <ul class="package-features">
-                                <li><i class="fas fa-check"></i> 60-day term</li>
-                                <li><i class="fas fa-check"></i> Weekly returns</li>
-                                <li><i class="fas fa-check"></i> Priority support</li>
-                            </ul>
-                           
-                            <button class="package-btn">Invest Now</button>
-                        </div>
-                    </div>
-
-                    <!-- Package 3 -->
-                    <div class="package-card" data-modal="modal-3" data-amount="50000" data-package="gold" data-description="Gold Package - 7% ROI">
-                        <div class="package-header">
-                            <div>
-                                <h3 class="package-name">Gold</h3>
-                                <div class="package-rate">7% ROI</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="package-price">UGX. 50,000</div>
-                            <ul class="package-features">
-                                <li><i class="fas fa-check"></i> 90-day term</li>
-                                <li><i class="fas fa-check"></i> Bi-weekly returns</li>
-                                <li><i class="fas fa-check"></i> Dedicated manager</li>
-                            </ul>
-                            <button class="package-btn">Invest Now</button>
-
-                        </div>
-                    </div>
-
-                    <!-- Package 4 -->
-                    <div class="package-card" data-modal="modal-4" data-amount="100000" data-package="Platinum data-description="Premium Package - 8% ROI">
-                        <div class="package-header">
-                            <div>
-                                <h3 class="package-name">Platinum</h3>
-                                <div class="package-rate">8% ROI</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="package-price">UGX. 100,000</div>
-                            <ul class="package-features">
-                                <li><i class="fas fa-check"></i> 120-day term</li>
-                                <li><i class="fas fa-check"></i> Monthly returns</li>
-                                <li><i class="fas fa-check"></i> VIP support</li>
-                            </ul>
-                            <button class="package-btn">Invest Now</button>
-                        </div>
-                    </div>
-
-                    <!-- Package 5 -->
-                    <div class="package-card" data-modal="modal-5" data-amount="150000" data-package="premium" data-description="Platinum Package - 10% ROI">
-                        <div class="package-header">
-                            <div>
-                                <h3 class="package-name">Premium</h3>
-                                <div class="package-rate">10% ROI</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="package-price">UGX. 150,000</div>
-                            <ul class="package-features">
-                                <li><i class="fas fa-check"></i> 180-day term</li>
-                                <li><i class="fas fa-check"></i> Quarterly returns</li>
-                                <li><i class="fas fa-check"></i> Personal advisor</li>
-                            </ul>
-                            <button class="package-btn">Invest Now</button>
-                        </div>
-                    </div>
-
-                    <!-- Package 6 -->
-                    <div class="package-card" data-modal="modal-6" data-amount="200000" data-package="ultimate" data-description="Ultimate Package - 15% ROI">
-                        <div class="package-header">
-                            <div>
-                                <h3 class="package-name">Ultimate</h3>
-                                <div class="package-rate">15% ROI</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="package-price">UGX. 200,000</div>
-                            <ul class="package-features">
-                                <li><i class="fas fa-check"></i> 365-day term</li>
-                                <li><i class="fas fa-check"></i> Custom returns</li>
-                                <li><i class="fas fa-check"></i> Exclusive benefits</li>
-                            </ul>
-                            <button class="package-btn">Invest Now</button>
-                        </div>
-                    </div>
-
-                     <!-- Group Registration Buttons -->
-<div class="group-registration-container">
-    <div class="group-buttons">
-        <button class="group-btn group-5" onclick="openGroupModal('group5')">
-         <!---- <span class="group-icon">👥</span>  --->  
-            <span class="group-title">Register as Group of 5</span>
-            <span class="group-subtitle">Standard Benefits</span>
-        </button>
+        <div class="sub-note">Available to withdraw • <span id="available-balance">0.00</span></div>
         
-        <button class="group-btn group-10" onclick="openGroupModal('group10')">
-            <span class="group-icon">👨‍👩‍👧‍👦</span>
-            <span class="group-title">Register as Group of 10</span>
-            <span class="group-subtitle">Double Benefits & Premium Rewards</span>
-        </button>
+        <div class="wallet-actions">
+            <button class="action-btn primary" id="withdraw">
+                <span>Withdraw</span>
+            </button>
+            <button class="action-btn deposit" id="deposit">
+                <span>Deposit</span>
+            </button>
+        </div>
+    </article>
+    </div>
+
+ 
+
+        <!-- Mini Stats -->
+        <div class="mini-stats" id="statsSwipe">
+          <div class="mini-stats-container">
+            <div class="stat-card" data-key="totalReferrals">
+              <div class="stat-value" id="total-referrals">0.00</div>
+              <div class="stat-label">Total Referrals</div>
+            </div>
+            <div class="stat-card" data-key="referralBonus">
+              <div class="stat-value" id="referral-bonus">0.00</div>
+              <div class="stat-label">Referral Bonus</div>
+            </div>
+            <div class="stat-card" data-key="availableBalance">
+              <div class="stat-value" id="available-balance">0.00</div>
+              <div class="stat-label">Available Balance</div>
+            </div>
+            <div class="stat-card" data-key="actualBalance">
+              <div class="stat-value"id="actual-balance">0.00</div>
+              <div class="stat-label">Actual Balance</div>
+            </div>
+            <div class="stat-card" data-key="investmentBonus">
+              <div class="stat-value" id="bonus">0.00</div>
+              <div class="stat-label">Investment Bonus</div>
+            </div>
+            <div class="stat-card" data-key="totalEarnings">
+              <div class="stat-value" id="lifetime-total">0.00</div>
+              <div class="stat-label">Total Earnings</div>
+            </div>
+          </div>
+        </div>
+        <div class="scroll-indicator">
+          <div class="scroll-dot active"></div>
+          <div class="scroll-dot"></div>
+          <div class="scroll-dot"></div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="card mb-24">
+          <h3 class="section-title">Financial Summary</h3>
+          <div class="financial-summary">
+            <div class="financial-item">
+              <div class="financial-value" id="earningsToday"></div>
+              <div class="financial-label">Today</div>
+            </div>
+            <div class="financial-item">
+              <div class="financial-value" id="earningsWeek"></div>
+              <div class="financial-label">This Week</div>
+            </div>
+            <div class="financial-item">
+              <div class="financial-value" id="earningsTotal"></div>
+              <div class="financial-label">Total</div>
+            </div>
+          </div>
+          <div class="progress-container">
+            <div class="progress-bar-bg">
+              <div class="progress-bar" id="progressToNext" data-percent="70"></div>
+            </div>
+            <p class="progress-text">10 referrals away from Level 2 — keep pushing!</p>
+          </div>
+        </div>
+
+        <!-- Network Breakdown -->
+        <div class="card mb-24">
+          <h3 class="section-title">Network Breakdown</h3>
+          <div id="networkLevels">
+            <div class="level-row" data-level="1">
+              <div class="level-label" id="active-referrals">Level 1</div>
+              <div class="level-count" id="lifetime-referral">1</div>
+              <div class="level-bar-container">
+                <div class="level-bar" style="width: 30%;"></div>
+              </div>
+            </div>
+            <div class="level-row" data-level="2">
+              <div class="level-label">Level 1</div>
+              <div class="level-count">1</div>
+              <div class="level-bar-container">
+                <div class="level-bar" style="width: 30%;"></div>
+              </div>
+            </div>
+            <div class="level-row" data-level="3">
+              <div class="level-label">Level 1</div>
+              <div class="level-count">1</div>
+              <div class="level-bar-container">
+                <div class="level-bar" style="width: 30%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card mb-24">
+          <h3 class="section-title">Recent Activity</h3>
+          <ul class="activity-list" id="recentActivityList">
+            <li class="activity-item" data-type="bonus">
+              <div class="activity-icon">
+                <i class="fas fa-gift"></i>
+              </div>
+              <div class="activity-details">
+                <div class="activity-title">Referral Bonus</div>
+                <div class="activity-time">loading...</div>
+              </div>
+              <div class="activity-amount text-success">+UGX.0.00</div>
+            </li>
+            <li class="activity-item" data-type="deposit">
+              <div class="activity-icon">
+                <i class="fas fa-arrow-down"></i>
+              </div>
+              <div class="activity-details">
+                <div class="activity-title">Deposit</div>
+                <div class="activity-time">loading...</div>
+              </div>
+              <div class="activity-amount">UGX. 0.00</div>
+            </li>
+            <li class="activity-item" data-type="withdraw">
+              <div class="activity-icon">
+                <i class="fas fa-arrow-up"></i>
+              </div>
+              <div class="activity-details">
+                <div class="activity-title">Withdrawal</div>
+                <div class="activity-time">loading...</div>
+              </div>
+              <div class="activity-amount text-warning">-UGX. </div>
+            </li>
+            <li class="activity-item" data-type="bonus">
+              <div class="activity-icon">
+                <i class="fas fa-gift"></i>
+              </div>
+              <div class="activity-details">
+                <div class="activity-title">Level Up Bonus</div>
+                <div class="activity-time">loading...</div>
+              </div>
+              <div class="activity-amount text-success">+UGX. 0.00</div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- User Package Card -->
+<div class="package-card-profile">
+    <div class="package-card-header">
+        <h3 class="card-header-text">Current Package</h3>
+    </div>
+    <div class="package-card-body">
+        <span id="package" class="package-name"></span>
+        <span id="package-duration" class="plan-duration"></span>
+        <span id="package-bonus" class="plan-bonus"></span>
+        <span id="package-status" class="plan-status active"></span>
     </div>
 </div>
 
-                </div>
-            </section>
-        </main>
-    </section>
 
-        <div class="policy-container">
+
+
+        <!-- Profile Details -->
+        <div class="card mb-24">
+          <h3 class="section-title">Profile Details</h3>
+          <div class="profile-details" id="profileDetails">
+            <div class="profile-detail" data-field="email">
+              <div class="detail-label">Email</div>
+              <div class="detail-value" id="email"></div>
+            </div>
+            <div class="profile-detail" data-field="phone">
+              <div class="detail-label">Phone</div>
+              <div class="detail-value" id="phone"></div>
+            </div>
+            <div class="profile-detail" data-field="referralCode">
+              <div class="detail-label">Referral Code</div>
+              <div class="detail-value" id="referral_code"></div>
+            </div>
+            <div class="profile-detail" data-field="joinDate">
+              <div class="detail-label">Join Date</div>
+              <div class="detail-value" id="memberSince"></div>
+               <div class="detail-value" id="isVerified"></div>  
+                <div class="detail-value" id="isActive"></div>
+            </div>
+          </div>
+          <button class="btn btn-secondary" id="log-out" style="width: 100%; margin-top: 16px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Content Column -->
+      <div class="main-content">
+        <!-- Main Stat Cards -->
+        <div class="stat-cards">
+          <div class="stat-cards-container">
+            <div class="main-stat-card" id="statNetworkGrowth" data-type="network-growth">
+              <h3>
+                <span>Network Growth</span>
+                <h5 id="network-size"></h5>
+                <h5 id="network-depth"></h5>
+              
+                <div class="card-icon">
+                  <i class="fas fa-users"></i>
+                </div>
+              </h3>
+              <div class="main-stat-value">+1%</div>
+              <div class="main-stat-label">vs. last month</div>
+              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-chart-line" style="font-size: 24px; color: var(--text-light);"></i>
+              </div>
+            </div>
+            <div class="main-stat-card" id="statEarnings" data-type="earnings-overview">
+              <h3>
+                <span>Earnings Overview</span>
+                <div class="card-icon" style="background: var(--secondary-gradient);">
+                  <i class="fas fa-dollar-sign"></i>
+                </div>
+              </h3>
+              <div class="main-stat-value" id="lifetime-total"></div>
+              <div class="main-stat-label" id="earningsMonth">Total earnings to date</div>
+              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-chart-bar" style="font-size: 24px; color: var(--text-light);"></i>
+              </div>
+            </div>
+
+
+            <div class="main-stat-card" id="statLevelPerformance" data-type="level-performance">
+              <h3>
+                <span>Level Performance</span>
+                <div class="card-icon" style="background: linear-gradient(135deg, #ff8a00 0%, #e52e71 100%);">
+                  <i class="fas fa-star"></i>
+                </div>
+              </h3>
+              <div class="main-stat-value">Level 1</div>
+              <div class="main-stat-label">1% to Level next</div>
+              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-trophy" style="font-size: 24px; color: var(--text-light);"></i>
+              </div>
+            </div>
+            <div class="main-stat-card" id="statTeamPerformance" data-type="team-performance">
+              <h3>
+                <span>Team Performance</span>
+                <div class="card-icon" style="background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);">
+                  <i class="fas fa-user-friends"></i>
+                </div>
+              </h3>
+              <div class="main-stat-value">0</div>
+              <div class="main-stat-label">Active team members</div>
+              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-chart-pie" style="font-size: 24px; color: var(--text-light);"></i>
+              </div>
+            </div>
+            <div class="main-stat-card" id="statRecent" data-type="recent-activity">
+              <h3>
+                <span>Recent Activity Summary</span>
+                <div class="card-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                  <i class="fas fa-clock"></i>
+                </div>
+              </h3>
+              <div class="main-stat-value">0</div>
+              <div class="main-stat-label">Transactions this week</div>
+              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-history" style="font-size: 24px; color: var(--text-light);"></i>
+              </div>
+            </div>
+            <div class="main-stat-card" id="statNotifications" data-type="notifications">
+              <h3>
+                <span>Notifications</span>
+                <div class="card-icon" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);">
+                  <i class="fas fa-bell"></i>
+                </div>
+              </h3>
+              <div class="main-stat-value">0</div>
+              <div class="main-stat-label">Unread notifications</div>
+              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-envelope" style="font-size: 24px; color: var(--text-light);"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="scroll-indicator">
+          <div class="scroll-dot active"></div>
+          <div class="scroll-dot"></div>
+        </div>
+
+        <!-- Packages Grid -->
+        <div class="card">
+          <h3 class="section-title ">Investment Packages</h3>
+          <div class="packages-grid" id="packagesGrid">
+            <div class="package-card" data-modal="bronze" data-package-id="bronze">
+              <h3 class="package-name">Bronze Package</h3>
+              <div class="package-price">UGX. 10,000</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 5% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Basic analytics</li>
+                <li><i class="fas fa-check-circle"></i> 24/7 support</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+            <div class="package-card" data-modal="silver" data-package-id="silver">
+              <h3 class="package-name">Silver Package</h3>
+              <div class="package-price">UGX. 20,000</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 7% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Advanced analytics</li>
+                <li><i class="fas fa-check-circle"></i> Priority support</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+            <div class="package-card" data-modal="gold" data-package-id="gold">
+              <h3 class="package-name">Gold Package</h3>
+              <div class="package-price">UGX. 50,000</div>
+              <div class="package-badge">Popular</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 10% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Premium analytics</li>
+                <li><i class="fas fa-check-circle"></i> VIP support</li>
+              </ul>
+              <button class="btn btn-accent package-btn" style="width: 100%;">Get Started</button>
+            </div>
+            <div class="package-card" data-modal="platinum" data-package-id="platinum">
+              <h3 class="package-name">Platinum Package</h3>
+              <div class="package-price">UGX. 100,000</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 12% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Expert analytics</li>
+                <li><i class="fas fa-check-circle"></i> Dedicated manager</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+            <div class="package-card" data-modal="premium" data-package-id="premium">
+              <h3 class="package-name">Premium Package</h3>
+              <div class="package-price">UGX. 150,000</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 15% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Full analytics suite</li>
+                <li><i class="fas fa-check-circle"></i> Executive support</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+            <div class="package-card" data-modal="ultimate" data-package-id="ultimate">
+              <h3 class="package-name">Ultimate Package</h3>
+              <div class="package-price">UGX. 200,000</div>
+              <div class="package-badge">Best Value</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 20% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Custom dashboard</li>
+                <li><i class="fas fa-check-circle"></i> Concierge service</li>
+              </ul>
+              <button class="btn btn-accent package-btn" style="width: 100%;">Get Started</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Team CTA Cards -->
+        <div class="team-cta-container">
+          <div class="team-cta" id="team5Btn">
+            <h3>Join as Team of 5</h3>
+            <p>Combine efforts, multiply rewards</p>
+            <div class="loyalty-points">Loyalty +250 pts</div>
+            <button class="btn btn-primary">Join Now</button>
+          </div>
+          <div class="team-cta" id="team10Btn">
+            <h3>Join as Team of 10</h3>
+            <p>Double benefits vs Team of 5</p>
+            <div class="loyalty-points">Loyalty +500 pts</div>
+            <button class="btn btn-accent">Join Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+</button>
+  <div class="referral-trigger-container">
+  <button class="referral-modal-trigger referral-queens-trigger" 
+          onclick="openReferralModal('referralQueensModal')">
+    <i class="fas fa-crown mr-2"></i> Queens Circle
+  </button>
+  
+  <button class="referral-modal-trigger referral-ambassador-trigger" 
+          onclick="openReferralModal('referralAmbassadorModal')"> 
+    <i class="fas fa-shield-alt mr-2"></i> Ambassador Leadership
+  </button>
+</div>
+
+
+
+  <div class="success-message" id="copySuccess" role="status" aria-live="polite">
+    <i class="fas fa-check-circle"></i> Link copied to clipboard!
+  </div>
+ <div class="policy-toggle">
+            <button class="toggle-btn" id="policyToggle">
+                <i class="fas fa-file-alt"></i>
+                View Policy Document
+            </button>
+        </div>
+        <div class="policy-container" id="policyContainer">
             <aside class="policy-sidebar">
                 <h1 class="policy-title">Policy Document</h1>
                 <p class="policy-subtitle">"Earn. Connect. Grow Together."</p>
@@ -337,7 +535,7 @@
                     </div>
                 </nav>
             </aside>
-
+            
             <main class="policy-content">
                 <section id="membership" class="policy-section">
                     <div class="section-header">
@@ -666,10 +864,25 @@
             </main>
         </div>
     </div>
-<!---- 
-    <--------- Package Modals -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!--------- Package Modals -->
     <!-- Modal 1 -->
-    <div class="modal payment-modal" id="modal-1" data-amount="10000" data-package="Bronze">
+    <div class="modal payment-modal" id="bronze" data-amount="10000" data-package="Bronze">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -712,7 +925,7 @@
     </div>
 
     <!-- Modal 2 -->
-    <div class="modal payment-modal" data-amount="20000" data-package="Silver" id="modal-2" >
+    <div class="modal payment-modal" id="silver" data-amount="20000" data-package="Silver">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -754,7 +967,7 @@
     </div>
 
     <!-- Modal 3 -->
-    <div class="modal payment-modal" id="modal-3" data-amount="50000" data-package="Gold">
+    <div class="modal payment-modal" id="gold" data-amount="50000" data-package="Gold">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -796,7 +1009,7 @@
     </div>
 
     <!-- Modal 4 -->
-    <div class="modal payment-modal" id="modal-4" data-amount="100000" data-package="Platinum">
+    <div class="modal payment-modal" id="platinum" data-amount="100000" data-package="Platinum">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -880,7 +1093,7 @@
         </div>
     </div>
     <!-- Modal 5 -->
-    <div class="modal payment-modal" id="modal-5" data-amount="150000" data-package="Premium">
+    <div class="modal payment-modal" id="premium" data-amount="150000" data-package="Premium">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -922,7 +1135,7 @@
     </div>
 
     <!-- Modal 6 -->
-    <div class="modal payment-modal" id="modal-6" data-amount="200000" data-package="ultimate">
+    <div class="modal payment-modal" id="ultimate" data-amount="200000" data-package="ultimate">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
             <div class="modal-header">
@@ -964,6 +1177,9 @@
     </div>
 
     <!-- withdraw Modal  -->
+     
+
+     
     <div class="modal payment-modal" id="modal-withdraw">
         <div class="modal-content">
             <button class="close-modal">&times;</button>
@@ -996,11 +1212,580 @@
                     <button type="button" class="btn btn-primary" id="withdraw-btn">Withdraw</button>
                 </div>
             </form>
+         </div>
         </div>
+      </div>
     </div>
-   
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+  </div>
+  <div>
+  
+
+ 
+    <div id="referralQueensModal" class="referral-modal">
+    <div class="referral-modal-content">
+      <div class="referral-close-icon" onclick="closeReferralModal('referralQueensModal')">
+        <i class="fas fa-times"></i>
+      </div>
+      <div class="referral-modal-header referral-queens-header" style="background-image: url('https://cdn.pixabay.com/photo/2017/08/06/12/52/woman-2592247_1280.jpg');">
+        <div class="referral-modal-header-content">
+          <div class="referral-badge referral-queens-badge">
+            <i class="fas fa-crown mr-2"></i> Premium Team
+          </div>
+          <h2 class="text-2xl font-bold">Queens Circle</h2>
+          <p class="text-sm mt-1 opacity-90">Team of 5 Members</p>
+        </div>
+      </div>
+      
+      <div class="referral-modal-body">
+        <form id="referralQueensForm" class="referral-queens-form">
+          <div class="referral-queens-accordion">
+            <!-- Member 1 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-queens-member-1">
+                <span>Member 1 <small class="ml-2 opacity-70">(Team Leader)</small></span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-queens-member-1">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-user-1">User ID</label>
+                  <input type="text" id="referral-queens-user-1" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-phone-1">Phone Number</label>
+                  <input type="tel" id="referral-queens-phone-1" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-email-1">Email Address</label>
+                  <input type="email" id="referral-queens-email-1" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-referral-1">Referral Code</label>
+                  <input type="text" id="referral-queens-referral-1" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 2 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-queens-member-2">
+                <span>Member 2</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-queens-member-2">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-user-2">User ID</label>
+                  <input type="text" id="referral-queens-user-2" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-phone-2">Phone Number</label>
+                  <input type="tel" id="referral-queens-phone-2" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-email-2">Email Address</label>
+                  <input type="email" id="referral-queens-email-2" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-referral-2">Referral Code</label>
+                  <input type="text" id="referral-queens-referral-2" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 3 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-queens-member-3">
+                <span>Member 3</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-queens-member-3">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-user-3">User ID</label>
+                  <input type="text" id="referral-queens-user-3" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-phone-3">Phone Number</label>
+                  <input type="tel" id="referral-queens-phone-3" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-email-3">Email Address</label>
+                  <input type="email" id="referral-queens-email-3" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-referral-3">Referral Code</label>
+                  <input type="text" id="referral-queens-referral-3" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 4 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-queens-member-4">
+                <span>Member 4</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-queens-member-4">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-user-4">User ID</label>
+                  <input type="text" id="referral-queens-user-4" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-phone-4">Phone Number</label>
+                  <input type="tel" id="referral-queens-phone-4" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-email-4">Email Address</label>
+                  <input type="email" id="referral-queens-email-4" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-referral-4">Referral Code</label>
+                  <input type="text" id="referral-queens-referral-4" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 5 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-queens-member-5">
+                <span>Member 5</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-queens-member-5">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-user-5">User ID</label>
+                  <input type="text" id="referral-queens-user-5" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-phone-5">Phone Number</label>
+                  <input type="tel" id="referral-queens-phone-5" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-email-5">Email Address</label>
+                  <input type="email" id="referral-queens-email-5" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-queens-referral-5">Referral Code</label>
+                  <input type="text" id="referral-queens-referral-5" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="referral-benefits">
+            <h3 class="referral-benefits-title">
+              <i class="fas fa-gem text-purple-600"></i> Queens Circle Benefits
+            </h3>
+            <div class="referral-benefits-grid">
+              <div class="referral-benefit-item referral-queens-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-star"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Bonus Rewards</h4>
+                  <p>1.5x bonus multiplier on all team referrals</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-queens-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-handshake"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Conference Access</h4>
+                  <p>Standard access to annual conferences</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-queens-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-crown"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Rank Recognition</h4>
+                  <p>Starter rank with clear advancement path</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-queens-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-gift"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Gift Program</h4>
+                  <p>Tier 1 welcome package and seasonal gifts</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="referral-buttons">
+            <button type="button" class="referral-btn referral-btn-secondary" data-referral-close="referralQueensModal">Close</button>
+            <button type="submit" class="referral-btn referral-btn-primary referral-queens-btn">
+              <i class="fas fa-check-circle mr-2"></i> Register Team
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Ambassador Leadership Modal -->
+  <div id="referralAmbassadorModal" class="referral-modal">
+    <div class="referral-modal-content">
+      <div class="referral-close-icon" onclick="closeReferralModal('referralAmbassadorModal')">
+        <i class="fas fa-times"></i>
+      </div>
+      <div class="referral-modal-header referral-ambassador-header" style="background-image: url('https://cdn.pixabay.com/photo/2018/03/10/09/45/businessman-3213659_1280.jpg');">
+        <div class="referral-modal-header-content">
+          <div class="referral-badge referral-ambassador-badge">
+            <i class="fas fa-shield-alt mr-2"></i> Elite Team
+          </div>
+          <h2 class="text-2xl font-bold">Ambassador Leadership Group</h2>
+          <p class="text-sm mt-1 opacity-90">Team of 10 Members</p>
+        </div>
+      </div>
+      
+      <div class="referral-modal-body">
+        <form id="referralAmbassadorForm" class="referral-ambassador-form">
+          <div class="referral-ambassador-accordion">
+            <!-- Member 1 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-1">
+                <span>Member 1 <small class="ml-2 opacity-70">(Team Leader)</small></span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-1">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-1">User ID</label>
+                  <input type="text" id="referral-ambassador-user-1" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-1">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-1" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-1">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-1" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-1">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-1" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 2 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-2">
+                <span>Member 2</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-2">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-2">User ID</label>
+                  <input type="text" id="referral-ambassador-user-2" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-2">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-2" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-2">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-2" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-2">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-2" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 3 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-3">
+                <span>Member 3</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-3">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-3">User ID</label>
+                  <input type="text" id="referral-ambassador-user-3" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-3">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-3" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-3">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-3" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-3">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-3" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 4 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-4">
+                <span>Member 4</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-4">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-4">User ID</label>
+                  <input type="text" id="referral-ambassador-user-4" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-4">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-4" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-4">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-4" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-4">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-4" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 5 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-5">
+                <span>Member 5</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-5">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-5">User ID</label>
+                  <input type="text" id="referral-ambassador-user-5" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-5">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-5" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-5">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-5" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-5">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-5" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 6 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-6">
+                <span>Member 6</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-6">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-6">User ID</label>
+                  <input type="text" id="referral-ambassador-user-6" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-6">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-6" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-6">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-6" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-6">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-6" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 7 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-7">
+                <span>Member 7</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-7">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-7">User ID</label>
+                  <input type="text" id="referral-ambassador-user-7" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-7">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-7" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-7">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-7" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-7">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-7" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 8 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-8">
+                <span>Member 8</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-8">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-8">User ID</label>
+                  <input type="text" id="referral-ambassador-user-8" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-8">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-8" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-8">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-8" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-8">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-8" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 9 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-9">
+                <span>Member 9</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-9">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-9">User ID</label>
+                  <input type="text" id="referral-ambassador-user-9" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-9">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-9" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-9">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-9" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-9">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-9" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Member 10 -->
+            <div class="referral-accordion-item">
+              <div class="referral-accordion-header" data-referral-accordion="referral-ambassador-member-10">
+                <span>Member 10</span>
+                <i class="fas fa-chevron-down referral-accordion-icon"></i>
+              </div>
+              <div class="referral-accordion-content" id="referral-ambassador-member-10">
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-user-10">User ID</label>
+                  <input type="text" id="referral-ambassador-user-10" class="referral-form-input" placeholder="Enter user ID">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-phone-10">Phone Number</label>
+                  <input type="tel" id="referral-ambassador-phone-10" class="referral-form-input" placeholder="Enter phone number">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-email-10">Email Address</label>
+                  <input type="email" id="referral-ambassador-email-10" class="referral-form-input" placeholder="Enter email address">
+                </div>
+                <div class="referral-form-group">
+                  <label class="referral-form-label" for="referral-ambassador-referral-10">Referral Code</label>
+                  <input type="text" id="referral-ambassador-referral-10" class="referral-form-input" placeholder="Enter referral code">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="referral-benefits">
+            <h3 class="referral-benefits-title">
+              <i class="fas fa-trophy text-blue-600"></i> Ambassador Leadership Benefits
+            </h3>
+            <div class="referral-benefits-grid">
+              <div class="referral-benefit-item referral-ambassador-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Enhanced Bonuses</h4>
+                  <p>3x bonus multiplier on all team referrals</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-ambassador-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-diamond"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>VIP Conferences</h4>
+                  <p>Elite access to global conferences & workshops</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-ambassador-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Leadership Recognition</h4>
+                  <p>Priority rank advancement opportunities</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-ambassador-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-gift"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Premium Rewards</h4>
+                  <p>Tier 3 welcome package and luxury gifts</p>
+                </div>
+              </div>
+              
+              <div class="referral-benefit-item referral-ambassador-benefit">
+                <div class="referral-benefit-icon">
+                  <i class="fas fa-trophy"></i>
+                </div>
+                <div class="referral-benefit-text">
+                  <h4>Exclusive Opportunities</h4>
+                  <p>Special access to launch new products first</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="referral-buttons">
+            <button type="button" class="referral-btn referral-btn-secondary" data-referral-close="referralAmbassadorModal">Close</button>
+            <button type="submit" class="referral-btn referral-btn-primary referral-ambassador-btn">
+              <i class="fas fa-check-circle mr-2"></i> Register Team
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+           
+    <script id="app-script">
+  
+    ///================================================================
+    //===================================================================
+    //=================================================================
+    // APP PROFILE JS ON INLINE HTML
+    //=================================================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
     const DOM = {
         elements: {
             packageCards: document.querySelectorAll('.package-card'),
@@ -1083,13 +1868,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ModalManager.init();
 
-    // Logout handler
-    document.getElementById("logout-btn").onclick = () => {
-        if (confirm("Are you sure you want to logout?")) { 
-            window.location.href = "partials/index.html"; 
-            window.close(); 
-        }
-    };
+   
 
     // Social channels
     function openSocialChannels() {
@@ -1098,15 +1877,74 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 });
-
-
-function scrollToPolicy() {
-    const policySection = document.querySelector('.policy-container');
-    if (policySection) {
-        policySection.scrollIntoView({ behavior: 'smooth' });
+   // Modal functionality
+  
+  
+  
+// ULTRA-SIMPLE REFERRAL MODAL FUNCTIONS
+function openReferralModal(modalId) {
+    console.log('Opening:', modalId);
+    
+    // First, hide ALL modals
+    document.querySelectorAll('.modal, .referral-modal').forEach(modal => {
+        modal.style.display = 'none';
+        modal.classList.remove('show', 'active');
+    });
+    
+    // Then show the target referral modal
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.classList.add('active');
+        console.log('Modal displayed');
     }
 }
 
-</script>
-  <script src="{{url_for('static', filename='js/profile.js')}}" defer></script>
-   <script src="{{url_for('static', filename='js/payments.js')}}" defer></script>
+function closeReferralModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+}
+
+// Close when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('referral-modal')) {
+        const modalId = e.target.id;
+        closeReferralModal(modalId);
+    }
+});
+
+// Test function - FORCE visibility
+function testModalVisibility() {
+    const queensModal = document.getElementById('referralQueensModal');
+    if (queensModal) {
+        // Remove all classes and inline styles
+        queensModal.className = 'referral-modal';
+        queensModal.style.cssText = '';
+        
+        // Add our forced styles
+        queensModal.style.display = 'flex';
+        queensModal.style.position = 'fixed';
+        queensModal.style.top = '0';
+        queensModal.style.left = '0';
+        queensModal.style.width = '100vw';
+        queensModal.style.height = '100vh';
+        queensModal.style.zIndex = '99999';
+        queensModal.style.background = 'rgba(0,0,0,0.8)';
+        queensModal.style.alignItems = 'center';
+        queensModal.style.justifyContent = 'center';
+        queensModal.style.padding = '1rem';
+        
+        console.log('Modal forcefully positioned - should be visible');
+    }
+}
+
+  </script>
+  <script src="{{url_for('static', filename='js/profile.js')}}"></script>
+  <script src="{{url_for('static', filename='js/payments.js')}}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

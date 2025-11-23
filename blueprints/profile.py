@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify, session, render_template, redirect, url_for,g, current_app
 from models import User, db, Package
 
+
 bp = Blueprint('profile',__name__, url_prefix="")
 
 # ----------------------------------------------------------------------------------
@@ -21,20 +22,6 @@ def get_user_profile():
         return jsonify({"error": "User not found"}), 404
     return jsonify(user.to_dict()), 200
 
-# @bp.route('/user/profile')
-# def get_user_profile():
-#     user = current_user
-#     print(f"User type: {type(user)}")
-#     print(f"User methods: {[method for method in dir(user) if not method.startswith('_')]}")
-    
-#     # Test if to_dict exists
-#     if hasattr(user, 'to_dict'):
-#         print("to_dict method exists")
-#         result = user.to_dict()
-#         return jsonify(result), 200python app.py
-#     else:
-#         print("to_dict method DOES NOT exist")
-#         return jsonify({"error": "to_dict method not found"}), 500
 
 #==========================================================================
 # THIS IS THE PROFILE PAGE FOR USERS
@@ -84,76 +71,261 @@ def get_user_network(user_id):
         }), 500
 #=================================================================================
 #==========================================================================
-#     # EAGER LOADING before update
-#     user = User.query.options(
-#         db.joinedload(User.wallet),
-#         db.joinedload(User.bonuses),
-#         db.joinedload(User.packages).joinedload(Package.catalog)
-#     ).filter_by(id=user_id).first()
 
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
-
-#     data = request.get_json()
-    
-#     # Update fields
-#     if 'username' in data:
-#         user.username = data['username']
-#     if 'email' in data:
-#         user.email = data['email']
-#     if 'phone' in data:
-#         user.phone = data['phone']
-
-#     db.session.commit()
-    
-#     # Return updated user data with eager loading
-#     return jsonify(user.to_dict())
-
-# #======================================================================================
-# #=====================================================================================
-# @bp.route('/api/admin/users', methods=['GET'])
-# def get_all_users():
-#     """Get all users for admin dashboard (optimized)"""
-#     user_id = session.get('user_id')
-#     if not user_id:
-#         return jsonify({"error": "Unauthorized"}), 401
-
-#     current_user = User.query.get(user_id)
-#     if current_user.role != 'admin':
-#         return jsonify({"error": "Admin access required"}), 403
-
-#     #  EAGER LOADING for multiple users
-#     users = User.query.options(
-#         db.joinedload(User.wallet),
-#         db.joinedload(User.bonuses),
-#         db.joinedload(User.packages).joinedload(Package.catalog)
-#     ).all()
-
-#     return jsonify([user.to_dict() for user in users])
 # #====================================================================================================
 # #======================================================================================================
-@bp.route('/api/user/current', methods=['GET'])
-def get_current_user():
-    """Get current user with all relationships (optimized)"""
-    user_id = session.get('user_id')
+from flask import jsonify, request, current_app
+
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal, ROUND_HALF_UP
+from sqlalchemy import func, and_, or_
+import logging
+
+logger = logging.getLogger(__name__)
+#=========================================================================
+#=======================================================================
+
+
+@bp.route('/api/user/total-earnings', methods=['GET'])
+def get_current_user_total_earnings():
+    """
+    Calculate total earnings and referral statistics for the currently logged-in user
+    """
+    print("🎯 EARNINGS ENDPOINT HIT - WITH REFERRAL STATS")
+    
+    # Use session authentication like your other routes
+    user_id = session.get("user_id")
     if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
+        return jsonify({
+            "error": "Authentication required",
+            "message": "Please log in to access this endpoint"
+        }), 401
+    
+    try:
+        from models import User, Wallet, ReferralBonus, Bonus, Transaction, Referral, db
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        print(f"✅ Processing earnings for user: {user.username}")
+        
+        # Get current time in UTC
+        now = datetime.now(timezone.utc)
+        
+        # Calculate time ranges
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=today_start.weekday())
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Initialize totals with Decimal
+        totals = {
+            'today': Decimal('0.00'),
+            'this_week': Decimal('0.00'),
+            'this_month': Decimal('0.00'),
+            'breakdown': {
+                'referral_bonus': Decimal('0.00'),
+                'signup_bonus': Decimal('0.00'),
+                'available_balance': Decimal('0.00'),
+                'wallet_balance': Decimal('0.00')
+            }
+        }
 
-    #  EAGER LOADING - Prevents N+1 queries
-    user = User.query.options(
-        db.joinedload(User.wallet),
-        db.joinedload(User.bonuses),
-        db.joinedload(User.packages).joinedload(Package.catalog)
-    ).filter_by(id=user_id).first()
+        # =========================================================================
+        # 1. CALCULATE REFERRAL STATISTICS
+        # =========================================================================
+        
+        # Total direct referrals (users who signed up using this user's referral code)
+        total_direct_referrals = db.session.query(
+            func.count(Referral.id)
+        ).filter(
+            Referral.referrer_id == user_id,
+            Referral.status == 'active'
+        ).scalar() or 0
 
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+        # Active referrals (referred users who are active)
+        active_referrals = db.session.query(
+            func.count(Referral.id)
+        ).filter(
+            Referral.referrer_id == user_id,
+            Referral.status == 'active',
+            Referral.referred_id.isnot(None)
+        ).scalar() or 0
 
-    return jsonify(user.to_dict())
-#=======================================================================================================
+        # Total network size (from User model)
+        total_network_size = user.total_network_size or 0
 
+        # =========================================================================
+        # 2. CALCULATE LIFETIME EARNINGS
+        # =========================================================================
+        
+        # Lifetime referral bonuses (all time, not just active)
+        lifetime_referral_bonus_raw = db.session.query(
+            func.coalesce(func.sum(ReferralBonus.bonus_amount), 0.00)
+        ).filter(
+            ReferralBonus.user_id == user_id
+            # Remove status filter to get ALL historical bonuses
+        ).scalar() or 0.00
 
+        # Lifetime signup bonuses (all time)
+        lifetime_signup_bonus = db.session.query(
+            func.coalesce(func.sum(Bonus.amount), Decimal('0.00'))
+        ).filter(
+            Bonus.user_id == user_id,
+            Bonus.type == 'signup'
+            # Remove status filter to get ALL historical bonuses
+        ).scalar() or Decimal('0.00')
 
+        # Convert to Decimal for calculation
+        lifetime_referral_bonus = Decimal(str(lifetime_referral_bonus_raw))
+        
+        # Total lifetime earnings (all bonuses ever earned)
+        lifetime_earnings = (lifetime_referral_bonus + lifetime_signup_bonus).quantize(Decimal('0.01'), ROUND_HALF_UP)
 
+        # =========================================================================
+        # 3. CALCULATE CURRENT PERIOD EARNINGS (existing logic)
+        # =========================================================================
 
+        # Current period referral bonuses
+        referral_today_raw = db.session.query(
+            func.coalesce(func.sum(ReferralBonus.bonus_amount), 0.00)
+        ).filter(
+            ReferralBonus.user_id == user_id,
+            ReferralBonus.status == 'active',
+            ReferralBonus.created_at >= today_start
+        ).scalar() or 0.00
+        
+        referral_week_raw = db.session.query(
+            func.coalesce(func.sum(ReferralBonus.bonus_amount), 0.00)
+        ).filter(
+            ReferralBonus.user_id == user_id,
+            ReferralBonus.status == 'active',
+            ReferralBonus.created_at >= week_start
+        ).scalar() or 0.00
+        
+        referral_month_raw = db.session.query(
+            func.coalesce(func.sum(ReferralBonus.bonus_amount), 0.00)
+        ).filter(
+            ReferralBonus.user_id == user_id,
+            ReferralBonus.status == 'active',
+            ReferralBonus.created_at >= month_start
+        ).scalar() or 0.00
+
+        # Convert all referral amounts to Decimal
+        referral_today = Decimal(str(referral_today_raw))
+        referral_week = Decimal(str(referral_week_raw))
+        referral_month = Decimal(str(referral_month_raw))
+
+        # Current period signup bonuses
+        signup_today = db.session.query(
+            func.coalesce(func.sum(Bonus.amount), Decimal('0.00'))
+        ).filter(
+            Bonus.user_id == user_id,
+            Bonus.type == 'signup',
+            Bonus.status == 'active',
+            Bonus.created_at >= today_start
+        ).scalar() or Decimal('0.00')
+
+        signup_week = db.session.query(
+            func.coalesce(func.sum(Bonus.amount), Decimal('0.00'))
+        ).filter(
+            Bonus.user_id == user_id,
+            Bonus.type == 'signup',
+            Bonus.status == 'active',
+            Bonus.created_at >= week_start
+        ).scalar() or Decimal('0.00')
+
+        signup_month = db.session.query(
+            func.coalesce(func.sum(Bonus.amount), Decimal('0.00'))
+        ).filter(
+            Bonus.user_id == user_id,
+            Bonus.type == 'signup',
+            Bonus.status == 'active',
+            Bonus.created_at >= month_start
+        ).scalar() or Decimal('0.00')
+
+        # 4. Get current balances (not time-bound)
+        available_balance = user.available_balance if user.available_balance else Decimal('0.00')
+        wallet_balance = user.wallet.balance if user.wallet else Decimal('0.00')
+
+        # Calculate period totals
+        totals['today'] = (referral_today + signup_today).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        totals['this_week'] = (referral_week + signup_week).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        totals['this_month'] = (referral_month + signup_month).quantize(Decimal('0.01'), ROUND_HALF_UP)
+
+        # Set breakdown (current state)
+        referral_total_raw = db.session.query(
+            func.coalesce(func.sum(ReferralBonus.bonus_amount), 0.00)
+        ).filter(
+            ReferralBonus.user_id == user_id,
+            ReferralBonus.status == 'active'
+        ).scalar() or 0.00
+        
+        totals['breakdown']['referral_bonus'] = Decimal(str(referral_total_raw)).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        totals['breakdown']['signup_bonus'] = db.session.query(
+            func.coalesce(func.sum(Bonus.amount), Decimal('0.00'))
+        ).filter(
+            Bonus.user_id == user_id,
+            Bonus.type == 'signup',
+            Bonus.status == 'active'
+        ).scalar() or Decimal('0.00')
+        totals['breakdown']['available_balance'] = available_balance.quantize(Decimal('0.01'), ROUND_HALF_UP)
+        totals['breakdown']['wallet_balance'] = wallet_balance.quantize(Decimal('0.01'), ROUND_HALF_UP)
+
+        # =========================================================================
+        # 5. PREPARE COMPREHENSIVE RESPONSE
+        # =========================================================================
+
+        response_data = {
+            "user_id": user_id,
+            "username": user.username,
+            
+            # Current period earnings
+            "today": str(totals['today']),
+            "this_week": str(totals['this_week']),
+            "this_month": str(totals['this_month']),
+            
+            # Current balances breakdown
+            "breakdown": {
+                "referral_bonus": str(totals['breakdown']['referral_bonus']),
+                "signup_bonus": str(totals['breakdown']['signup_bonus']),
+                "available_balance": str(totals['breakdown']['available_balance']),
+                "wallet_balance": str(totals['breakdown']['wallet_balance'])
+            },
+            
+            # NEW: Referral statistics
+            "referral_stats": {
+                "total_direct_referrals": total_direct_referrals,
+                "active_referrals": active_referrals,
+                "total_network_size": total_network_size,
+                "network_depth": user.network_depth or 0,
+                "direct_referrals_count": user.direct_referrals_count or 0
+            },
+            
+            # NEW: Lifetime earnings
+            "lifetime_earnings": {
+                "total": str(lifetime_earnings),
+                "breakdown": {
+                    "referral_bonus": str(lifetime_referral_bonus),
+                    "signup_bonus": str(lifetime_signup_bonus)
+                }
+            }
+        }
+
+        print(f"✅ Comprehensive stats calculated for user {user_id}")
+        print(f"   - Direct referrals: {total_direct_referrals}")
+        print(f"   - Network size: {total_network_size}")
+        print(f"   - Lifetime earnings: {lifetime_earnings}")
+        
+        logger.info(f"Comprehensive stats calculated for user {user_id}")
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        print(f"💥 Error calculating comprehensive stats for user {user_id}: {str(e)}")
+        logger.error(f"Error calculating comprehensive stats for user {user_id}: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Internal server error",
+            "message": "Unable to calculate statistics at this time"
+        }), 500
 

@@ -38,41 +38,7 @@
         }
 
         /* Dynamic Background */
-        #hero-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .background-slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        .background-slide.active {
-            opacity: 1;
-        }
-
-        .background-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 2;
-        }
+    
 
         /* Hero Content */
         #hero-content {
@@ -234,8 +200,8 @@
         /* Registration Form */
         #hero-registration-container {
             width: 400px;
-            margin-top: 300px;
-            margin-bottom: 300px;
+            margin-top: 600px;
+            margin-bottom: 600px;
             margin-right: 0;
             height: fit-content;
         }
@@ -243,10 +209,10 @@
         #hero-registration-form {
             background: var(--white);
             border-radius: var(--border-radius);
-            padding: 30px;
+            padding: 20px;
             box-shadow: var(--shadow);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(149, 45, 169, 0.2);
         }
 
         .form-header {
@@ -353,11 +319,7 @@
             animation-delay: 0s;
         }
 
-        .floating-2 {
-            top: 60%;
-            left: 5%;
-            animation-delay: 2s;
-        }
+      
 
         .floating-3 {
             bottom: 20%;
@@ -447,7 +409,7 @@
         .login-modal {
             background: white;
             border-radius: 20px;
-            width: 90%;
+            width: 70%;
             max-width: 450px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             overflow: hidden;
@@ -501,7 +463,7 @@
         }
 
         .login-input {
-            width: 100%;
+            width: 60%;
             padding: 16px;
             border: 2px solid #e9ecef;
             border-radius: 12px;
@@ -1590,3 +1552,526 @@
             font-size: 14px;
             margin-top: 5px;
         }
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #28a745;
+    max-width: 400px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast.success {
+    border-left-color: #28a745;
+}
+
+.toast.error {
+    border-left-color: #dc3545;
+}
+
+.toast-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.toast.success .toast-icon {
+    background: #28a745;
+    content: "✓";
+}
+
+.toast.error .toast-icon {
+    background: #dc3545;
+    content: "!";
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.toast-message {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.toast-close:hover {
+    color: #666;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+}
+
+/* Full-page blank animation */
+.loading-page {
+  position: fixed;
+  inset: 0;
+  background: #ea87db; /* blank page */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 999;
+}
+
+/* Spinner animation */
+.spinner {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #333;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Optional text styling */
+.animation-container p {
+  font-size: 1rem;
+  color: #333;
+}
+* Bouncing dots */
+.dot {
+  width: 15px;
+  height: 15px;
+  margin: 0 5px;
+  background-color: #333;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 0.6s infinite alternate;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-15px); }
+}
+
+/* Make dots horizontal */
+
+ 
+.animation-container p {
+  margin-top: 20px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  text-align: center;
+    flex-direction: row;
+  align-items: center;
+   display: flex;
+}
+
+/* Bouncing shapes */
+.shape {
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  animation: bounce 1.5s infinite ease-in-out;
+}
+
+.shape1 { background: #ff3f81; left: 0; animation-delay: 0s; }
+.shape2 { background: #33d9b2; left: 50px; animation-delay: 0.2s; }
+.shape3 { background: #ffd93d; left: 100px; animation-delay: 0.4s; }
+.shape4 { background: #4285f4; left: 150px; animation-delay: 0.6s; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-40px); }
+}
+
+#hero-background {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.background-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 1; /* Add this */
+}
+
+.background-slide.active {
+    opacity: 1;
+}
+
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2; /* Ensure this is above background slides */
+}
+
+.hero-content {
+    position: relative; /* or absolute */
+    z-index: 3; /* Above everything else */
+    /* Your content styles */
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* Hero Section */
+#hero-section {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Background Container */
+#hero-background {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Background Slides */
+.background-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 1;
+}
+
+.background-slide.active {
+    opacity: 1;
+}
+
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2;
+}
+
+/* Hero Content */
+#hero-content {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 3rem;
+    align-items: center;
+}
+
+/* Left side - Hero Text */
+#hero-text-container {
+    color: white;
+}
+
+.hero-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    backdrop-filter: blur(10px);
+}
+
+#hero-main-headline {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+#hero-subheading {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+/* Hero Features */
+#hero-features {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-icon {
+    font-size: 1.2rem;
+}
+
+.feature-text {
+    font-size: 0.9rem;
+}
+
+/* CTA Buttons */
+#hero-cta-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.cta-button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.cta-primary {
+    background: #007bff;
+    color: white;
+}
+
+.cta-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+/* Hero Stats */
+#hero-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.hero-stat {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Right side - Registration Form */
+#hero-registration-container {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-title {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.form-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-button {
+    width: 100%;
+    padding: 1rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: background 0.3s ease;
+}
+
+.form-button:hover {
+    background: #0056b3;
+}
+
+.form-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.form-footer a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+/* Floating Elements */
+.floating-element {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    color: white;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: float 6s ease-in-out infinite;
+}
+
+
+
+
+.floating-2 {
+    top: 20%;
+    right: 5%;
+    animation-delay: 2s;
+}
+
+
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}

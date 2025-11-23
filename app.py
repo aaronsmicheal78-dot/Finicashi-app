@@ -1,3 +1,161 @@
+# import os
+# import logging
+# from flask import Flask, render_template, g, session
+# from config import Config
+# from extensions import db, login_manager, init_extensions
+# from flask_migrate import Migrate
+# from datetime import datetime
+# from flask_login import LoginManager
+# from flask_login import current_user, login_required
+# from logger import app_logger
+# from models import User
+
+# login_manager = LoginManager()
+# migrate = Migrate()
+
+# def create_app(config_class=Config):
+#     app = Flask(__name__)
+#     app.config.from_object(config_class)
+    
+    
+#     if not app.debug:
+#         app.config.update(
+#             SESSION_COOKIE_SECURE=True,
+#             SESSION_COOKIE_HTTPONLY=True,
+#             REMEMBER_COOKIE_SECURE=True,
+#             REMEMBER_COOKIE_HTTPONLY=True,
+#         )
+    
+    
+#     setup_logging(app)
+    
+   
+#     init_extensions(app)
+#     migrate.init_app(app, db)
+    
+
+#     register_blueprints(app)
+    
+   
+
+#     @app.route('/debug-whoami')
+#     @login_required
+#     def whoami():
+#         return {
+#             "user_id": current_user.id,
+#             "username": current_user.username,
+#             "is_authenticated": current_user.is_authenticated
+#         }
+
+#     @login_manager.user_loader
+#     def load_user(user_id):
+#         from models import User 
+#         return User.query.get(int(user_id))
+    
+#     @login_manager.user_loader
+#     def load_user(user_id):
+#         return User.query.get(int(user_id))
+    
+#     # ----------------------
+#     # Global before_request
+#     # ----------------------
+#     @app.before_request
+#     def load_logged_in_user():
+#         g.user = None
+#         user_id = session.get("user_id")
+#         if user_id:
+#             g.user = User.query.get(user_id)
+
+
+    
+   
+#     @app.route("/")
+#     def home():
+#         return render_template("index.html")
+    
+#     @app.route("/healthz")
+#     def healthz():
+#         return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}, 200
+    
+#     return app
+
+# def setup_logging(app):
+#     """Production-ready logging setup"""
+#     if app.debug:
+        
+#         logging.basicConfig(level=logging.DEBUG)
+#     else:
+        
+#         logging.basicConfig(
+#             level=logging.INFO,
+#             format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]',
+#             handlers=[
+#                 logging.StreamHandler(), 
+#             ]
+#         )
+    
+ 
+#    # logging.getLogger('werkzeug').setLevel(logging.WARNING)
+
+# def register_blueprints(app):
+#     """Register all blueprints"""
+#     from blueprints.auth import bp as auth_bp
+#     from blueprints.profile import bp as profile_bp
+#     from blueprints.admin import admin_bp as admin_bp
+#     from blueprints.payments import bp as payment_bp
+    
+#     app.register_blueprint(auth_bp)
+#     app.register_blueprint(profile_bp)
+#     app.register_blueprint(admin_bp)
+#     app.register_blueprint(payment_bp)
+
+
+# app = create_app()
+
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 5000))
+#     debug = app.config.get("DEBUG", False)
+
+#     app.run(
+#         debug=debug,
+#         host="0.0.0.0",
+#         port=port,
+#         use_reloader=debug,   
+#     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# top of your main app.py
+import gevent.monkey
+gevent.monkey.patch_all()
+
 import os
 from flask import Flask, render_template, session, g
 from config import Config
@@ -7,6 +165,10 @@ from flask_migrate import Migrate
 from extensions import db
 from sqlalchemy import text
 from datetime import datetime
+#from flask_caching import Cache
+
+
+
 # --------------------------------------------------------------------------------------------------------
 #       Global instances
 # --------------------------------------------------------------------------------------------------------
@@ -23,8 +185,18 @@ def create_app():
         app.config['DEBUG'] = True
         app.config["PROPAGATE_EXCEPTIONS"] = True
         app.config["DEBUG"] = False
-    
-    # ------------------------------------------------------------------------------------------
+
+        if not app.debug:
+            app.config.update(
+            SESSION_COOKIE_SECURE=True,
+            SESSION_COOKIE_HTTPONLY=True,
+            REMEMBER_COOKIE_SECURE=True,
+            REMEMBER_COOKIE_HTTPONLY=True,
+        )
+          
+        #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
+        #cache.init_app(app)
+        # ------------------------------------------------------------------------------------------
     # SIMPLIFIED LOGGING - No rotation to avoid permission errors
     # ------------------------------------------------------------------------------------------
     import logging
@@ -99,6 +271,17 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
     
+    # from flask_sock import Sock
+
+    # sock = Sock(app)
+
+    # @sock.route('/ws')
+    # def websocket(ws):
+    #     while True:
+    #         data = ws.receive()
+    #         ws.send(f"Received {data}")
+
+    
     # ----------------------
     # Global before_request
     # ----------------------
@@ -108,32 +291,6 @@ def create_app():
         user_id = session.get("user_id")
         if user_id:
             g.user = User.query.get(user_id)
-
-
-
-
-
-    @app.route('/debug/pay-now')
-    def pay_now():
-        """Minimal payment route"""
-        try:
-            from models import ReferralBonus, Wallet
-            from flask import jsonify
-            bonuses = ReferralBonus.query.filter_by(payment_id=148, status='pending').all()
-            results = []
-            
-            for bonus in bonuses:
-                wallet = Wallet.query.filter_by(user_id=bonus.user_id).first()
-                if wallet:
-                    wallet.balance += bonus.amount
-                    bonus.status = 'paid'
-                    results.append(f"Paid UGX {bonus.amount} to user {bonus.user_id}")
-            
-            db.session.commit()
-            return jsonify({"success": True, "results": results})
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"error": str(e)}), 500
 
     # ----------------------
     # Basic routes
@@ -157,10 +314,10 @@ app = create_app()
 # Local development
 # ----------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Changed to 5000 for standard Flask port
+    port = int(os.environ.get("PORT", 5000)) 
     debug_mode = app.config.get("DEBUG", True)
-    app.run(debug=debug_mode, host="0.0.0.0", port=port, use_reloader=True, threaded=True)  # Added use_reloader=False to prevent file locks
+    app.run(debug=debug_mode, host="0.0.0.0")
 
 #=======================================================================================================
 #------------------------THE END OF APP----------------------------------------------------------------
-#===========================================================================================================
+#==========================================================================================================

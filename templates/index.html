@@ -17,6 +17,20 @@
     </style>
 </head>
 <body>
+<div id="loadingPage" class="loading-page" style="display:none;">
+  <div class="animation-container">
+    <!-- Bouncing dots -->
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="shape shape1"></div>
+    <div class="shape shape2"></div>
+    <div class="shape shape3"></div>
+    <div class="shape shape4"></div>
+    <p>Logging...you....in...</p>
+    <p>Finicashi---is---home</p>
+  </div>
+</div>
     <div class="profile-container"></div>
     <!-- Hero Section -->
     <section id="hero-section">
@@ -29,6 +43,9 @@
             <div class="background-slide" id="slide-3"></div>
             <div class="background-slide" id="slide-4"></div>
             <div class="background-slide" id="slide-5"></div>
+             <div class="background-slide" id="slide-6"></div>
+            <div class="background-slide" id="slide-7"></div>
+            <div class="background-slide" id="slide-8"></div>
             <div class="background-overlay"></div>
         </div>
 
@@ -51,8 +68,8 @@
             <!-- Hero Text -->
             <div id="hero-text-container">
                 <div class="hero-badge">TRUSTED BY 250,000+ TRADERS WORLDWIDE</div>
-                <h1 id="hero-main-headline">MASTER DIGITAL INVESTMENT WITH FINICASHI</h1>
-                <p id="hero-subheading">Join FincashPro today and unlock professional trading tools, real-time analytics, and personalized investment strategies.</p>
+                <h1 id="hero-main-headline">MASTER NETWORK MARKETING WITH US</h1>
+                <p id="hero-subheading">Join FincashPro today and unlock unlimited Network growth.</p>
                 
                 <div id="hero-features">
                     <div class="hero-feature">
@@ -162,10 +179,6 @@
                         <input type="email" id="hero-email" class="form-input" placeholder="Enter your email" required>
                     </div>
 
-                    <!-- <div class="form-group">
-                        <label class="form-label" for="hero-referral-code">Referral Code (Optional)</label>
-                        <input type="tel" id="hero-referral-code" class="form-input" placeholder="Enter Referral code" required>
-                    </div> -->
                     
                     <div class="form-group">
                         <label class="form-label" for="hero-phone">Phone Number</label>
@@ -243,6 +256,7 @@
     </div>
 
 <script>
+    const loginButton = document.querySelector('.login-button');
       window.FincashProLogin = {
   openModal: function() {
     console.log("Opening modal...");
@@ -292,11 +306,17 @@
       email_or_phone: emailOrPhone,
       password: password
     };
-  // Disable button and show loading state
-//   const originalText = payButton.textContent;
-//   payButton.disabled = true;
-//   payButton.textContent = "Processing...";
-    // 4️⃣ Send fetch request to Flask backend
+
+    loginModal.style.display = "none";
+
+  // Show blank animation page
+  loadingPage.style.display = "flex";
+
+ loginButton.textContent = "Logging in, please wait...";
+    loginButton.disabled = true;
+    loginButton.style.opacity = "0.7";
+    loginButton.style.cursor = "not-allowed";
+
     fetch("/api/login", {
       method: "POST",
       headers: {
@@ -309,7 +329,7 @@
         console.log("Server response:", data);
 
         if (data.user) {
-  alert("Login successful!");
+  alert("Welcome! Finicash with you");
   
   // 🔑 Redirect based on role
   if (data.user.role === "admin") {
@@ -324,6 +344,10 @@
       .catch(error => {
         console.error("Login request failed:", error);
         alert("An error occurred. Please try again.");
+         loginButton.textContent = "Sign In to Account";
+        loginButton.disabled = false;
+           loadingPage.style.display = "none";
+           loginModal.style.display = "flex";
       });
   }
 };
@@ -335,6 +359,7 @@ document.addEventListener("DOMContentLoaded", function() {
     loginForm.addEventListener("submit", window.FincashProLogin.handleLogin);
   }
 });
+// REFERRAL CODE AUTO_DETECT
 document.addEventListener("DOMContentLoaded", function () {
     const params = new URLSearchParams(window.location.search);
     const referralCode = params.get("ref");
