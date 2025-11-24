@@ -495,3 +495,42 @@ document.getElementById("copyRefBtn").addEventListener("click", () => {
       console.error("Failed to copy: ", err);
     });
 });
+
+// confetti
+const actionBtn = document.getElementById("actionBtn");
+//const overlay = document.getElementById("overlay");
+//const closeBtn = document.getElementById("closeBtn");
+
+// Generate strong full-screen confetti blast
+function launchConfetti(centerX, centerY) {
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement("div");
+    piece.classList.add("confetti");
+
+    // random angle spread
+    let angle = Math.random() * 2 * Math.PI;
+    let distance = Math.random() * 300 + 150;
+
+    piece.style.setProperty("--dx", Math.cos(angle) * distance + "px");
+    piece.style.setProperty("--dy", Math.sin(angle) * distance + "px");
+
+    piece.style.left = centerX + "px";
+    piece.style.top = centerY + "px";
+    piece.style.backgroundColor = `hsl(${Math.random()*360}, 85%, 60%)`;
+
+    document.body.appendChild(piece);
+
+    setTimeout(() => piece.remove(), 1500);
+  }
+}
+
+//actionBtn.addEventListener("click", (e) => {
+ // overlay.style.display = "block";
+
+  // launch confetti burst from touch/click location
+ // launchConfetti(e.clientX, e.clientY);
+//});
+
+//closeBtn.addEventListener("click", () => {
+ // overlay.style.display = "none";
+//});

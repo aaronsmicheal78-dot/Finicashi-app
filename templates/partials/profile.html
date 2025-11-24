@@ -450,7 +450,7 @@
             <h3>Join as Team of 5</h3>
             <p>Combine efforts, multiply rewards</p>
             <div class="loyalty-points">Loyalty +250 pts</div>
-            <button class="btn btn-primary">Join Now</button>
+            <button class="btn btn-primary" id="actionBtn">Join Now</button>
           </div>
           <div class="team-cta" id="team10Btn">
             <h3>Join as Team of 10</h3>
@@ -1942,7 +1942,300 @@ function testModalVisibility() {
         console.log('Modal forcefully positioned - should be visible');
     }
 }
+// Modal functionality
+function openReferralModal(modalId) {
+    console.log('Opening:', modalId);
+    
+    // First, hide ALL modals
+    document.querySelectorAll('.modal, .referral-modal').forEach(modal => {
+        modal.style.display = 'none';
+        modal.classList.remove('show', 'active');
+    });
+    
+    // Then show the target referral modal
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.classList.add('active');
+        console.log('Modal displayed');
+        
+        // Reset any previous validation errors
+        resetValidationErrors(modal);
+    }
+}
 
+function closeReferralModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        
+        // Reset validation errors when closing
+        resetValidationErrors(modal);
+    }
+}
+
+// Accordion functionality
+function initAccordions() {
+    const accordionHeaders = document.querySelectorAll('.referral-accordion-header');
+    
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const accordionId = this.getAttribute('data-referral-accordion');
+            const accordionContent = document.getElementById(accordionId);
+            const accordionItem = this.closest('.referral-accordion-item');
+            const accordionIcon = this.querySelector('.referral-accordion-icon');
+            
+            // Toggle active class on the accordion item
+            accordionItem.classList.toggle('active');
+            
+            // Toggle the accordion content visibility
+            if (accordionContent.style.maxHeight && accordionContent.style.maxHeight !== '0px') {
+                accordionContent.style.maxHeight = '0px';
+                accordionContent.style.padding = '0';
+                if (accordionIcon) {
+                    accordionIcon.style.transform = 'rotate(0deg)';
+                }
+            } else {
+                accordionContent.style.maxHeight = accordionContent.scrollHeight + 'px';
+                accordionContent.style.padding = '15px';
+                if (accordionIcon) {
+                    accordionIcon.style.transform = 'rotate(180deg)';
+                }
+            }
+        });
+    });
+}
+
+// Form validation and submission
+function initFormHandlers() {
+    // Queens Circle form
+    const queensForm = document.getElementById('referralQueensForm');
+    if (queensForm) {
+        queensForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (validateForm(this)) {
+                submitForm(this, 'Queens Circle');
+            }
+        });
+    }
+    
+    // Ambassador Leadership form
+    const ambassadorForm = document.getElementById('referralAmbassadorForm');
+    if (ambassadorForm) {
+        ambassadorForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (validateForm(this)) {
+                submitForm(this, 'Ambassador Leadership');
+            }
+        });
+    }
+    
+    // Close buttons
+    const closeButtons = document.querySelectorAll('[data-referral-close]');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-referral-close');
+            closeReferralModal(modalId);
+        });
+    });
+}
+
+// Form validation
+function validateForm(form) {
+    let isValid = true;
+    
+    // Get all required inputs in the form
+    const requiredInputs = form.querySelectorAll('input[required]');
+    
+    // Reset previous errors
+    resetValidationErrors(form);
+    
+    // Validate each required field
+    requiredInputs.forEach(input => {
+        if (!input.value.trim()) {
+            isValid = false;
+            markFieldAsInvalid(input, 'This field is required');
+        } else if (input.type === 'email' && !isValidEmail(input.value)) {
+            isValid = false;
+            markFieldAsInvalid(input, 'Please enter a valid email address');
+        } else if (input.type === 'tel' && !isValidPhone(input.value)) {
+            isValid = false;
+            markFieldAsInvalid(input, 'Please enter a valid phone number');
+        }
+    });
+    
+    return isValid;
+}
+
+// Email validation
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Phone validation (basic)
+function isValidPhone(phone) {
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+    return phoneRegex.test(phone);
+}
+
+// Mark field as invalid
+function markFieldAsInvalid(input, message) {
+    input.style.borderColor = '#e74c3c';
+    
+    // Create or update error message
+    let errorElement = input.parentNode.querySelector('.referral-error-message');
+    if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.className = 'referral-error-message';
+        errorElement.style.color = '#e74c3c';
+        errorElement.style.fontSize = '0.8rem';
+        errorElement.style.marginTop = '5px';
+        input.parentNode.appendChild(errorElement);
+    }
+    errorElement.textContent = message;
+}
+
+// Reset validation errors
+function resetValidationErrors(container) {
+    const errorMessages = container.querySelectorAll('.referral-error-message');
+    errorMessages.forEach(error => error.remove());
+    
+    const inputs = container.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.style.borderColor = '';
+    });
+}
+
+// Form submission with success popup
+function submitForm(form, teamName) {
+    // Show loading state
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering...';
+    submitButton.disabled = true;
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        // Reset button
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        
+        // Show success popup
+        showSuccessPopup(teamName + ' team registered successfully!');
+        
+        // Close the modal
+        const modal = form.closest('.referral-modal');
+        if (modal) {
+            closeReferralModal(modal.id);
+        }
+        
+        // Reset form
+        form.reset();
+    }, 2000);
+}
+
+// Success popup
+function showSuccessPopup(message) {
+    // Create popup if it doesn't exist
+    let popup = document.getElementById('referralSuccessPopup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'referralSuccessPopup';
+        popup.style.position = 'fixed';
+        popup.style.top = '50%';
+        popup.style.left = '50%';
+        popup.style.transform = 'translate(-50%, -50%)';
+        popup.style.backgroundColor = '#2ecc71';
+        popup.style.color = 'white';
+        popup.style.padding = '20px 30px';
+        popup.style.borderRadius = '8px';
+        popup.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+        popup.style.zIndex = '10000';
+        popup.style.textAlign = 'center';
+        popup.style.minWidth = '300px';
+        document.body.appendChild(popup);
+    }
+    
+    // Set message and show
+    popup.innerHTML = `
+        <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">
+            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>Success!
+        </h3>
+        <p style="margin: 0;">${message}</p>
+    `;
+    popup.style.display = 'block';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 3000);
+}
+
+// Close when clicking outside modal content
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('referral-modal')) {
+        const modalId = e.target.id;
+        closeReferralModal(modalId);
+    }
+});
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initAccordions();
+    initFormHandlers();
+    
+    // Add required attributes to inputs
+    const allInputs = document.querySelectorAll('.referral-form-input');
+    allInputs.forEach(input => {
+        input.setAttribute('required', 'required');
+    });
+    
+    // Add CSS for accordion transitions if not already in your CSS
+    if (!document.querySelector('#referralAccordionStyles')) {
+        const style = document.createElement('style');
+        style.id = 'referralAccordionStyles';
+        style.textContent = `
+            .referral-accordion-content {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            }
+            .referral-accordion-icon {
+                transition: transform 0.3s ease;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+});
+
+// Test function - FORCE visibility (keeping your existing function)
+function testModalVisibility() {
+    const queensModal = document.getElementById('referralQueensModal');
+    if (queensModal) {
+        // Remove all classes and inline styles
+        queensModal.className = 'referral-modal';
+        queensModal.style.cssText = '';
+        
+        // Add our forced styles
+        queensModal.style.display = 'flex';
+        queensModal.style.position = 'fixed';
+        queensModal.style.top = '0';
+        queensModal.style.left = '0';
+        queensModal.style.width = '100vw';
+        queensModal.style.height = '100vh';
+        queensModal.style.zIndex = '99999';
+        queensModal.style.background = 'rgba(0,0,0,0.8)';
+        queensModal.style.alignItems = 'center';
+        queensModal.style.justifyContent = 'center';
+        queensModal.style.padding = '1rem';
+        
+        console.log('Modal forcefully positioned - should be visible');
+    }
+}
   </script>
   <script src="{{url_for('static', filename='js/profile.js')}}"></script>
   <script src="{{url_for('static', filename='js/payments.js')}}"></script>

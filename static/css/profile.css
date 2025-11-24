@@ -2745,3 +2745,24 @@ M/*obile-First Referral Modal Styles*/
     overflow-y: auto !important;
     margin: 0 !important;
 }
+
+ .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    z-index: 999;
+    pointer-events: none;
+    animation: confettiFall 1.5s ease-out forwards;
+  }
+
+  @keyframes confettiFall {
+    0% {
+      opacity: 1;
+      transform: translate(0, 0) rotate(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy)) rotate(720deg);
+    }
+  }
