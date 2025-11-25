@@ -7,6 +7,7 @@ from sqlalchemy import UniqueConstraint, Index, event, Numeric, text
 from extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
 from enum import Enum
+from sqlalchemy.orm import joinedload
 
 # ===========================================================
 # ENUM DEFINITIONS
@@ -104,7 +105,13 @@ class User(db.Model, BaseMixin):
         lazy='dynamic'
     )
 
+    __table_args__ = (
+    # For User
+    Index('idx_user_phone', 'phone'),
+    Index('idx_user_referral_code', 'referral_code')
 
+    )
+    
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 
@@ -233,6 +240,8 @@ class Transaction(db.Model, BaseMixin):
 
     wallet = db.relationship('Wallet', back_populates='transactions')
 
+    Index('idx_transaction_created', 'created_at'),
+
 # ===========================================================
 # PAYMENTS & WITHDRAWALS
 # ===========================================================
@@ -355,6 +364,9 @@ class Package(db.Model, BaseMixin):
 
     user = db.relationship('User', back_populates='packages')
     catalog = db.relationship('PackageCatalog', backref='user_packages')
+
+    Index('idx_package_user_status', 'user_id', 'status'),
+    Index('idx_package_expires', 'expires_at'),
 
 
 class ReferralBonus(db.Model, BaseMixin):
@@ -587,6 +599,26 @@ class BonusPayoutQueue(db.Model):
 
 
     )
+    
+    def to_dict(self):
+        """Convert activity to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'type': self.type,
+            'title': self.title,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'amount': float(self.amount) if self.amount is not None else 0.0,
+            'currency': self.currency
+        }
+    
+    def __repr__(self):
+        return f'<Activity {self.id} {self.type} {self.title}>'
+
+# Index for better query performance
+__table_args__ = (
+    db.Index('idx_activities_timestamp_type', 'timestamp', 'type'),
+    db.Index('idx_activities_user_timestamp', 'user_id', 'timestamp'),
+)
 
 # Add these indexes to ensure performance with large networks
 additional_indexes = [

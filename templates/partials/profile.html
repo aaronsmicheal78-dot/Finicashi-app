@@ -188,7 +188,41 @@
           </div>
         </div>
 
-        <!-- Recent Activity -->
+
+
+                <!-- Recent Activity -->
+        <div class="card mb-24">
+          <h3 class="section-title">Recent Activity</h3>
+
+          <!-- Dynamic list -->
+          <ul class="activity-list" id="recentActivityList">
+            <!-- JS will insert list items here -->
+          </ul>
+
+          <!-- Optional Loading Placeholder -->
+          <div id="activityLoadingMsg" style="text-align:center; padding:10px; display:none;">
+            Loading activities...
+          </div>
+
+          <!-- Optional Empty State -->
+          <div id="activityEmptyMsg" style="text-align:center; padding:10px; display:none;">
+            No activities yet.
+          </div>
+        </div>
+        <template id="activityItemTemplate">
+  <li class="activity-item">
+    <div class="activity-icon">
+      <i class="fas"></i>
+    </div>
+    <div class="activity-details">
+      <div class="activity-title"></div>
+      <div class="activity-time"></div>
+    </div>
+    <div class="activity-amount"></div>
+  </li>
+</template>
+
+        <!-- Recent Activity
         <div class="card mb-24">
           <h3 class="section-title">Recent Activity</h3>
           <ul class="activity-list" id="recentActivityList">
@@ -233,7 +267,7 @@
               <div class="activity-amount text-success">+UGX. 0.00</div>
             </li>
           </ul>
-        </div>
+        </div> -->
 
         <!-- User Package Card -->
 <div class="package-card-profile">
@@ -264,14 +298,12 @@
               <div class="detail-value" id="phone"></div>
             </div>
             <div class="profile-detail" data-field="referralCode">
-              <div class="detail-label">Referral Code</div>
-              <div class="detail-value" id="referral_code"></div>
+              <div class="detail-label">Verified</div>
+              <div class="detail-value" id="isVerified"></div>
             </div>
             <div class="profile-detail" data-field="joinDate">
               <div class="detail-label">Join Date</div>
-              <div class="detail-value" id="memberSince"></div>
-               <div class="detail-value" id="isVerified"></div>  
-                <div class="detail-value" id="isActive"></div>
+              <div class="detail-value" id="memberSince"></div>  
             </div>
           </div>
           <button class="btn btn-secondary" id="log-out" style="width: 100%; margin-top: 16px;">
@@ -456,7 +488,7 @@
             <h3>Join as Team of 10</h3>
             <p>Double benefits vs Team of 5</p>
             <div class="loyalty-points">Loyalty +500 pts</div>
-            <button class="btn btn-accent">Join Now</button>
+            <button class="btn btn-accent" id="trigger">Join Now</button>
           </div>
         </div>
       </div>

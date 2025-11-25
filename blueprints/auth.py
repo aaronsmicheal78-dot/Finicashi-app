@@ -191,7 +191,7 @@ def signup():
  # --------------------------------------------------
  #      2️⃣ Login Route
  # --------------------------------------------------
-@bp.route("/api/login", methods=["POST"])
+@bp.route("/api/login", methods=["POST", "GET"])
 def login():
    
     """
@@ -202,6 +202,7 @@ def login():
         "password": ""
     }
      """
+    
     data = request.get_json()
     email_or_phone = data.get("email_or_phone", "").strip().lower()
     password = data.get("password", "")

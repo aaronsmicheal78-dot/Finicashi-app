@@ -152,7 +152,7 @@
 
 
 
-# top of your main app.py
+
 import gevent.monkey
 gevent.monkey.patch_all()
 
@@ -256,11 +256,13 @@ def create_app():
         from blueprints.profile import bp as profile_bp
         from blueprints.admin import admin_bp as admin_bp
         from blueprints.payments import bp as payment_bp
+        from activity import activity_bp as activity_bp
        
         app.register_blueprint(auth_bp)
         app.register_blueprint(profile_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(payment_bp)
+        app.register_blueprint(activity_bp)
      
     register_blueprints(app)
     
