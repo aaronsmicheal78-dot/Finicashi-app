@@ -2216,8 +2216,8 @@ M/*obile-First Referral Modal Styles*/
   
     box-shadow: var(--shadow-lg);
     border: 1px solid rgba(255, 255, 255, 0.1);
-   /* margin-top: auto;
-    margin-bottom: auto;*/
+    margin-top: auto;
+    margin-bottom: auto;
     z-index: 901;
     border-style: solid;
     position: relative !important;
@@ -2253,7 +2253,7 @@ M/*obile-First Referral Modal Styles*/
         height: 40px;
         font-size: 1.2rem;
     }
-}
+
 /* ===== REFERRAL MODALS ===== */
 /* These are your new Queens & Ambassador modals */
 
