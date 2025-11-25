@@ -27,15 +27,16 @@
       padding-bottom: 80px;
     }
 
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-      border: #4facfe;
-      border-radius: 16px;
-      border-style: solid;
-    }
+        
+.container {
+    width: 100%;             /* fills available width */
+    max-width: 360px;        /* limit width for mobile */
+    margin: 0 auto;          /* center horizontally */
+    padding: 16px;           /* give some space inside */
+    border: 2px solid #4facfe; /* visible blue border */
+    border-radius: 16px;     
+    box-sizing: border-box;  /* include padding & border in width */
+}
 
     /* Card styles */
     .card {
@@ -849,7 +850,7 @@
     border-radius: 18px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.06);
     border: 1px solid #e5e7eb;
-    max-width: 900px;
+    max-width: 800px;
     margin: 20px auto; 
     position: relative;
     overflow: hidden;
@@ -1079,21 +1080,55 @@
     display: none !important;
 }
 
+
+/* Modal overlay */
 .modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    z-index: var(--z-index-investment-modal);
-    align-items: flex-start;
+    background-color: rgba(0,0,0,0.5); /* semi-transparent overlay */
+    display: flex;
     justify-content: center;
-    padding: var(--space-md);
+    align-items: center;
+    z-index: 999;
+    padding: 10px; /* spacing on mobile */
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
 }
+
+/* Modal box */
+.modal-content {
+    background: #fff; /* white background */
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px; /* max width for tablets/phones */
+    max-height: 80vh; /* half the screen height */
+    overflow-y: auto;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    position: relative;
+    margin: auto; /* center horizontally */
+}
+
+/* Optional: close button inside modal */
+.modal-content .close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+
+
+
+
+
+
 
 /* Support for both JS methods */
 .modal.show,
@@ -1102,204 +1137,134 @@
     display: flex !important;
 }
 
-.close-modal {
-    position: absolute;
-    top: var(--space-md);
-    right: var(--space-md);
-    background: var(--neutral-bg);
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1rem;
-    color: var(--neutral);
-    transition: var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    box-shadow: var(--shadow-sm);
-}
 
-.close-modal:hover {
-    background: var(--primary);
-    color: var(--white);
-    transform: rotate(90deg) scale(1.1);
-}
-
+/* Mobile-first content adjustment for half-screen modal */
 .modal-header {
-    margin-bottom: var(--space-lg);
-    padding-right: var(--space-xl);
+    margin-bottom: 8px;
+    padding-right: 8px;
 }
 
 .modal-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: var(--space-sm);
-    line-height: 1.3;
-    color: var(--neutral-dark);
+    font-size: 1rem;       /* smaller title */
+    margin-bottom: 4px;
 }
 
 .modal-description {
-    color: var(--neutral);
-    margin-bottom: var(--space-lg);
-    font-size: 0.9rem;
-    line-height: 1.4;
+    font-size: 0.8rem;     /* smaller description */
+    margin-bottom: 6px;
 }
 
 .modal-details {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-lg);
+    gap: 4px;               /* reduce gap */
+    margin-bottom: 6px;
 }
 
 .modal-detail {
-    background: var(--neutral-bg);
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    border-left: 3px solid var(--primary);
+    padding: 6px 8px;       /* reduce padding */
+    border-radius: 8px;
+    border-left-width: 2px; /* thinner highlight */
 }
 
 .modal-detail-label {
-    font-size: 0.8rem;
-    color: var(--neutral);
-    margin-bottom: var(--space-xs);
-    font-weight: 500;
+    font-size: 0.7rem;
+    margin-bottom: 2px;
 }
 
 .modal-detail-value {
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--neutral-dark);
+    font-size: 0.85rem;
 }
 
 .investment-form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
+    gap: 6px;
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
+    gap: 2px;
 }
 
 .form-label {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--neutral-dark);
+    font-size: 0.75rem;
 }
 
 .form-input {
-    padding: var(--space-md);
-    border: 1px solid var(--neutral-light);
-    border-radius: var(--radius-md);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-size: 1rem;
-    background: var(--white);
-    transition: var(--transition-fast);
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(41, 98, 255, 0.1);
+    padding: 6px 8px;       /* smaller input */
+    font-size: 0.85rem;
 }
 
 .fixed-amount {
-    background: var(--neutral-bg);
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    font-weight: 700;
-    font-size: 1rem;
-    text-align: center;
-    border: 1px solid var(--neutral-light);
-    color: var(--neutral-dark);
+    padding: 6px 8px;
+    font-size: 0.85rem;
 }
 
 .form-actions {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
-    margin-top: var(--space-lg);
+    gap: 4px;
+    margin-top: 8px;
 }
 
 .btn {
-    padding: var(--space-md) var(--space-lg);
-    border-radius: var(--radius-md);
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition-fast);
-    font-size: 0.95rem;
-    text-align: center;
-    min-height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-height: 36px;
 }
 
-.btn-primary {
-    background: var(--primary);
-    color: var(--white);
-    box-shadow: var(--shadow-sm);
+.close-modal {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+    top: 8px;
+    right: 8px;
 }
 
-.btn-primary:hover {
-    background: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-secondary {
-    background: var(--neutral-bg);
-    color: var(--neutral-dark);
-    border: 1px solid var(--neutral-light);
-}
-
-.btn-secondary:hover {
-    background: var(--neutral-light);
-    transform: translateY(-1px);
-}
-
-/* Investment Modal Tablet Styles */
+/* Tablet / larger screens (slightly scale up) */
 @media (min-width: 768px) {
-    .modal {
-        padding: var(--space-lg);
-        align-items: center;
-    }
-    
-    
-    
-    .modal-title {
-        font-size: 1.5rem;
-    }
-    
     .modal-details {
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-md);
+        gap: 8px;
     }
-    
+
+    .modal-detail {
+        padding: 10px 12px;
+        border-left-width: 3px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .form-input, .fixed-amount {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
     .form-actions {
         flex-direction: row;
+        gap: 8px;
     }
-    
+
     .btn {
-        flex: 1;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        min-height: 40px;
     }
-    
+
     .close-modal {
-        top: var(--space-lg);
-        right: var(--space-lg);
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
     }
 }
+
+
+
+
+
+
+
 
 /* ===== REFERRAL MODALS ===== */
 .referral-modal {
@@ -1775,8 +1740,8 @@
 /*  */
 
         .wallet-card {
-            width: 110%;
-            max-width: 923px;
+            width: 100%;
+            max-width: 900px;
             background: var(--card-bg);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
@@ -2009,21 +1974,6 @@ M/*obile-First Referral Modal Styles*/
     display: none !important;
 }
 
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    z-index: 900;
-    align-items: flex-start;
-    justify-content: center;
-    padding: var(--space-md);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
 
 /* If your JS uses 'show' class */
 .modal.show {
@@ -2212,11 +2162,11 @@ M/*obile-First Referral Modal Styles*/
     background: var(--white);
     border-radius: var(--radius-lg);
    
-    padding: var(--space-lg);
+    /*padding: var(--space-lg);*/
   
-    box-shadow: var(--shadow-lg);
+   /* box-shadow: var(--shadow-lg);*/
     border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: auto;
+    margin-top: 50px;
     margin-bottom: auto;
     z-index: 901;
     border-style: solid;

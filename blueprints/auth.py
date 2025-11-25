@@ -207,6 +207,11 @@ def login():
     email_or_phone = data.get("email_or_phone", "").strip().lower()
     password = data.get("password", "")
 
+    print("Method:", request.method)
+    print("Content-Type:", request.headers.get("Content-Type"))
+    print("Body:", request.get_data())
+
+
     
     if not email_or_phone or not password:
         return jsonify({"error": "Email/Phone and password are required"}), 400
