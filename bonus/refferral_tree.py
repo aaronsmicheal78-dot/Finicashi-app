@@ -360,7 +360,7 @@ class ReferralTreeHelper:
         Initialize a user who joined without referral (standalone in network)
         """
         try:
-            # Create self-reference only (depth 0)
+           
             query = text("""
                 INSERT INTO referral_network (ancestor_id, descendant_id, depth, path_length)
                 VALUES (:user_id, :user_id, 0, 0)

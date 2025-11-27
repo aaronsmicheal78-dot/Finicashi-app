@@ -57,6 +57,9 @@ def process_package_purchase(payment):
         package=package_catalog.name,
         type="purchased",
         status='active',
+        package_amount=package_catalog.amount,  
+        daily_bonus_rate=package_catalog.bonus_percentage or Decimal("0.05"),
+        total_bonus_paid=Decimal("0.00"),
         activated_at=datetime.now(timezone.utc),
         expires_at=datetime.now(timezone.utc) + timedelta(days=package_catalog.duration_days)
     )

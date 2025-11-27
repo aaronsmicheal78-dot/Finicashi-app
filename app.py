@@ -193,6 +193,7 @@ def create_app():
             REMEMBER_COOKIE_SECURE=True,
             REMEMBER_COOKIE_HTTPONLY=True,
         )
+    
           
         #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
         #cache.init_app(app)
@@ -265,7 +266,10 @@ def create_app():
         app.register_blueprint(activity_bp)
      
     register_blueprints(app)
-    
+    print(app.url_map)
+
+
+
     # ------------------------------------------------------------------------------------------------------------------------
     # Flask-Login user_loader - MOVED INSIDE create_app to avoid circular imports
     # ------------------------------------------------------------------------------------------------------------------------

@@ -341,8 +341,9 @@ class Bonus(db.Model, BaseMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     amount = db.Column(db.Numeric(precision=18, scale=2),  nullable=True)
-    type = db.Column(db.String(50)) 
+    type = db.Column(db.String(50)) # signup, daily, 
     status = db.Column(db.String(20), default='active')
+    created_at = db.Column(db.DateTime, default=db.func.now())
 
     user = db.relationship('User', back_populates='bonuses')
    
@@ -358,9 +359,14 @@ class Package(db.Model, BaseMixin):
     package = db.Column(db.String(50),  nullable=True)
     type = db.Column(db.String(50))  
     status = db.Column(db.String(20), default='active')
+    package_amount = db.Column(db.Numeric(10, 2), nullable=False)  
+    total_bonus_received = db.Column(db.Numeric(10, 2), default=0) 
     
     activated_at = db.Column(db.DateTime, default=db.func.now())
     expires_at = db.Column(db.DateTime, nullable=True)
+    daily_bonus_rate = db.Column(db.Numeric(10, 5), nullable=False, default=0.05)  
+    total_bonus_paid = db.Column(db.Numeric(10, 2), default=0)
+   
 
     user = db.relationship('User', back_populates='packages')
     catalog = db.relationship('PackageCatalog', backref='user_packages')
@@ -385,8 +391,6 @@ class ReferralBonus(db.Model, BaseMixin):
     amount = db.column_property(bonus_amount)
    
 
-    
-    # Add these new fields
     qualifying_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Amount that triggered bonus
     bonus_percentage = db.Column(db.Numeric(5, 4), nullable=False)  # Actual percentage applied
     calculated_on = db.Column(db.DateTime, default=db.func.now())
@@ -396,12 +400,12 @@ class ReferralBonus(db.Model, BaseMixin):
     threat_level = db.Column(db.String(50), default='low')
 
     
-    # Network tracking
+  
     network_path = db.Column(db.String(500))  # Store the referral path as string (e.g., "1->5->12")
     is_paid_out = db.Column(db.Boolean, default=False)
     paid_out_at = db.Column(db.DateTime, nullable=True)
     
-    # Relationships
+
     referrer = db.relationship('User', foreign_keys=[referrer_id], backref='referral_earnings')
     referred_user = db.relationship('User', foreign_keys=[referred_id], backref='referred_by_me')
     payment = db.relationship('Payment', backref='referral_bonus')

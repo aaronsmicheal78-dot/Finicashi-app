@@ -18,7 +18,7 @@
       <div class="profile-column">
         <div class="profile-header">
           <div class="avatar" id="avatarImg">
-            <img src="" alt="">
+           <!--- <img src="" alt="FC"> ---->
           </div>
           <div class="user-info">
             <h2 class="username"><span id="username"></span></h2>
@@ -29,18 +29,18 @@
 
       <div class="crypto-ticker">
         <div class="ticker-wrapper">
-                <span>BTC: $42,150</span>
-                <span>ETH: $2,850</span>
-                <span>UGX: 3,800/$</span>
-                <span>Gold: $1,980</span>
-                  <span>USD: $1,980</span>
-                   <span>EURO: $2,850</span>
-                   <span>POUND: $42,150</span>
-                    <span>UGX: 3,800/$</span>
-                <span>Gold: $1,980</span>
-                  <span>USD: $1,980</span>
-                   <span>EURO: $2,850</span>
-                   <span>PUND: $42,150</span>
+                <span>UGX: 427,150</span>
+                <span>UGX: 279,850</span>
+                <span>UGX: 305,800</span>
+                <span>UGX: 100,980</span>
+                  <span>UGX: 114,980</span>
+                   <span>UGX: 929,850</span>
+                   <span>UGX: 452,150</span>
+                    <span>UGX: 353,800</span>
+                <span>UGX: 404,980</span>
+                  <span>UGX: 119,980</span>
+                   <span>UGX: 238,850</span>
+                   <span>UGX: 542,150</span>
               </div>
         </div>   
 
@@ -104,7 +104,7 @@
         <div class="mini-stats" id="statsSwipe">
           <div class="mini-stats-container">
             <div class="stat-card" data-key="totalReferrals">
-              <div class="stat-value" id="total-referrals">0.00</div>
+              <div class="stat-value" id="total-direct-referrals">0.00</div>
               <div class="stat-label">Total Referrals</div>
             </div>
             <div class="stat-card" data-key="referralBonus">
@@ -396,10 +396,14 @@
               </h3>
               <div class="main-stat-value">0</div>
               <div class="main-stat-label">Unread notifications</div>
-              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-envelope" style="font-size: 24px; color: var(--text-light);"></i>
+              <!-- Include in your base template or dashboard -->
+              
+
+              <!-- Optional: Bonus history section for dashboard -->
+              <div id="bonus-history" class="bonus-history-widget">
+                  <!-- Dynamic content will be loaded here -->
               </div>
-            </div>
+              </div>
           </div>
         </div>
         <div class="scroll-indicator">
@@ -1157,7 +1161,7 @@
                     <label class="form-label" for="phone-5">Phone Number</label>
                     <input type="tel" class="form-input phone-input" id="phone-5" placeholder="Enter your phone number" required>
                 </div>
-                a
+                
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary close-form">Close</button>
                     <button type="button" class="btn btn-primary pay-btn">Pay Now</button>

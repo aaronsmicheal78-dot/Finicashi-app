@@ -1,6 +1,8 @@
 import os, re, json, uuid, requests
 from flask import jsonify
 from models import db, Payment, PaymentStatus, PackageCatalog, TransactionType, Package
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '60'))
 MARZ_BASE_URL = 'https://wallet.wearemarz.com/api/v1'
@@ -30,8 +32,8 @@ def validate_payment_input(data):
         return None, (jsonify({"error": "Missing required fields"}), 400)
 
     # Validate Ugandan phone
-   # if not re.match(r"^(?:\+256|0)?7\d{8}$", phone):
-     #   return None, (jsonify({"error": "Invalid phone number"}), 400)
+    # if not re.match(r"^(?:\+256|0)?7\d{8}$", phone):
+    #   return None, (jsonify({"error": "Invalid phone number"}), 400)
 
     # Validate per type
     if payment_type == "package":
@@ -75,61 +77,66 @@ def validate_payment_input(data):
 # =========================
 # CHECK EXISTING PAYMENT
 # =========================
+import logging
+logger = logging.getLogger(__name__)
+
 def handle_existing_payment(user, amount, payment_type):
-    """Return existing pending payment if available."""
-    existing = Payment.query.filter_by(
-        user_id=user.id,
-        amount=amount,
-        transaction_type=TransactionType[payment_type.upper()],
-        status=PaymentStatus.PENDING.value
-    ).first()
-
-    if existing:
-        return jsonify({
-            "reference": existing.reference,
-            "status": existing.status,
-            "note": "Idempotent: existing record returned"
-        }), 200
-
-    return None  
-
-
+    """Return existing pending payment object if available, None otherwise."""
+    logging.info(f"Searching for existing payment: user={user.id}, amount={amount}, type={payment_type}")
+    try:
+        existing = Payment.query.filter_by(
+            user_id=user.id,
+            amount=amount,
+            transaction_type=TransactionType[payment_type.upper()],
+            status=PaymentStatus.PENDING.value
+        ).first()
+        logging.info(f"Found existing payment: {existing}")
+        return existing  
+    except Exception as e:
+        logging.error(f"Error in handle_existing_payment: {str(e)}")
+        return None
 # =========================
 # CREATE PAYMENT RECORD
 # =========================
 def create_payment_record(user, amount, phone, payment_type, package=None):
     """Create a new Payment record."""
+    logging.info(f"Creating payment record for user {user.id}")
     reference = str(uuid.uuid4())
     transaction_type = TransactionType[payment_type.upper()]
-    
-    if isinstance(package, PackageCatalog):
-        package_id = package.id
-        pkg_obj = package
-    else:
-        package_id = package
-        pkg_obj = None
+    try:
+        if isinstance(package, PackageCatalog):
+            package_id = package.id
+            pkg_obj = package
+        else:
+            package_id = None
+            pkg_obj = None
 
-    payment = Payment(
-        user_id=user.id,
-        reference=reference,
-        amount=amount,
-        currency="UGX",
-        phone_number=phone,
-        provider=None,
-        status=PaymentStatus.PENDING.value,
-        method="MarzPay",
-        external_ref=None,
-        idempotency_key=str(uuid.uuid4()),
-        raw_response=None,
-        payment_type=payment_type,
-        transaction_type=transaction_type,
-        package_catalog_id=package_id if isinstance(package, PackageCatalog) else package,
-        package_catalog=pkg_obj if isinstance(package, PackageCatalog) else None    
-    )
-    
-    db.session.add(payment)
-    db.session.commit()
-    return payment
+        payment = Payment(
+            user_id=user.id,
+            reference=reference,
+            amount=amount,
+            currency="UGX",
+            phone_number=phone,
+            provider=None,
+            status=PaymentStatus.PENDING.value,
+            method="MarzPay",
+            external_ref=None,
+            idempotency_key=str(uuid.uuid4()),
+            raw_response=None,
+            payment_type=payment_type,
+            transaction_type=transaction_type,
+            package_catalog_id=package_id if isinstance(package, PackageCatalog) else package,
+            package_catalog=pkg_obj if isinstance(package, PackageCatalog) else None    
+        )
+        
+        db.session.add(payment)
+        db.session.flush()
+        print(f"payment created: {payment}")
+        logging.info(f"Payment record created with ID: {payment.id}")
+        return payment
+    except Exception as e:
+        logging.error(f"Error in create_payment_record: {str(e)}")
+        return None
 
 # In payment processing code
 def update_payment_status(payment, marz_response):
@@ -161,7 +168,7 @@ def send_to_marzpay(payment, phone, amount, package=None):
     else:
         description = "payment"
         
-    #print(f"Description: {description}")
+    print(f"Description: {description}")
 
     #Proper phone number formatting
     formatted_phone = phone
@@ -183,7 +190,6 @@ def send_to_marzpay(payment, phone, amount, package=None):
    # print(f"Payload being sent to MarzPay: {payload}")
     print("🔹 MarzPay payload:", json.dumps(payload, indent=2))
 
-    
     try:
         resp = requests.post(f"{MARZ_BASE_URL}/collect-money", json=payload, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
       
@@ -239,3 +245,30 @@ def send_to_marzpay(payment, phone, amount, package=None):
         error_response = jsonify({"error": "Unexpected payment error"})
         return None, error_response
 
+
+
+def create_user_package(user, package_catalog: PackageCatalog):
+    """Create a new Package for a user after successful payment."""
+    if not package_catalog:
+        raise ValueError("Invalid package catalog")
+
+    package_amount = package_catalog.amount
+
+    new_package = Package(
+        user_id=user.id,
+        catalog_id=package_catalog.id,
+        package=package_catalog.name,
+        type="purchased",
+        status="active",
+   
+
+        package_amount=package_catalog.amount,
+       
+        daily_bonus_rate=Decimal("0.05"),
+        total_bonus_paid=Decimal("0.00"),
+        activated_at=datetime.utcnow(),
+        expires_at=datetime.utcnow() + timedelta(days=30)  
+    )
+    db.session.add(new_package)
+    db.session.commit()
+    return new_package

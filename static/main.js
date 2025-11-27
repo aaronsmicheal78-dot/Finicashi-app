@@ -135,7 +135,7 @@ document.getElementById('hero-registration-form').addEventListener('submit', asy
             throw new Error(data.error || `Signup failed with status ${response.status}`);
         }
 
-        alert('✅ Registration Successful! Your account has been created.');
+        alert('✅ Registration Successful! Please, tap login!');
         
         this.reset();
 

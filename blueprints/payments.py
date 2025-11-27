@@ -30,7 +30,7 @@ from blueprints.package_helpers import PackagePurchaseValidator
 
 bp = Blueprint("payments", __name__)  
 logger = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 
@@ -98,6 +98,7 @@ def payment_callback():
             from bonus.payment_processor import process_package_purchase
             success, message = process_package_purchase(payment)
             if success:
+                
                 return jsonify({"status": "ok", "bonus_status": "success", "message": message}), 200
             else:
                 return jsonify({"status": "ok", "bonus_status": "error", "message": message}), 200
@@ -124,6 +125,9 @@ def payment_callback():
 #========================================================================================================
 
 #=====================================================================================================================
+# 
+# 
+# 
 @bp.route("/payments/initiate", methods=['POST'])
 def initiate_payment():
     print("DATA RECIEVED: SILENTLY PROCESSING")
@@ -148,38 +152,69 @@ def initiate_payment():
         phone = validated["phone"]
         payment_type = validated["payment_type"]          
         package_obj = validated.get("package_obj")  
-        package_id = package_obj.id if package_obj and payment_type == "package" else None
 
-        # FIX: Validate that package exists for package payments
         if payment_type == "package":
             if not package_obj:
                return jsonify({"error": "Package not found"}), 400
 
-        payment = None
-
-        if payment_type == "package":
-            # FIX: Check for existing payments first (for both internal and external)
-            existing_response = handle_existing_payment(user, amount, payment_type)
-            if existing_response:
-                return existing_response
-
-            # Internal balance payment
-            if user.actual_balance >= package_obj.amount:
+            if payment_type == "package" and user.actual_balance >= package_obj.amount:
+                logging.info("=== STARTING PAYMENT PROCESS ===")
+                logging.info(f"User: {user.id}, Amount: {package_obj.amount}, Type: {payment_type}")
+                
                 user.actual_balance -= package_obj.amount
+                db.session.add(user)
 
-                payment = create_payment_record(
-                    user, amount, phone, payment_type, package=package_obj
-                )
+                # Check for existing payment
+                logging.info("Checking for existing payment...")
+                existing_payment = handle_existing_payment(user, package_obj.amount, payment_type)
+                
+                if existing_payment:
+                    logging.info("Found existing payment, returning it")
+                    return jsonify({
+                        "reference": existing_payment.reference,
+                        "status": existing_payment.status,
+                        "note": "Idempotent: existing record returned"
+                    }), 200
+
+                # Create payment record
+                logging.info("Creating new payment record...")
+                payment = create_payment_record(user, amount, phone, payment_type, package=package_obj)
+                
                 if not payment:
                     return jsonify({"error": "Failed to create payment record"}), 500
-                    
+
+                # Create user package
+                logging.info("Creating user package...")
+                from blueprints.payments_helpers import create_user_package
+                user_package = create_user_package(user, package_obj)
+                logging.info(f"Created user package: {user_package}")
+                
+                # Update payment status
                 payment.status = PaymentStatus.COMPLETED.value
                 payment.raw_response = json.dumps({"method": "internal_balance"})
-                payment.balance_type_used = "actual_balance" 
-                
+                payment.balance_type_used = "actual_balance"
+
                 db.session.add(payment)
-                db.session.commit()  # Commit payment first
+                db.session.commit()
+                logging.info("=== PAYMENT PROCESS COMPLETED SUCCESSFULLY ===")
                 
+                # return jsonify({
+                #     "reference": payment.reference,
+                #     "status": payment.status,
+                #     "message": "Payment completed successfully"
+                # }), 200
+            #else:
+                #return jsonify({"error": "Insufficient balance"}), 400
+                
+   
+
+
+
+
+
+
+
+
                 # USE THE HELPER FOR PACKAGE + BONUS PROCESSING
                 try:
                     from bonus.payment_processor import process_package_purchase
@@ -187,8 +222,10 @@ def initiate_payment():
                     success, message = process_package_purchase(payment)
                     
                     if success:
+                        
                         print(f"✅ Internal purchase bonuses processed: {message}")
                         bonus_status = "success"
+                       
                     else:
                         print(f"⚠️ Internal purchase bonuses failed: {message}")
                         bonus_status = "error"
@@ -202,7 +239,7 @@ def initiate_payment():
                     "reference": payment.reference,
                     "status": PaymentStatus.COMPLETED.value,
                     "payment_type": payment_type,
-                    "package": package_id,
+                    "package": package_obj.id,
                     "message": "Package purchased using account balance",
                     "new_actual_balance": user.actual_balance,
                     "available_balance": user.available_balance,
@@ -234,7 +271,7 @@ def initiate_payment():
                     "reference": payment.reference,
                     "status": payment.status,  # Use the status set by send_to_marzpay
                     "payment_type": payment_type,
-                    "package": package_id,
+                    "package": package_obj.id,
                     "checkout_url": marz_data.get("pop_up_info") if marz_data else None
                 }), 200
             # else:

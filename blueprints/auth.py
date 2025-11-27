@@ -136,6 +136,7 @@ def signup():
             # -------------------------------------
             from bonus.refferral_tree import ReferralTreeHelper
             if referrer:
+                current_app.logger.info(f"Referrer found: {referrer}")
                
 
                 added = ReferralTreeHelper.add_new_user(new_user.id, referrer.id)
@@ -146,14 +147,41 @@ def signup():
                             f"[SIGNUP] Referral tree insertion failed for user {new_user.id}"
                         )
                     raise Exception("Referral tree error")
+                
+                # if referrer.direct_referrals_count is None:
+                #    referrer.direct_referrals_count = 0   
+                #    referrer.direct_referrals_count += 1
 
-                    # Increase referrer's direct referral count
-                if referrer.direct_referrals_count is None:
-                   referrer.direct_referrals_count = 0   
-                   referrer.direct_referrals_count += 1
-            else:                
+                from models import Referral
+
+                if referrer:
+                    current_app.logger.info(f"Referrer found: {referrer}")
+                    referral = Referral.query.filter_by(
+                        referrer_id=referrer.id,
+                        referred_email=new_user.email,
+                        status="pending"
+                    ).first()
+
+                    # If no referral row was created earlier, create one now
+                    if not referral:
+                        current_app.logger.info(f"Referrer NOT found!")
+                        referral = Referral(
+                            referrer_id=referrer.id,
+                            referred_email=new_user.email
+                        )
+                        db.session.add(referral)
+
+                    referral.referred_id = new_user.id
+                    referral.status = "active"
+                    db.session.commit()
+
+                    old_status = 'pending'
+                    new_status = 'active'
+                    current_app.logger.info(f"Referrer {referrer} status changed from {old_status} to {new_status}")
+
+                else:                
                 # Initialize standalone user in referral network
-                added = ReferralTreeHelper.initialize_standalone_user(new_user.id)
+                    added = ReferralTreeHelper.initialize_standalone_user(new_user.id)
                 
                 if not added:
                     current_app.logger.error(
@@ -163,7 +191,7 @@ def signup():
                 
         # Commit DB if all operations succeeded
         db.session.commit()
-
+        current_app.logger.info('SUCESSFUL REGISTRATION WITH STATUS CHANGE')
         # Success response
         return jsonify({
             "status": "success",
@@ -176,6 +204,7 @@ def signup():
                 "referral_code": new_user.referral_code
             }
         }), 201
+        
     except Exception as e:
         db.session.rollback()
         print("\n\n=== SIGNUP ERROR ===")

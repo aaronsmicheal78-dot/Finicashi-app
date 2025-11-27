@@ -329,3 +329,162 @@ def get_current_user_total_earnings():
             "message": "Unable to calculate statistics at this time"
         }), 500
 
+
+from decimal import Decimal, ROUND_DOWN
+from flask import session, jsonify, current_app
+from datetime import date, datetime
+from models import Bonus
+
+
+@bp.route('/api/user/today-bonus')
+def get_today_bonus():
+    """Check if user received any bonus today based on their packages"""
+    try:
+        user_id = session.get("user_id")
+        print(f"user_id from session: {user_id}")
+
+        if not user_id:
+            print("No user_id in session")
+            return jsonify({"error": "Not logged in", "has_bonus": False}), 401
+
+        user = User.query.get(user_id)
+        if not user:
+            print("User not found in DB")
+            session.clear()
+            return jsonify({"error": "User not found", "has_bonus": False}), 404
+
+        today = date.today()
+        
+        # Check if user already received a bonus today
+        today_bonus = Bonus.query.filter(
+            Bonus.user_id == user.id,
+            Bonus.type == 'daily',
+            db.func.date(Bonus.created_at) == today
+        ).first()
+
+        if today_bonus:
+            # User already got bonus today
+            bonus_amount = Decimal(str(today_bonus.amount))
+            return jsonify({
+                "has_bonus": True,
+                "amount": float(bonus_amount),
+                "bonus_id": today_bonus.id,
+                "message": f"Daily bonus received: ${bonus_amount:.2f}"
+            })
+
+        # If no bonus today, check if user has active packages and calculate eligibility
+        active_packages = Package.query.filter(
+            Package.user_id == user.id,
+            Package.status == 'active',
+            Package.expires_at >= today
+        ).all()
+
+        print(f"Found {len(active_packages)} active packages for user {user_id}")
+
+        if not active_packages:
+            return jsonify({"has_bonus": False, "message": "No active packages"})
+
+        # Calculate total potential bonus across all active packages using Decimal
+        total_potential_bonus = Decimal('0')
+        eligible_packages_count = 0
+        bonus_details = []
+
+        for package in active_packages:
+            try:
+                # DEBUG: Print package details to see what's in the database
+                print(f"Package ID: {package.id}, Catalog: {package.catalog}, Package Amount: {package.package_amount}, Daily Rate: {package.daily_bonus_rate}")
+                
+                # Get package amount - try multiple sources
+                if package.package_amount and Decimal(str(package.package_amount)) > Decimal('0'):
+                    package_amount = Decimal(str(package.package_amount))
+                    amount_source = "package.package_amount"
+                elif package.catalog and package.catalog.amount:
+                    package_amount = Decimal(str(package.catalog.amount))
+                    amount_source = "package.catalog.amount"
+                else:
+                    print(f"Warning: No package amount found for package {package.id}")
+                    continue
+
+                # Get daily bonus rate
+                if package.daily_bonus_rate and Decimal(str(package.daily_bonus_rate)) > Decimal('0'):
+                    daily_bonus_rate = Decimal(str(package.daily_bonus_rate))
+                    rate_source = "package.daily_bonus_rate"
+                elif package.catalog and package.catalog.bonus_percentage:
+                    # Convert percentage to decimal (5% -> 0.05)
+                    daily_bonus_rate = Decimal(str(package.catalog.bonus_percentage)) / Decimal('100')
+                    rate_source = "package.catalog.bonus_percentage"
+                else:
+                    # Default to 5% if nothing is set
+                    daily_bonus_rate = Decimal('0.05')
+                    rate_source = "default"
+
+                print(f"Package {package.id}: amount={package_amount} ({amount_source}), rate={daily_bonus_rate} ({rate_source})")
+                
+                # Calculate daily bonus (5% of package amount)
+                daily_bonus = package_amount * daily_bonus_rate
+                daily_bonus = daily_bonus.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+                
+                # Check if we haven't exceeded 75% of package value
+                max_bonus = package_amount * Decimal('0.75')
+                max_bonus = max_bonus.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+                
+                # Get current total bonus paid (convert safely)
+                current_total_bonus = Decimal(str(package.total_bonus_paid or '0'))
+                
+                print(f"Package {package.id}: daily_bonus={daily_bonus}, current_total={current_total_bonus}, max={max_bonus}")
+                
+                # Check if package is eligible for bonus today
+                if current_total_bonus + daily_bonus <= max_bonus:
+                    total_potential_bonus += daily_bonus
+                    eligible_packages_count += 1
+                    status = "eligible"
+                else:
+                    status = "max_bonus_reached"
+                    
+                bonus_details.append({
+                    "package_id": package.id,
+                    "package_name": package.catalog.name if package.catalog else f"Package #{package.id}",
+                    "package_amount": float(package_amount),
+                    "bonus_amount": float(daily_bonus),
+                    "daily_rate": float(daily_bonus_rate),
+                    "current_total_bonus": float(current_total_bonus),
+                    "max_bonus": float(max_bonus),
+                    "remaining_bonus": float(max_bonus - current_total_bonus),
+                    "status": status
+                })
+
+            except Exception as package_error:
+                current_app.logger.error(f"Error processing package {package.id}: {package_error}")
+                print(f"Package {package.id} error: {package_error}")
+                import traceback
+                traceback.print_exc()
+                continue
+
+        print(f"Final calculation: eligible_packages_count={eligible_packages_count}, total_potential_bonus={total_potential_bonus}")
+
+        # If we have eligible packages, return that user can claim bonus
+        if eligible_packages_count > 0:
+            return jsonify({
+                "has_bonus": False,
+                "eligible": True,
+                "potential_bonus": float(total_potential_bonus),
+                "eligible_packages_count": eligible_packages_count,
+                "total_packages_count": len(active_packages),
+                "message": f"You can claim ${total_potential_bonus:.2f} bonus today from {eligible_packages_count} package(s)!",
+                "bonus_details": bonus_details
+            })
+
+        # No eligible packages
+        return jsonify({
+            "has_bonus": False, 
+            "eligible": False,
+            "message": "No bonus available today",
+            "bonus_details": bonus_details
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting today's bonus: {e}")
+        print(f"ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"has_bonus": False, "error": str(e)}), 500

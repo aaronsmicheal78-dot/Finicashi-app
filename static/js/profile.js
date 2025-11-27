@@ -221,6 +221,7 @@ class EarningsDashboard {
         this.elements.signupBonus = document.getElementById('bonus');
         this.elements.availableBalance = document.getElementById('available-balance');
         this.elements.walletBalance = document.getElementById('wallet-balance');
+        this.elements.activeReferrals = document.getElementById('total-direct-referrals');
         
         // Log what we found
         console.log("📊 Elements found:", {
@@ -230,7 +231,8 @@ class EarningsDashboard {
             referralBonus: !!this.elements.referralBonus,
             signupBonus: !!this.elements.signupBonus,
             availableBalance: !!this.elements.availableBalance,
-            walletBalance: !!this.elements.walletBalance
+            walletBalance: !!this.elements.walletBalance,
+            activeReferrals: !!this.elements.activeReferrals
         });
 
         // Create error container if needed
@@ -313,6 +315,7 @@ class EarningsDashboard {
             this.updateElement(this.elements.signupBonus, data.breakdown.signup_bonus);
             this.updateElement(this.elements.availableBalance, data.breakdown.available_balance);
             this.updateElement(this.elements.walletBalance, data.breakdown.wallet_balance);
+            this.updateElement(this.elements.activeReferrals, data.referral_stats.total_direct_referrals);
         }
     }
 
@@ -993,3 +996,217 @@ class RecentActivityManager {
         };
     }
 }
+
+class DailyBonusNotifier {
+    constructor() {
+        this.notificationContainer = null;
+        this.init();
+    }
+
+    init() {
+        // Create notification container
+        this.createNotificationContainer();
+        
+        // Check for new bonuses on page load
+        this.checkForNewBonuses();
+        
+        // Set up periodic checks (every 30 seconds)
+        setInterval(() => this.checkForNewBonuses(), 30000);
+    }
+
+    createNotificationContainer() {
+        this.notificationContainer = document.createElement('div');
+        this.notificationContainer.id = 'bonus-notifications';
+        this.notificationContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 350px;
+        `;
+        document.body.appendChild(this.notificationContainer);
+    }
+
+    async checkForNewBonuses() {
+        try {
+            const response = await fetch('/api/user/today-bonus');
+            const data = await response.json();
+            
+            if (data.has_bonus && data.amount > 0) {
+                this.showBonusNotification(data.amount, data.package_name);
+                
+                // Mark as seen to prevent duplicate notifications
+                await this.markBonusAsSeen(data.bonus_id);
+            }
+        } catch (error) {
+            console.log('Error checking bonuses:', error);
+        }
+    }
+
+    showBonusNotification(amount, packageName = '') {
+        // Check if notification already exists
+        const existingNotification = document.querySelector('.bonus-notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        const notification = document.createElement('div');
+        notification.className = 'bonus-notification';
+        notification.style.cssText = `
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: slideIn 0.5s ease-out;
+            position: relative;
+            min-width: 300px;
+        `;
+
+        const message = packageName 
+            ? `Your daily bonus of $${amount} for ${packageName} has been paid! 🎉`
+            : `Your daily bonus of $${amount} has been paid! 🎉`;
+
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">Daily Bonus Paid!</div>
+                    <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+                </div>
+                <button class="close-bonus-notification" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; margin-left: 10px;">×</button>
+            </div>
+        `;
+
+        // Add close button functionality
+        notification.querySelector('.close-bonus-notification').addEventListener('click', () => {
+            this.removeNotification(notification);
+        });
+
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+            this.removeNotification(notification);
+        }, 8000);
+
+        this.notificationContainer.appendChild(notification);
+
+        // Add CSS animation
+        this.addNotificationStyles();
+    }
+
+    removeNotification(notification) {
+        notification.style.animation = 'slideOut 0.5s ease-in';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 500);
+    }
+
+    addNotificationStyles() {
+        if (!document.getElementById('bonus-notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'bonus-notification-styles';
+            styles.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+                .bonus-notification:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+                    transition: all 0.3s ease;
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+    }
+
+    async markBonusAsSeen(bonusId) {
+        try {
+            await fetch('/api/user/mark-bonus-seen', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ bonus_id: bonusId })
+            });
+        } catch (error) {
+            console.log('Error marking bonus as seen:', error);
+        }
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    new DailyBonusNotifier();
+});
+
+// Add this to your dashboard to show recent bonuses
+class BonusDashboard {
+    constructor() {
+        this.container = document.getElementById('bonus-history');
+        if (this.container) {
+            this.loadBonusHistory();
+        }
+    }
+
+    async loadBonusHistory() {
+        try {
+            const response = await fetch('/api/user/bonus-history');
+            const bonuses = await response.json();
+            
+            this.renderBonusHistory(bonuses);
+        } catch (error) {
+            console.log('Error loading bonus history:', error);
+        }
+    }
+
+    renderBonusHistory(bonuses) {
+        if (!bonuses.length) {
+            this.container.innerHTML = '<p>No bonus history available.</p>';
+            return;
+        }
+
+        const html = `
+            <div class="bonus-history-header">
+                <h3>Recent Daily Bonuses</h3>
+            </div>
+            <div class="bonus-list">
+                ${bonuses.map(bonus => `
+                    <div class="bonus-item">
+                        <div class="bonus-amount">+$${bonus.amount}</div>
+                        <div class="bonus-details">
+                            <div class="bonus-type">Daily Bonus</div>
+                            <div class="bonus-date">${new Date(bonus.date).toLocaleDateString()}</div>
+                        </div>
+                        <div class="bonus-package">Package #${bonus.package_id}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        this.container.innerHTML = html;
+    }
+}
+
+// Initialize on dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    new BonusDashboard();
+});
