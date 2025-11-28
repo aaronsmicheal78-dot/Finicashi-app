@@ -139,6 +139,16 @@ def process_package_purchase(payment):
                 
                 db.session.commit()
                 
+                for bonus_id in bonus_ids:
+                    bonus = ReferralBonus.query.get(bonus_id)
+                    success, msg, tx_id = BonusPaymentHelper._credit_user_wallet_atomic(
+                        user_id=bonus.user_id,
+                        amount=Decimal(str(bonus.bonus_amount)),
+                        bonus_id=bonus.id
+                    )
+                    if not success:
+                        print(f"⚠️ Failed to credit wallet for bonus {bonus.id}: {msg}")
+
                 # 5. Queue for payout
                 for bonus_id in bonus_ids:
                     BonusPaymentHelper.queue_bonus_payout(bonus_id)

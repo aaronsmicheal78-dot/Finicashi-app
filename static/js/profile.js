@@ -1206,7 +1206,3 @@ class BonusDashboard {
     }
 }
 
-// Initialize on dashboard
-document.addEventListener('DOMContentLoaded', function() {
-    new BonusDashboard();
-});

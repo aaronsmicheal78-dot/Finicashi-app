@@ -104,8 +104,8 @@
         <div class="mini-stats" id="statsSwipe">
           <div class="mini-stats-container">
             <div class="stat-card" data-key="totalReferrals">
-              <div class="stat-value" id="total-direct-referrals">0.00</div>
-              <div class="stat-label">Total Referrals</div>
+              <div class="stat-value" id="actual-balance">0.00</div>
+              <div class="stat-label">Actual Balance</div>
             </div>
             <div class="stat-card" data-key="referralBonus">
               <div class="stat-value" id="referral-bonus">0.00</div>
@@ -116,15 +116,15 @@
               <div class="stat-label">Available Balance</div>
             </div>
             <div class="stat-card" data-key="actualBalance">
-              <div class="stat-value"id="actual-balance">0.00</div>
-              <div class="stat-label">Actual Balance</div>
+              <div class="stat-value"id="total-direct-referrals">0.00</div>
+              <div class="stat-label">Referrals</div>
             </div>
             <div class="stat-card" data-key="investmentBonus">
               <div class="stat-value" id="bonus">0.00</div>
               <div class="stat-label">Investment Bonus</div>
             </div>
             <div class="stat-card" data-key="totalEarnings">
-              <div class="stat-value" id="lifetime-total">0.00</div>
+              <div class="stat-value" id="earningsMonth">0.00</div>
               <div class="stat-label">Total Earnings</div>
             </div>
           </div>
@@ -270,17 +270,30 @@
         </div> -->
 
         <!-- User Package Card -->
-<div class="package-card-profile">
+         <!-- User Packages Card -->
+
+
+<!-- <div class="package-card-profile">
     <div class="package-card-header">
-        <h3 class="card-header-text">Current Package</h3>
+        <h3 class="card-header-text">Your Packages</h3>
+    </div>
+    <div class="package-card-body" id="packages-container">
+        <------- Individual package items will be dynamically injected here -->
+    <!-- </div>
+</div> -----> 
+
+ 
+ <div class="package-card-profile">
+    <div class="package-card-header">
+        <h3 class="card-header-text">Package</h3>
     </div>
     <div class="package-card-body">
-        <span id="package" class="package-name"></span>
+        <span id="package" class="package-name" id="package"></span>
         <span id="package-duration" class="plan-duration"></span>
         <span id="package-bonus" class="plan-bonus"></span>
         <span id="package-status" class="plan-status active"></span>
     </div>
-</div>
+</div> 
 
 
 
@@ -446,6 +459,7 @@
               </ul>
               <button class="btn btn-accent package-btn" style="width: 100%;">Get Started</button>
             </div>
+
             <div class="package-card" data-modal="platinum" data-package-id="platinum">
               <h3 class="package-name">Platinum Package</h3>
               <div class="package-price">UGX. 100,000</div>
@@ -466,14 +480,55 @@
               </ul>
               <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
             </div>
+
+
+            
             <div class="package-card" data-modal="ultimate" data-package-id="ultimate">
               <h3 class="package-name">Ultimate Package</h3>
-              <div class="package-price">UGX. 200,000</div>
-              <div class="package-badge">Best Value</div>
+              <div class="package-price">2000,000</div>
               <ul class="package-benefits">
                 <li><i class="fas fa-check-circle"></i> 20% referral bonus</li>
-                <li><i class="fas fa-check-circle"></i> Custom dashboard</li>
-                <li><i class="fas fa-check-circle"></i> Concierge service</li>
+                <li><i class="fas fa-check-circle"></i> Full analytics suite</li>
+                <li><i class="fas fa-check-circle"></i> Executive support</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+
+            
+            <div class="package-card" data-modal="diamond" data-package-id="diamond">
+              <h3 class="package-name">Diamond Package</h3>
+              <div class="package-price">UGX. 500,000</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 25% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Full suite</li>
+                <li><i class="fas fa-check-circle"></i> VIP support</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+
+
+            
+            <div class="package-card" data-modal="ruby" data-package-id="ruby">
+              <h3 class="package-name">Ruby Package</h3>
+              <div class="package-price">UGX. 750,000</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 27% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Full analytics</li>
+                <li><i class="fas fa-check-circle"></i> VVIP support</li>
+              </ul>
+              <button class="btn btn-primary package-btn" style="width: 100%;">Get Started</button>
+            </div>
+
+
+
+            <div class="package-card" data-modal="emerald" data-package-id="emerald">
+              <h3 class="package-name">Emerald Package</h3>
+              <div class="package-price">UGX. 1,000,000</div>
+              <div class="package-badge">Best Value</div>
+              <ul class="package-benefits">
+                <li><i class="fas fa-check-circle"></i> 30% referral bonus</li>
+                <li><i class="fas fa-check-circle"></i> Custom analytics</li>
+                <li><i class="fas fa-check-circle"></i> VVVIP service</li>
               </ul>
               <button class="btn btn-accent package-btn" style="width: 100%;">Get Started</button>
             </div>
@@ -901,21 +956,6 @@
         </div>
     </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   <!--------- Package Modals -->
     <!-- Modal 1 -->
     <div class="modal payment-modal" id="bronze" data-amount="10000" data-package="Bronze">
@@ -1128,6 +1168,12 @@
             </form>
         </div>
     </div>
+
+
+
+
+
+
     <!-- Modal 5 -->
     <div class="modal payment-modal" id="premium" data-amount="150000" data-package="Premium">
         <div class="modal-content">
@@ -1156,6 +1202,134 @@
                 <div class="form-group">
                     <label class="form-label">Investment Amount</label>
                     <div class="fixed-amount">UGX. 150,000</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone-5">Phone Number</label>
+                    <input type="tel" class="form-input phone-input" id="phone-5" placeholder="Enter your phone number" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+    <!-- Modal Diamond -->
+    <div class="modal payment-modal" id="diamond" data-amount="500000" data-package="diamond">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Diamond Package</h2>
+                <p class="modal-description">Our executive tier for individuals seeking returns with VIP service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">25%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 500,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">180 days</div>
+                </div>
+            </div>
+            
+            <form class="investment-form payment-form">
+                <div class="form-group">
+                    <label class="form-label">Investment Amount</label>
+                    <div class="fixed-amount">UGX. 500,000</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone-5">Phone Number</label>
+                    <input type="tel" class="form-input phone-input" id="phone-5" placeholder="Enter your phone number" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Ruby -->
+    <div class="modal payment-modal" id="ruby" data-amount="750000" data-package="ruby">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Ruby Package</h2>
+                <p class="modal-description">Our executive tier for VVIP individuals seeking executive service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">27%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 750,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">180 days</div>
+                </div>
+            </div>
+            
+            <form class="investment-form payment-form">
+                <div class="form-group">
+                    <label class="form-label">Investment Amount</label>
+                    <div class="fixed-amount">UGX. 750,000</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone-5">Phone Number</label>
+                    <input type="tel" class="form-input phone-input" id="phone-5" placeholder="Enter your phone number" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary close-form">Close</button>
+                    <button type="button" class="btn btn-primary pay-btn">Pay Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5 -->
+    <div class="modal payment-modal" id="emerald" data-amount="1000000" data-package="emerald">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Emerald Package</h2>
+                <p class="modal-description">Our executive tier for VVVIP individuals seeking premium returns with professional 24/7 service.</p>
+            </div>
+            
+            <div class="modal-details">
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ROI Rate</div>
+                    <div class="modal-detail-value">30%</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Package Price</div>
+                    <div class="modal-detail-value">UGX. 1,000,000</div>
+                </div>
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Term</div>
+                    <div class="modal-detail-value">180 days</div>
+                </div>
+            </div>
+            
+            <form class="investment-form payment-form">
+                <div class="form-group">
+                    <label class="form-label">Investment Amount</label>
+                    <div class="fixed-amount">UGX. 1,000,000</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="phone-5">Phone Number</label>
@@ -1212,10 +1386,7 @@
         </div>
     </div>
 
-    <!-- withdraw Modal  -->
-     
-
-     
+    <!-- withdraw Modal  -->  
     <div class="modal payment-modal" id="modal-withdraw">
         <div class="modal-content">
             <button class="close-modal">&times;</button>

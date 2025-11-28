@@ -13,7 +13,10 @@ PACKAGE_MAP = {
     50000: "Gold",
     100000: "Platinum",
     150000: "Premium",
-    200000: "Ultimate"
+    200000: "Ultimate",
+    500000: "diamond",
+    750000: "ruby",
+    1000000: "emerald"
 }
 ALLOWED_AMOUNTS = set(PACKAGE_MAP.keys())
 
@@ -260,10 +263,7 @@ def create_user_package(user, package_catalog: PackageCatalog):
         package=package_catalog.name,
         type="purchased",
         status="active",
-   
-
-        package_amount=package_catalog.amount,
-       
+        package_amount=package_catalog.amount,  
         daily_bonus_rate=Decimal("0.05"),
         total_bonus_paid=Decimal("0.00"),
         activated_at=datetime.utcnow(),

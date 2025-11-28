@@ -65,54 +65,65 @@ class BonusPaymentHelper:
             db.session.rollback()
             current_app.logger.error(f"Error approving bonus {bonus_id}: {str(e)}")
             return False, f"Payment processing error: {str(e)}"
-    
+        
+   
     @staticmethod
     def _credit_user_wallet_atomic(user_id: int, amount: Decimal, bonus_id: int) -> Tuple[bool, str, Optional[int]]:
         """
-        Atomic wallet credit operation within database transaction
+        Safely credit a user's wallet with a bonus amount.
+        Ensures wallet exists, updates balance, creates transaction, and commits atomically.
         """
         try:
-            # Lock wallet for update to prevent race conditions
+            if amount <= Decimal("0"):
+                return False, "Invalid bonus amount", None
+
+            # Ensure wallet exists
             wallet = Wallet.query.filter_by(user_id=user_id).with_for_update().first()
             if not wallet:
-                return False, "Wallet not found", None
-            
-            # Validate amount
-            if amount <= 0:
-                return False, "Invalid bonus amount", None
-            
-            # Update wallet balance
+                # create wallet if missing
+                wallet = Wallet(user_id=user_id, balance=Decimal("0.00"))
+                db.session.add(wallet)
+                db.session.commit()  # commit immediately to ensure wallet exists
+                current_app.logger.info(f"Wallet auto-created for user {user_id}")
+
+            # Convert to Decimal explicitly
             current_balance = Decimal(str(wallet.balance))
-            new_balance = current_balance + amount
+            amount_decimal = Decimal(str(amount))
+            new_balance = current_balance + amount_decimal
             wallet.balance = new_balance
-            
-            # Create transaction record with unique reference
-            transaction_ref = f"BONUS_{bonus_id}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+            wallet.updated_at = datetime.utcnow()
+            db.session.add(wallet)
+            import uuid
+            # Create transaction record
+            transaction_ref = f"BONUS_{bonus_id}_{uuid.uuid4().hex[:8].upper()}"
             transaction = Transaction(
                 wallet_id=wallet.id,
                 type='referral_bonus',
-                amount=amount,
+                amount=amount_decimal,
                 status='completed',
                 reference=transaction_ref,
                 metadata={
                     'bonus_id': bonus_id,
                     'user_id': user_id,
                     'processed_at': datetime.now(timezone.utc).isoformat()
-                }
+                },
+                created_at=datetime.utcnow()
             )
             db.session.add(transaction)
-            db.session.flush()  # Get transaction ID without commit
-            
+
+            # Commit all changes
+            db.session.commit()
             current_app.logger.info(
-                f"Wallet credit: User {user_id}, Amount {amount}, New Balance: {new_balance}"
+                f"Wallet credited successfully: User {user_id}, Amount {amount_decimal}, New Balance: {new_balance}"
             )
-            
+
             return True, "Wallet credited successfully", transaction.id
-            
+
         except Exception as e:
-            current_app.logger.error(f"Wallet credit error for user {user_id}: {str(e)}")
+            db.session.rollback()
+            current_app.logger.error(f"Wallet credit failed for user {user_id}: {str(e)}", exc_info=True)
             return False, f"Wallet credit failed: {str(e)}", None
-    
+
     @staticmethod
     def process_pending_bonuses_batch(payment_id: int) -> Tuple[bool, str, Dict[str, Any]]:
         """

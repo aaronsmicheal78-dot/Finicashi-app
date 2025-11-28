@@ -236,7 +236,7 @@ class Transaction(db.Model, BaseMixin):
     type = db.Column(db.String(50), nullable=False)  # deposit, withdrawal, bonus, referral, payment
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
     status = db.Column(db.String(20), default='pending', nullable=False)
-    reference = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    reference = db.Column(db.String(120), unique=True, nullable=True, index=True)
 
     wallet = db.relationship('Wallet', back_populates='transactions')
 

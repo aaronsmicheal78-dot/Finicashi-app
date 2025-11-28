@@ -937,23 +937,101 @@
     100% { transform: translateX(-100%); }
 }
 
-/* Card Body */
-.package-card-profile {
-    background: #ffffff;
-    border: 1px solid #93c5fd; /* light blue border */
-    border-radius: 12px;
-    padding: 5px;
-    max-width: 900px;
-    margin: 20px auto;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+
 
 .package-card-profile:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 28px rgba(0,0,0,0.12);
 }
+
+.package-card-profile {
+    background: #ffffff;
+    border: 1px solid #93c5fd;
+    border-radius: 12px;
+    padding: 10px;
+    max-width: 360px; /* mobile-friendly */
+    margin: 10px auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.package-card-header {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+}
+
+.card-header-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e3a8a;
+}
+
+.package-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Individual package item */
+.package-item {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e0f2fe;
+    border-radius: 10px;
+    padding: 8px;
+    background: #f8fafc;
+}
+
+.package-item-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.package-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    color: #ffffff;
+}
+
+.package-status.active { background: #22c55e; }
+.package-status.completed { background: #64748b; }
+.package-status.expired { background: #ef4444; }
+
+.package-item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.package-progress-bar {
+    height: 6px;
+    width: 100%;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-filled {
+    height: 100%;
+    background: #3b82f6;
+    width: 0%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+
+
+
+
 
 /* Card Header */
 .package-card-header {

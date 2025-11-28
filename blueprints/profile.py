@@ -1,6 +1,6 @@
 
 from flask import Blueprint, jsonify, session, render_template, redirect, url_for,g, current_app
-from models import User, db, Package
+from models import User, db, Package, Wallet, ReferralBonus
 
 
 bp = Blueprint('profile',__name__, url_prefix="")
@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
 #=======================================================================
 
 
-@bp.route('/api/user/total-earnings', methods=['GET'])
+@bp.route('/api/user//total-earnings', methods=['GET'])
 def get_current_user_total_earnings():
     """
     Calculate total earnings and referral statistics for the currently logged-in user
@@ -110,15 +110,12 @@ def get_current_user_total_earnings():
             
         print(f"✅ Processing earnings for user: {user.username}")
         
-        # Get current time in UTC
         now = datetime.now(timezone.utc)
         
-        # Calculate time ranges
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=today_start.weekday())
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
-        # Initialize totals with Decimal
         totals = {
             'today': Decimal('0.00'),
             'this_week': Decimal('0.00'),
@@ -334,157 +331,429 @@ from decimal import Decimal, ROUND_DOWN
 from flask import session, jsonify, current_app
 from datetime import date, datetime
 from models import Bonus
-
+from bonus.daily import process_user_daily_bonus
 
 @bp.route('/api/user/today-bonus')
 def get_today_bonus():
-    """Check if user received any bonus today based on their packages"""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+   
+    bonus_summary = process_user_daily_bonus(user_id)
+
+    return jsonify({
+        "success": True,
+        "wallet_balance": bonus_summary["wallet_balance"],
+        "total_bonus_today": bonus_summary["total_bonus_today"],
+        "processed_packages": bonus_summary["processed_packages"],
+        "packages_completed": bonus_summary["packages_completed"],
+        "packages_expired": bonus_summary["packages_expired"]
+    })
+
+@bp.route('/api/user//////////today-bonus', methods=['GET'])
+def get_today_bonuss():
+    """Automatically process and return today's bonus for the logged-in user"""
     try:
         user_id = session.get("user_id")
-        print(f"user_id from session: {user_id}")
-
         if not user_id:
-            print("No user_id in session")
             return jsonify({"error": "Not logged in", "has_bonus": False}), 401
 
         user = User.query.get(user_id)
-        if not user:
-            print("User not found in DB")
+        if not user or not user.is_active:
             session.clear()
-            return jsonify({"error": "User not found", "has_bonus": False}), 404
+            return jsonify({"error": "User not found or inactive", "has_bonus": False}), 404
 
-        today = date.today()
+        # Automatically process daily bonus for the user
+        from bonus.daily import process_user_daily_bonus
+        bonus_summary = process_user_daily_bonus(user_id)
+
+        response = {
+            "has_bonus": bonus_summary["total_bonus_today"] > 0,
+            "bonus_amount": bonus_summary["total_bonus_today"],
+            "wallet_balance": bonus_summary["wallet_balance"],
+            "packages_processed": bonus_summary["packages_processed"],
+            "packages_expired": bonus_summary["packages_expired"],
+            "packages_completed": bonus_summary["packages_completed"],
+            "processed_packages": bonus_summary["processed_packages"],
+            "message": f"Daily bonus processed: {bonus_summary['total_bonus_today']:.2f}" if bonus_summary["total_bonus_today"] > 0 else "No bonus to process today",
+            "next_bonus_available": (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S UTC")
+        }
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error processing/getting today's bonus: {e}", exc_info=True)
+        return jsonify({
+            "has_bonus": False,
+            "error": "Failed to process bonus",
+            "details": str(e)
+        }), 500
+
+@bp.route('/api////claim-daily-bonus', methods=['POST'])
+def claim_daily_bonuss():
+    """
+    Claim daily bonus for authenticated user
+    """
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": "Authentication required"
+            }), 401
+        from bonus.daily import process_user_daily_bonus
+        # Process daily bonus using the enhanced processor
+        result = process_user_daily_bonus(user_id)
         
-        # Check if user already received a bonus today
-        today_bonus = Bonus.query.filter(
-            Bonus.user_id == user.id,
-            Bonus.type == 'daily',
+        # Check if processing was successful
+        if not result.get("success", False):
+            error_msg = result.get("error", "Failed to process daily bonus")
+            logger.warning(f"Daily bonus processing failed for user {user_id}: {error_msg}")
+            return jsonify({
+                "success": False,
+                "error": error_msg
+            }), 400
+
+        # Check if any bonus was awarded
+        if result["total_bonus_today"] <= 0:
+            return jsonify({
+                "success": True,
+                "message": "No daily bonus available at this time",
+                "bonus_amount": 0.0,
+                "wallet_balance": result["wallet_balance"],
+                "package_summary": {
+                    "total_packages": result["packages_processed"] + result["packages_completed"] + 
+                                    result["packages_expired"] + result["packages_skipped"],
+                    "packages_processed": result["packages_processed"],
+                    "packages_completed": result["packages_completed"],
+                    "packages_expired": result["packages_expired"],
+                    "packages_skipped": result["packages_skipped"]
+                },
+                "processed_packages": result["processed_packages"],
+                "skipped_packages": result.get("skipped_packages", [])
+            }), 200
+
+        # Successful bonus claim
+        return jsonify({
+            "success": True,
+            "message": "Daily bonus claimed successfully!",
+            "bonus_amount": result["total_bonus_today"],
+            "wallet_balance": result["wallet_balance"],
+            "package_summary": {
+                "total_packages": result["packages_processed"] + result["packages_completed"] + 
+                                result["packages_expired"] + result["packages_skipped"],
+                "packages_processed": result["packages_processed"],
+                "packages_completed": result["packages_completed"],
+                "packages_expired": result["packages_expired"],
+                "packages_skipped": result["packages_skipped"]
+            },
+            "processed_packages": result["processed_packages"],
+            "skipped_packages": result.get("skipped_packages", [])
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Unexpected error in claim_daily_bonus route: {e}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "An unexpected error occurred while processing your request"
+        }), 500
+
+    
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+from datetime import datetime, timedelta
+import uuid
+import logging
+from flask import session, jsonify
+from models import Wallet, Transaction
+
+logger = logging.getLogger(__name__)
+
+@bp.route('/api///////claim-daily-bonus', methods=['POST'])
+def claim_daily_bonusss():
+    """
+    Claim daily bonus for active packages using Flask session authentication
+    with comprehensive error handling and proper decimal arithmetic.
+    """
+    db_session = db.session
+    
+    try:
+        # Session-based authentication
+        if 'user_id' not in session:
+            logger.warning("Unauthorized bonus claim attempt - no user in session")
+            return jsonify({"error": "Authentication required"}), 401
+
+        user_id = session['user_id']
+        logger.info(f"Daily bonus claim attempt for user {user_id}")
+
+        # Fetch user from database
+        user = User.query.get(user_id)
+        if not user:
+            logger.error(f"User not found in database for session user_id: {user_id}")
+            session.clear()  # Clear invalid session
+            return jsonify({"error": "User not found"}), 404
+
+        # Check if user is active
+        if not user.is_active:
+            logger.warning(f"Inactive user attempted bonus claim: {user_id}")
+            return jsonify({"error": "Account is inactive"}), 403
+
+        # Fetch wallet with error handling
+        wallet = Wallet.query.filter_by(user_id=user_id).first()
+        if not wallet:
+    
+            wallet = Wallet(user_id=user.id, balance=0)
+            db.session.add(wallet)
+            db.session.commit()
+        print(f"DEBUG: Before update - Wallet balance: {wallet.balance}")
+        if not wallet:
+            logger.error(f"Wallet not found for user {user_id}")
+            return jsonify({"error": "Wallet not found"}), 404
+
+        # Fetch active packages
+        packages = Package.query.filter_by(user_id=user_id, status='active').all()
+        if not packages:
+            logger.info(f"No active packages found for user {user_id}")
+            return jsonify({
+                "error": "No active packages found",
+                "suggestion": "Please purchase a package to start earning daily bonuses"
+            }), 400
+
+        # Check if user already claimed bonus today
+        today = datetime.utcnow().date()
+        already_claimed = Bonus.query.filter(
+            Bonus.user_id == user_id,
+            Bonus.type == "daily",
             db.func.date(Bonus.created_at) == today
         ).first()
 
-        if today_bonus:
-            # User already got bonus today
-            bonus_amount = Decimal(str(today_bonus.amount))
+        if already_claimed:
+            logger.info(f"User {user_id} already claimed daily bonus today")
+            # Calculate next available time (next day)
+            next_claim_time = (datetime.utcnow() + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
             return jsonify({
-                "has_bonus": True,
-                "amount": float(bonus_amount),
-                "bonus_id": today_bonus.id,
-                "message": f"Daily bonus received: ${bonus_amount:.2f}"
-            })
+                "error": "Daily bonus already claimed today",
+                "next_available": next_claim_time.isoformat(),
+                "next_available_human": next_claim_time.strftime("%Y-%m-%d %H:%M:%S UTC")
+            }), 400
 
-        # If no bonus today, check if user has active packages and calculate eligibility
-        active_packages = Package.query.filter(
-            Package.user_id == user.id,
-            Package.status == 'active',
-            Package.expires_at >= today
-        ).all()
+        # Initialize bonus calculation
+        total_bonus_today = Decimal("0.00")
+        now = datetime.utcnow()
+        packages_updated = []
+        expired_packages = []
+        completed_packages = []
 
-        print(f"Found {len(active_packages)} active packages for user {user_id}")
-
-        if not active_packages:
-            return jsonify({"has_bonus": False, "message": "No active packages"})
-
-        # Calculate total potential bonus across all active packages using Decimal
-        total_potential_bonus = Decimal('0')
-        eligible_packages_count = 0
-        bonus_details = []
-
-        for package in active_packages:
+        # Calculate bonus for each package
+        for pkg in packages:
             try:
-                # DEBUG: Print package details to see what's in the database
-                print(f"Package ID: {package.id}, Catalog: {package.catalog}, Package Amount: {package.package_amount}, Daily Rate: {package.daily_bonus_rate}")
-                
-                # Get package amount - try multiple sources
-                if package.package_amount and Decimal(str(package.package_amount)) > Decimal('0'):
-                    package_amount = Decimal(str(package.package_amount))
-                    amount_source = "package.package_amount"
-                elif package.catalog and package.catalog.amount:
-                    package_amount = Decimal(str(package.catalog.amount))
-                    amount_source = "package.catalog.amount"
-                else:
-                    print(f"Warning: No package amount found for package {package.id}")
+                # Validate package data
+                if not pkg.package_amount or pkg.package_amount <= Decimal("0"):
+                    logger.warning(f"Invalid package amount for package {pkg.id}")
                     continue
 
-                # Get daily bonus rate
-                if package.daily_bonus_rate and Decimal(str(package.daily_bonus_rate)) > Decimal('0'):
-                    daily_bonus_rate = Decimal(str(package.daily_bonus_rate))
-                    rate_source = "package.daily_bonus_rate"
-                elif package.catalog and package.catalog.bonus_percentage:
-                    # Convert percentage to decimal (5% -> 0.05)
-                    daily_bonus_rate = Decimal(str(package.catalog.bonus_percentage)) / Decimal('100')
-                    rate_source = "package.catalog.bonus_percentage"
+                # Check package expiry (60 days from activation)
+                if pkg.activated_at:
+                    expiry_date = pkg.activated_at + timedelta(days=60)
                 else:
-                    # Default to 5% if nothing is set
-                    daily_bonus_rate = Decimal('0.05')
-                    rate_source = "default"
-
-                print(f"Package {package.id}: amount={package_amount} ({amount_source}), rate={daily_bonus_rate} ({rate_source})")
-                
-                # Calculate daily bonus (5% of package amount)
-                daily_bonus = package_amount * daily_bonus_rate
-                daily_bonus = daily_bonus.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-                
-                # Check if we haven't exceeded 75% of package value
-                max_bonus = package_amount * Decimal('0.75')
-                max_bonus = max_bonus.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-                
-                # Get current total bonus paid (convert safely)
-                current_total_bonus = Decimal(str(package.total_bonus_paid or '0'))
-                
-                print(f"Package {package.id}: daily_bonus={daily_bonus}, current_total={current_total_bonus}, max={max_bonus}")
-                
-                # Check if package is eligible for bonus today
-                if current_total_bonus + daily_bonus <= max_bonus:
-                    total_potential_bonus += daily_bonus
-                    eligible_packages_count += 1
-                    status = "eligible"
-                else:
-                    status = "max_bonus_reached"
+                    expiry_date = pkg.created_at + timedelta(days=60)
                     
-                bonus_details.append({
-                    "package_id": package.id,
-                    "package_name": package.catalog.name if package.catalog else f"Package #{package.id}",
-                    "package_amount": float(package_amount),
-                    "bonus_amount": float(daily_bonus),
-                    "daily_rate": float(daily_bonus_rate),
-                    "current_total_bonus": float(current_total_bonus),
-                    "max_bonus": float(max_bonus),
-                    "remaining_bonus": float(max_bonus - current_total_bonus),
-                    "status": status
-                })
+                if now > expiry_date:
+                    logger.info(f"Package {pkg.id} expired for user {user_id}")
+                    pkg.status = "expired"
+                    expired_packages.append({
+                        "package_id": pkg.id,
+                        "package_name": pkg.package,
+                        "expired_at": expiry_date.isoformat()
+                    })
+                    db_session.add(pkg)
+                    continue
 
-            except Exception as package_error:
-                current_app.logger.error(f"Error processing package {package.id}: {package_error}")
-                print(f"Package {package.id} error: {package_error}")
-                import traceback
-                traceback.print_exc()
-                continue
+                # Calculate daily bonus (2.5%)
+                try:
+                    daily_bonus_raw = Decimal(str(pkg.package_amount)) * Decimal("0.025")
+                    daily_bonus = daily_bonus_raw.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                except (InvalidOperation, TypeError) as e:
+                    logger.error(f"Bonus calculation error for package {pkg.id}: {e}")
+                    continue
 
-        print(f"Final calculation: eligible_packages_count={eligible_packages_count}, total_potential_bonus={total_potential_bonus}")
+                # Calculate maximum payout (75% of package amount)
+                try:
+                    max_payout = Decimal(str(pkg.package_amount)) * Decimal("0.75")
+                    current_total_paid = Decimal(str(pkg.total_bonus_paid or "0"))
+                    remaining_limit = max_payout - current_total_paid
+                except (InvalidOperation, TypeError) as e:
+                    logger.error(f"Payout calculation error for package {pkg.id}: {e}")
+                    continue
 
-        # If we have eligible packages, return that user can claim bonus
-        if eligible_packages_count > 0:
+                # Skip if remaining limit is zero or negative
+                if remaining_limit <= Decimal("0"):
+                    pkg.status = "completed"
+                    db_session.add(pkg)
+                    completed_packages.append({
+                        "package_id": pkg.id,
+                        "package_name": pkg.package,
+                        "total_paid": float(current_total_paid),
+                        "max_payout": float(max_payout)
+                    })
+                    logger.info(f"Package {pkg.id} reached maximum payout")
+                    continue
+
+                # Cap bonus if it exceeds remaining limit
+                if daily_bonus > remaining_limit:
+                    daily_bonus = remaining_limit.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    logger.info(f"Bonus capped for package {pkg.id}: {daily_bonus}")
+
+                # Validate bonus amount
+                if daily_bonus <= Decimal("0"):
+                    logger.warning(f"Invalid bonus amount {daily_bonus} for package {pkg.id}")
+                    continue
+
+                # Accumulate total bonus
+                total_bonus_today += daily_bonus
+
+                # Update package payout tracking
+                try:
+                    pkg.total_bonus_paid = current_total_paid + daily_bonus
+                    
+                    # Check if package reached maximum payout after this bonus
+                    if pkg.total_bonus_paid >= max_payout:
+                        pkg.status = "completed"
+                        completed_packages.append({
+                            "package_id": pkg.id,
+                            "package_name": pkg.package,
+                            "total_paid": float(pkg.total_bonus_paid),
+                            "max_payout": float(max_payout)
+                        })
+                        logger.info(f"Package {pkg.id} completed maximum payout")
+                    else:
+                        packages_updated.append({
+                            "package_id": pkg.id,
+                            "package_name": pkg.package,
+                            "bonus_today": float(daily_bonus),
+                            "total_paid": float(pkg.total_bonus_paid),
+                            "remaining_limit": float(remaining_limit - daily_bonus)
+                        })
+                    
+                    db_session.add(pkg)
+                    
+                except (InvalidOperation, TypeError) as e:
+                    logger.error(f"Error updating package {pkg.id} payout: {e}")
+                    continue
+
+            except Exception as pkg_error:
+                logger.error(f"Error processing package {pkg.id}: {pkg_error}")
+                continue  # Continue with other packages
+
+        # Validate total bonus
+        if total_bonus_today <= Decimal("0"):
+            logger.info(f"No bonus available for user {user_id}")
             return jsonify({
-                "has_bonus": False,
-                "eligible": True,
-                "potential_bonus": float(total_potential_bonus),
-                "eligible_packages_count": eligible_packages_count,
-                "total_packages_count": len(active_packages),
-                "message": f"You can claim ${total_potential_bonus:.2f} bonus today from {eligible_packages_count} package(s)!",
-                "bonus_details": bonus_details
-            })
+                "error": "No bonus available to claim today",
+                "details": {
+                    "expired_packages": expired_packages,
+                    "completed_packages": completed_packages,
+                    "total_packages_checked": len(packages)
+                },
+                "suggestion": "All packages are either expired, completed, or have issues"
+            }), 400
 
-        # No eligible packages
-        return jsonify({
-            "has_bonus": False, 
-            "eligible": False,
-            "message": "No bonus available today",
-            "bonus_details": bonus_details
-        })
+        max_reasonable_bonus = Decimal("100000.00")  
+        if total_bonus_today > max_reasonable_bonus:
+            logger.error(f"Suspicious bonus amount {total_bonus_today} for user {user_id}")
+            return jsonify({"error": "Bonus calculation error - amount too high"}), 500
+
+       
+        min_bonus = Decimal("0.01")
+        if total_bonus_today < min_bonus:
+            logger.info(f"Bonus too small to process: {total_bonus_today}")
+            return jsonify({
+                "error": "Bonus amount too small to process",
+                "minimum_bonus": float(min_bonus)
+            }), 400
+
+        try:
+            bonus_record = Bonus(
+                user_id=user_id,
+                type="daily",
+                amount=total_bonus_today,
+                status="active",
+                created_at=datetime.utcnow()
+            )
+            db_session.add(bonus_record)
+        except Exception as e:
+            logger.error(f"Error creating bonus record: {e}")
+            return jsonify({"error": "Failed to create bonus record"}), 500
+
+       
+        try:
+            current_balance = Decimal(str(wallet.balance or "0"))
+            new_balance = current_balance + total_bonus_today
+            wallet.balance = new_balance
+            print(f"DEBUG: After update - Wallet balance: {wallet.balance}")
+            wallet.updated_at = datetime.utcnow()
+            db_session.add(wallet)
+        except (InvalidOperation, TypeError) as e:
+            logger.error(f"Error updating wallet balance: {e}")
+            return jsonify({"error": "Failed to update wallet balance"}), 500
+
+        # Create transaction record
+        try:
+            transaction_ref = f"BONUS-{uuid.uuid4().hex[:10].upper()}"
+            if not transaction_ref:
+               raise Exception("Transaction reference generation failed")
+            transaction = Transaction(
+                wallet_id=wallet.id,
+                type="bonus",
+                amount=total_bonus_today,
+                status="successful",
+                reference=transaction_ref,
+                created_at=datetime.utcnow()
+            )
+            db_session.add(transaction)
+        except Exception as e:
+            logger.error(f"Error creating transaction record: {e}")
+            transaction_ref = "NO-REF"
+       
+        db_session.commit() 
+        logger.info(f"Daily bonus claimed successfully for user {user_id}: {total_bonus_today}")
+
+        response_data = {
+            "success": True,
+            "message": "Daily bonus claimed successfully!",
+            "bonus_amount": float(total_bonus_today),
+            "wallet_balance": float(wallet.balance),
+            "transaction_reference": transaction_ref,
+            "claimed_at": datetime.utcnow().isoformat(),
+            "package_summary": {
+                "total_packages": len(packages),
+                "packages_processed": len(packages_updated),
+                "packages_expired": len(expired_packages),
+                "packages_completed": len(completed_packages)
+            },
+            "next_bonus_available": (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S UTC")
+        }
+
+        if packages_updated:
+            response_data["processed_packages"] = packages_updated
+        if expired_packages:
+            response_data["expired_packages"] = expired_packages
+        if completed_packages:
+            response_data["completed_packages"] = completed_packages
+
+        return jsonify(response_data), 200
 
     except Exception as e:
-        current_app.logger.error(f"Error getting today's bonus: {e}")
-        print(f"ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"has_bonus": False, "error": str(e)}), 500
+       
+        db_session.rollback()
+        user_id = session.get('user_id', 'unknown')
+        logger.error(f"Unexpected error in claim_daily_bonus for user {user_id}: {str(e)}", exc_info=True)
+        
+        return jsonify({
+            "success": False,
+            "error": "Failed to process bonus claim",
+            "details": "Internal server error occurred",
+            "support_reference": f"ERR-{uuid.uuid4().hex[:8].upper()}"
+        }), 500

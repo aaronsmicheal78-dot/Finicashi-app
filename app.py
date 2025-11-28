@@ -194,7 +194,6 @@ def create_app():
             REMEMBER_COOKIE_HTTPONLY=True,
         )
     
-          
         #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
         #cache.init_app(app)
         # ------------------------------------------------------------------------------------------

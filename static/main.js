@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     
-new HeroRegistration();
+//new HeroRegistration();
 // toggle login password
 function togglePassword() {
     const passwordInput = document.getElementById('password');
