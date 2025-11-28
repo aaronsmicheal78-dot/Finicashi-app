@@ -537,7 +537,7 @@
     }
 
     .package-card {
-      background: var(--white);
+      background: rgb(223, 217, 227);                  /*var(--white);*/
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
       padding: 20px;
