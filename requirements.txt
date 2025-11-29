@@ -14,7 +14,7 @@ pg8000==1.31.5
 redis==7.1.0
 Flask_Caching==2.3.1
 gevent==25.9.1
-flask==4.0.0
+flask_cors==4.0.0
 
 
 
