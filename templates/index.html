@@ -7,17 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <link rel="stylesheet" href="{{url_for('static', filename='main.css')}}?v=1.1">
-       
-   
-
-   <style>
-       
-    </style>
-</head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='main.css')}}?v=1.1">
+    </head>
 <body>
-<div id="loadingPage" class="loading-page" style="display:none;">
+ <div id="loadingPage" class="loading-page" style="display:none;">
   <div class="animation-container">
     <!-- Bouncing dots -->
     <div class="dot"></div>
@@ -31,316 +25,494 @@
     <p>Finicashi---is---home</p>
   </div>
 </div>
-    <div class="profile-container"></div>
-    <!-- Hero Section -->
-    <section id="hero-section">
-        <!-- Dynamic Background -->
+  <!-- Background Slides -->
+   <div id="hero-background">
+    <div class="background-slide active" style="background-image: url('https://cdn.pixabay.com/photo/2017/10/17/19/11/fantasy-2861815_1280.jpg')"></div>
+    <div class="background-slide" style="background-image: url('https://cdn.pixabay.com/photo/2016/11/21/03/56/landscape-1844226_1280.jpg')"></div>
+    <div class="background-slide" style="background-image: url('https://cdn.pixabay.com/photo/2016/08/11/23/48/mountains-1587287_1280.jpg')"></div>
+    <div class="background-overlay"></div>
+  </div>
 
+  <!-- Hero Content -->
+  <section id="hero-content">
+    <div class="floating-element"><i class="fas fa-chart-line"></i></div>
+    <div class="floating-element"><i class="fas fa-coins"></i></div>
+    <div class="floating-element"><i class="fas fa-wallet"></i></div>
+    <div class="floating-element"><i class="fas fa-money-bill-wave"></i></div>
 
-        <div id="hero-background">
-            <div class="background-slide active" id="slide-1"></div>
-            <div class="background-slide" id="slide-2"></div>
-            <div class="background-slide" id="slide-3"></div>
-            <div class="background-slide" id="slide-4"></div>
-            <div class="background-slide" id="slide-5"></div>
-             <div class="background-slide" id="slide-6"></div>
-            <div class="background-slide" id="slide-7"></div>
-            <div class="background-slide" id="slide-8"></div>
-            <div class="background-overlay"></div>
+    <div id="hero-text-container">
+      <div class="hero-badge">Revolutionizing Investments</div>
+      <h1 id="hero-main-headline">Finicashi</h1>
+      <p id="hero-subheading">Unlock financial freedom through smart investments with our innovative digital platform. Join thousands already growing their wealth.</p>
+      
+      <div id="hero-stats">
+        <div class="hero-stat">
+          <div class="stat-value">45K+</div>
+          <div class="stat-label">Users</div>
         </div>
+        <div class="hero-stat">
+          <div class="stat-value">2.4M</div>
+          <div class="stat-label">Investments</div>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-value">12%</div>
+          <div class="stat-label">Avg Return</div>
+        </div>
+      </div>
+    </div>
 
-        <!-- Floating Elements -->
-        <div class="floating-element floating-1">
-            <div class="feature-icon">📈</div>
-            <span>Real-time Fin-Intel</span>
-        </div>
-        <div class="floating-element floating-2">
-            <div class="feature-icon">💳</div>
-            <span>Instant Deposits & Withdrawals</span>
-        </div>
-        <div class="floating-element floating-3">
-            <div class="feature-icon">🛡️</div>
-            <span>Bank-Level Security</span>
-        </div>
+    <div id="hero-cta-buttons">
+      <button class="cta-primary" id="register-btn">Get Started Now</button>
+      <button class="cta-secondary" id="login-modal-btn">Already a Member</button>
+    </div>
 
-        <!-- Hero Content -->
-        <div id="hero-content">
-            <!-- Hero Text -->
-            <div id="hero-text-container">
-                <div class="hero-badge">TRUSTED BY 250,000+ TRADERS WORLDWIDE</div>
-                <h1 id="hero-main-headline">MASTER NETWORK MARKETING WITH US</h1>
-                <p id="hero-subheading">Join FincashPro today and unlock unlimited Network growth.</p>
-                
-                <div id="hero-features">
-                    <div class="hero-feature">
-                        <div class="feature-icon">⚡</div>
-                        <span class="feature-text">Instant Bonus</span>
-                    </div>
-                    <div class="hero-feature">
-                        <div class="feature-icon">🔒</div>
-                        <span class="feature-text">Secure & Regulated</span>
-                    </div>
-                    <div class="hero-feature">
-                        <div class="feature-icon">📱</div>
-                        <span class="feature-text">Mobile Kashi</span>
-                    </div>
-                </div>
-                
-                <div id="hero-cta-buttons">
-                    <button class="cta-button cta-primary" id="hero-watch-demo">
-                        <span>🎬</span>
-                        Our Packages
-                    </button>
-                    <button class="cta-button cta-secondary" id="hero-learn-more">
-                        <span>📚</span>
-                        Referral code
-                    </button>
-                </div>
-                
-                <div id="hero-stats">
-                    <div class="hero-stat">
-                        <div class="stat-value">UGX2.4B+</div>
-                        <div class="stat-label">Monthly Trading Volume</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="stat-value">98.7%</div>
-                        <div class="stat-label">Withdrawal Success Rate</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="stat-value">24/7</div>
-                        <div class="stat-label">Customer Support</div>
-                    </div>
-                </div>
+    <!-- Auth Container -->
+    <div id="auth-container">
+      <div id="auth-switcher">
+        <div id="switch-register" class="active">Register</div>
+        <div id="switch-login">Login</div>
+      </div>
+
+      <div id="auth-form-container">
+        <!-- Register Form -->
+        <form id="register-form">
+          <div class="form-group">
+            <label for="hero-full-name" class="form-label">Full Name</label>
+            <input type="text" id="hero-full-name" class="form-input" placeholder="username" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="hero-email" class="form-label">Email</label>
+            <input type="email" id="hero-email" class="form-input" placeholder="email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="hero-phone" class="form-label">Phone Number</label>
+            <input type="tel" id="hero-phone" class="form-input" placeholder="Enter Phone" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="hero-code" class="form-label">Referral Code (Optional)</label>
+            <input type="text" id="hero-code" class="form-input" placeholder="Enter referral code">
+          </div>
+          
+          <div class="form-group">
+            <label for="hero-password" class="form-label">Password</label>
+            <div class="password-toggle-wrapper">
+              <input type="password" id="hero-password" class="form-input" placeholder="••••••••" required>
+              <button type="button" class="password-toggle" data-for="hero-password">
+                <i class="far fa-eye"></i>
+              </button>
             </div>
- <!-- Login Modal -->
-<div class="login-modal-overlay" id="loginModalOverlay">
-    <div class="login-modal" id="loginModal">
-        <div class="login-header">
-            <!-- NEW: Logo and Slogan -->
-            <div class="header-logo-container">
-                <div class="header-logo">FP</div>
-                <div class="header-slogan">For You</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="hero-confirm-password" class="form-label">Confirm Password</label>
+            <div class="password-toggle-wrapper">
+              <input type="password" id="hero-confirm-password" class="form-input" placeholder="••••••••" required>
+              <button type="button" class="password-toggle" data-for="hero-confirm-password">
+                <i class="far fa-eye"></i>
+              </button>
             </div>
-            <button class="login-close" onclick="FincashProLogin.closeModal()">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="login-logo">FincashPro</div>
-            <div>Welcome back to your account</div>
+          </div>
+          
+          <button type="submit" class="form-button">Create Account</button>
+          
+          <div class="form-footer">
+            By creating an account, you agree to our <a href="javascript:void(0)">Terms of Service</a> and <a href="javascript:void(0)">Privacy Policy</a>
+          </div>
+        </form>
+
+        <!-- Login Form -->
+        <form id="login-form">
+          <div class="form-group">
+            <label for="phone" class="form-label">Email or Phone</label>
+            <input type="text" id="phone" class="form-input" placeholder="email or phone" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <div class="password-toggle-wrapper">
+              <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+              <button type="button" class="password-toggle" data-for="password">
+                <i class="far fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="checkbox-group">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">Remember me</label>
+          </div>
+          
+          <button type="submit" class="login-button">Login to Account</button>
+          
+          <div class="form-footer">
+            <a href="javascript:void(0)">Forgot your password?</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Login Modal -->
+  <div id="loginModalOverlay">
+    <div id="loginModal">
+      <button class="login-close"><i class="fas fa-times"></i></button>
+      <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--text-dark);">Login to Finicashi</h2>
+      
+      <form>
+        <div class="form-group">
+          <label for="modal-phone" class="form-label">Email or Phone</label>
+          <input type="text" id="modal-phone" class="form-input" placeholder="email.com or phone" required>
         </div>
         
-        <div class="login-body">
-            <form id="loginForm" onsubmit="FincashProLogin.handleLogin(event)">
-                <div class="login-form-group">
-                    <input type="text" id="phone" class="login-input" placeholder="Phone or Email" required>
-                </div>
-                
-                <div class="login-form-group">
-                    <!-- NEW: Password Toggle -->
-                    <div class="password-input-wrapper">
-                        <input type="password" id="password" class="login-input" placeholder="Password" required>
-                        <section type="button" class="password-toggle" onclick="togglePassword()">
-                            <i class="fas fa-eye"></i>
-                            </section>
-                       
-                    </div>
-                </div>
-                
-                <!-- NEW: Login Options -->
-                <div class="login-options">
-                    <label class="remember-me">
-                        <input type="checkbox" id="rememberMe">
-                        Remember me
-                    </label>
-                    <a href="#" class="forgot-password">Forgot password?</a>
-                </div>
-                
-                <button type="submit" class="login-button">Sign In to Account</button>
-            </form>
+        <div class="form-group">
+          <label for="modal-password" class="form-label">Password</label>
+          <div class="password-toggle-wrapper">
+            <input type="password" id="modal-password" class="form-input" placeholder="••••••••" required>
+            <button type="button" class="password-toggle" data-for="modal-password">
+              <i class="far fa-eye"></i>
+            </button>
+          </div>
         </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="modal-rememberMe">
+          <label for="modal-rememberMe">Remember me</label>
+        </div>
+        
+        <button type="submit" class="login-button">Login to Account</button>
+        
+        <div class="form-footer">
+          <a href="javascript:void(0)">Forgot your password?</a>
+        </div>
+      </form>
     </div>
-</div>
+  </div>
 
-
-            <!-- Registration Form -->
-            <div id="hero-registration-container">
-                <form id="hero-registration-form">
-                    <div class="form-header">
-                        <h2 class="form-title">Start Investing Today</h2>
-                        <p class="form-subtitle">Join thousands of successful investors</p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="hero-user-name">User Name</label>
-                        <input type="text" id="hero-full-name" class="form-input" placeholder="Enter your Username" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="hero-email">Email Address</label>
-                        <input type="email" id="hero-email" class="form-input" placeholder="Enter your email" required>
-                    </div>
-
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="hero-phone">Phone Number</label>
-                        <input type="tel" id="hero-phone" class="form-input" placeholder="Enter your phone number" required>
-                    </div>
-                    
-                     
-                    <div class="form-group">
-                        <label class="form-label" for="hero-code">Referral Code (Optional)</label>
-                        <input type="text" id="hero-code" class="form-input" placeholder="Enter your Referral Code(Optional)" (optional)>
-                    </div>
-
-    
-
-
-                    <div class="form-group">
-                        <label class="form-label" for="hero-password">Password</label>
-                        <input type="password" id="hero-password" class="form-input" placeholder="Create a password" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="hero-password">confirm Password</label>
-                        <input type="password" id="hero-confirm-password" class="form-input" placeholder="Confirm password" required>
-                    </div>
-
-                     <button type="submit" class="form-button">Create Free Account</button>
-                     <button class="form-button" onclick="FincashProLogin.openModal()">Login</button>
-                     
-                    
-                    <div class="form-footer">
-                        By registering, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </section>
-   <!-- Package Modals Container -->
-   
-
+  <footer>
+    <a href="javascript:void(0)">Terms of Service</a>
+    <a href="javascript:void(0)">Privacy Policy</a>
+  </footer>
 <script>
-    const loginButton = document.querySelector('.login-button');
-      window.FincashProLogin = {
-  openModal: function() {
-    console.log("Opening modal...");
-    const overlay = document.getElementById("loginModalOverlay");
-    const modal = document.getElementById("loginModal");
-    overlay.style.display = "flex";
-    setTimeout(() => modal.classList.add("active"), 10);
-  },
+// Login Functionality - Starting from e.preventDefault()
 
-  closeModal: function() {
-    const overlay = document.getElementById("loginModalOverlay");
-    const modal = document.getElementById("loginModal");
-    modal.classList.remove("active");
-    setTimeout(() => overlay.style.display = "none", 300);
-  },
+ // Background Slides Rotation
+    const backgroundSlides = document.querySelectorAll('.background-slide');
+    let currentSlide = 0;
 
-  handleLogin: function(event) {
+    function rotateBackgrounds() {
+      backgroundSlides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % backgroundSlides.length;
+      backgroundSlides[currentSlide].classList.add('active');
+    }
+
+    // Change background every 5 seconds
+    setInterval(rotateBackgrounds, 5000);
+
+    // Auth Form Switcher
+    const switchRegister = document.getElementById('switch-register');
+    const switchLogin = document.getElementById('switch-login');
+    const registerForm = document.getElementById('register-form');
+    const loginForm = document.getElementById('login-form');
+
+    switchRegister.addEventListener('click', () => {
+      switchRegister.classList.add('active');
+      switchLogin.classList.remove('active');
+      registerForm.classList.remove('hidden');
+      loginForm.classList.remove('visible');
+    });
+
+    switchLogin.addEventListener('click', () => {
+      switchLogin.classList.add('active');
+      switchRegister.classList.remove('active');
+      registerForm.classList.add('hidden');
+      loginForm.classList.add('visible');
+    });
+
+    // Login Modal
+    const loginModalBtn = document.getElementById('login-modal-btn');
+    const loginModalOverlay = document.getElementById('loginModalOverlay');
+    const loginCloseBtn = document.querySelector('.login-close');
+
+    loginModalBtn.addEventListener('click', () => {
+      loginModalOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    });
+
+    loginCloseBtn.addEventListener('click', () => {
+      loginModalOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    });
+
+    // Close modal when clicking outside
+    loginModalOverlay.addEventListener('click', (e) => {
+      if (e.target === loginModalOverlay) {
+        loginModalOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Password Toggles
+    const passwordToggles = document.querySelectorAll('.password-toggle');
+
+    passwordToggles.forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const passwordField = document.getElementById(toggle.getAttribute('data-for'));
+        const icon = toggle.querySelector('i');
+        
+        if (passwordField.type === 'password') {
+          passwordField.type = 'text';
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        } else {
+          passwordField.type = 'password';
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+      });
+    });
+
+    // Register Button Click
+    const registerBtn = document.getElementById('register-btn');
+    registerBtn.addEventListener('click', () => {
+      document.getElementById('auth-container').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Form submissions
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Get form values
+      const formData = {
+        fullName: document.getElementById('hero-full-name').value,
+        email: document.getElementById('hero-email').value,
+        phone: document.getElementById('hero-phone').value,
+        referralCode: document.getElementById('hero-code').value,
+        password: document.getElementById('hero-password').value
+      };  
+    });
+
+function handleLogin(event) {
     event.preventDefault();
-    console.log("handleLogin() triggered ✅");
+    console.log("Login form submitted");
 
-    // 1️⃣ Get input values
+    // Get input values - using the exact IDs from your HTML
     const emailOrPhone = document.getElementById("phone").value.trim();
     const password = document.getElementById("password").value.trim();
+    
+    // Get the submit button for loading state
+    const loginButton = event.target.querySelector('button[type="submit"]');
 
-    // 2️⃣ Validate inputs
+    // Validate inputs
     if (!emailOrPhone || !password) {
-      alert("Please enter both email/phone and password.");
-      return;
+        alert("Please enter both email/phone and password.");
+        return;
     }
 
-    // Basic phone validation (digits only, length 10–15) OR email format
-    const phoneRegex = /^[0-9]{10,15}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!phoneRegex.test(emailOrPhone) && !emailRegex.test(emailOrPhone)) {
-      alert("Please enter a valid phone number (10–15 digits) or a valid email.");
-      return;
+    // Show loading state
+    if (loginButton) {
+        loginButton.textContent = "Logging in...";
+        loginButton.disabled = true;
+        loginButton.style.opacity = "0.7";
     }
 
-    if (password.length < 6) {
-      alert("Password must be at least 6 characters long.");
-      return;
-    }
-
-    // 3️⃣ Prepare payload
+    // Prepare login data
     const loginData = {
-      email_or_phone: emailOrPhone,
-      password: password
+        email_or_phone: emailOrPhone,
+        password: password
     };
 
-    loginModal.style.display = "none";
+    console.log("Sending login request:", loginData);
 
-  // Show blank animation page
-  loadingPage.style.display = "flex";
-
- loginButton.textContent = "Logging in, please wait...";
-    loginButton.disabled = true;
-    loginButton.style.opacity = "0.7";
-    loginButton.style.cursor = "not-allowed";
-
+    // Send POST request to /api/login
     fetch("/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(loginData)
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(loginData)
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Server response:", data);
-
-        if (data.user) {
-  alert("Welcome! Finicash with you");
-  
-  // 🔑 Redirect based on role
-  if (data.user.role === "admin") {
-    window.location.href = "/admin/dashboard"; // main admin route
-  } else {
-    window.location.href = `/profile`;
-  }
-} else {
-  alert(data.error || "Invalid email/phone or password.");
-}
-      })
-      .catch(error => {
-        console.error("Login request failed:", error);
-        alert("An error occurred. Please try again.");
-         loginButton.textContent = "Sign In to Account";
-        loginButton.disabled = false;
-           loadingPage.style.display = "none";
-           loginModal.style.display = "flex";
-      });
-  }
-};
-
-// 5️⃣ Attach form submit event dynamically
-document.addEventListener("DOMContentLoaded", function() {
-  const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", window.FincashProLogin.handleLogin);
-  }
-});
-// REFERRAL CODE AUTO_DETECT
-document.addEventListener("DOMContentLoaded", function () {
-    const params = new URLSearchParams(window.location.search);
-    const referralCode = params.get("ref");
-
-    if (referralCode) {
-        const input = document.getElementById("hero-code");
-        if (input) {
-            input.value = referralCode.toUpperCase();
+    .then(response => {
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+            // Handle HTTP errors (4xx, 5xx)
+            if (response.status === 401) {
+                throw new Error("Invalid email/phone or password");
+            } else if (response.status === 404) {
+                throw new Error("User not found");
+            } else {
+                throw new Error(`Server error: ${response.status}`);
+            }
         }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Login successful, response data:", data);
+        
+        // Check if we have user data and role
+        if (data.user && data.user.role) {
+            // Show success message
+            alert("Login successful! Welcome to Finicashi.");
+            
+            // Redirect based on user role
+            if (data.user.role === "admin") {
+                console.log("Redirecting admin to dashboard");
+                window.location.href = "/admin/dashboard";
+            } else {
+                console.log("Redirecting user to profile");
+                window.location.href = "/profile";
+            }
+        } else {
+            throw new Error("Invalid response from server: missing user data");
+        }
+    })
+    .catch(error => {
+        console.error("Login failed:", error);
+        
+        // Show appropriate error message
+        if (error.message.includes("Invalid email/phone or password")) {
+            alert("Invalid email/phone or password. Please try again.");
+        } else if (error.message.includes("User not found")) {
+            alert("Account not found. Please check your credentials or register.");
+        } else if (error.message.includes("Network")) {
+            alert("Network error. Please check your connection and try again.");
+        } else {
+            alert("Login failed: " + error.message);
+        }
+        
+        // Reset button state
+        if (loginButton) {
+            loginButton.textContent = "Login to Account";
+            loginButton.disabled = false;
+            loginButton.style.opacity = "1";
+        }
+    });
+}
+
+// Also handle the modal login form
+function handleModalLogin(event) {
+    event.preventDefault();
+    console.log("Modal login form submitted");
+
+    // Get input values from modal
+    const emailOrPhone = document.getElementById("modal-phone").value.trim();
+    const password = document.getElementById("modal-password").value.trim();
+    
+    // Get the submit button for loading state
+    const loginButton = event.target.querySelector('button[type="submit"]');
+
+    // Validate inputs
+    if (!emailOrPhone || !password) {
+        alert("Please enter both email/phone and password.");
+        return;
+    }
+
+    // Show loading state
+    if (loginButton) {
+        loginButton.textContent = "Logging in...";
+        loginButton.disabled = true;
+        loginButton.style.opacity = "0.7";
+    }
+
+    // Close modal during login process
+    const loginModalOverlay = document.getElementById("loginModalOverlay");
+    if (loginModalOverlay) {
+        loginModalOverlay.classList.remove('visible');
+    }
+
+    // Prepare login data
+    const loginData = {
+        email_or_phone: emailOrPhone,
+        password: password
+    };
+
+    console.log("Sending modal login request:", loginData);
+
+    // Send POST request to /api/login
+    fetch("/api/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(loginData)
+    })
+    .then(response => {
+        console.log("Modal response status:", response.status);
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error("Invalid email/phone or password");
+            } else if (response.status === 404) {
+                throw new Error("User not found");
+            } else {
+                throw new Error(`Server error: ${response.status}`);
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Modal login successful, response data:", data);
+        
+        if (data.user && data.user.role) {
+            alert("Login successful! Welcome to Finicashi.");
+            
+            // Redirect based on user role
+            if (data.user.role === "admin") {
+                window.location.href = "/admin/dashboard";
+            } else {
+                window.location.href = "/profile";
+            }
+        } else {
+            throw new Error("Invalid response from server: missing user data");
+        }
+    })
+    .catch(error => {
+        console.error("Modal login failed:", error);
+        
+        // Show error and reopen modal
+        if (error.message.includes("Invalid email/phone or password")) {
+            alert("Invalid email/phone or password. Please try again.");
+        } else if (error.message.includes("User not found")) {
+            alert("Account not found. Please check your credentials or register.");
+        } else {
+            alert("Login failed: " + error.message);
+        }
+        
+        // Reset button state and reopen modal
+        if (loginButton) {
+            loginButton.textContent = "Login to Account";
+            loginButton.disabled = false;
+            loginButton.style.opacity = "1";
+        }
+        
+        // Reopen modal on error
+        if (loginModalOverlay) {
+            loginModalOverlay.classList.add('visible');
+        }
+    });
+}
+
+// Attach event listeners to both login forms
+document.addEventListener("DOMContentLoaded", function() {
+    // Main auth form
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", handleLogin);
+        console.log("Attached login handler to main form");
+    }
+
+    // Modal login form
+    const modalLoginForm = document.querySelector("#loginModalOverlay form");
+    if (modalLoginForm) {
+        modalLoginForm.addEventListener("submit", handleModalLogin);
+        console.log("Attached login handler to modal form");
     }
 });
-
-document.addEventListener('DOMContentLoaded', () => 
-    (document.getElementById('hero-code').value = new URLSearchParams(window.location.search).get('ref') || '')
-);
-
-
 </script>
-
+ 
 <script src="{{url_for('static', filename='main.js')}}"></script>
 
 

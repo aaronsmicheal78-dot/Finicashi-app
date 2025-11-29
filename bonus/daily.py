@@ -97,7 +97,7 @@ def calculate_daily_bonus(package: Package) -> Tuple[Decimal, Decimal, Decimal]:
         current_total_paid = safe_decimal_convert(package.total_bonus_paid or Decimal("0"), "total_bonus_paid")
         
         # Daily bonus rate: 2.5%
-        daily_bonus_rate = Decimal("0.025")
+        daily_bonus_rate = Decimal("0.05")
         daily_bonus = (package_amount * daily_bonus_rate).quantize(Decimal("0.01"), ROUND_HALF_UP)
         
         # Maximum payout: 75% of package amount

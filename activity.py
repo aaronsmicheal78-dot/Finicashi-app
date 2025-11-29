@@ -354,7 +354,7 @@ def get_user_recent_activity(user_id):
         except Exception as e:
             current_app.logger.error(f"User transaction processing error: {str(e)}")
         
-        # 2. Get user's payments
+     
         try:
             payments_query = Payment.query.filter_by(user_id=user_id).filter(
                 Payment.status.in_(['completed'])

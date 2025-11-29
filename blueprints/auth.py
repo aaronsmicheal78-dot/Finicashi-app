@@ -231,6 +231,7 @@ def login():
         "password": ""
     }
      """
+    print("Route-HIT: login processing....")
     
     data = request.get_json()
     email_or_phone = data.get("email_or_phone", "").strip().lower()

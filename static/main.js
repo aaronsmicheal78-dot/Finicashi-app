@@ -49,147 +49,219 @@
         this.slides[this.currentSlide].classList.add('active');
     }
 }
+    document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM loaded - initializing auth system");
 
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    new HeroBackground();
-});
-
-        // Registration Form Handler
-        class HeeroRegistration {
-            constructor() {
-                this.init();
-            }
-
-            init() {
-                this.initializeEventListeners();
-            }
-
-            initializeEventListeners() {
-                const form = document.getElementById('hero-registration-form');
-                form.addEventListener('submit', (e) => this.handleRegistration(e));
-
-                // CTA buttons
-                document.getElementById('hero-watch-demo').addEventListener('click', () => {
-                    this.showDemoModal();
-                });
-
-                document.getElementById('hero-learn-more').addEventListener('click', () => {
-                    this.scrollToFeatures();
-                });
-            }}
-
- 
-document.getElementById('hero-registration-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    console.log('🔵 FORM SUBMISSION STARTED');
+    // Get all required elements
+    const loginModal = document.getElementById('loginModal');
+    const loginModalOverlay = document.getElementById('loginModalOverlay');
+    const loginModalBtn = document.getElementById('login-modal-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const loginCloseBtn = document.querySelector('.login-close');
+    const loadingPage = document.getElementById('loadingPage');
     
-    const btn = this.querySelector('button[type="submit"]');
-    const messageBox = document.getElementById('registration-message');
-    
-    console.log('Button element:', btn);
-    console.log('Message box element:', messageBox);
-    
-    // Test 1: Immediate button text change
-    btn.textContent = 'Creating Account...';
-    btn.disabled = true;
-    console.log('Button text changed to:', btn.textContent);
-    
-    // Test 2: Immediate message display
-    if (messageBox) {
-        messageBox.textContent = 'Processing your registration...';
-        messageBox.style.display = 'block';
-        messageBox.style.backgroundColor = '#e7f3ff';
-        messageBox.style.color = '#004085';
-        messageBox.style.padding = '10px';
-        messageBox.style.borderRadius = '4px';
-        messageBox.style.margin = '10px 0';
-        console.log('Message box updated');
-    }
-    
-    try {
-        console.log('🟡 Making API request...');
-        
-        const formData = {
-            fullName: document.getElementById('hero-full-name').value,
-            email: document.getElementById('hero-email').value,
-            phone: document.getElementById('hero-phone').value,
-            password: document.getElementById('hero-password').value,
-            referralCode: document.getElementById('hero-code').value.trim(),
-        };
-        
-        const response = await fetch('/api/signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
+    // Form elements
+    const modalLoginForm = document.querySelector('#loginModalOverlay form');
+    const authLoginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const switchRegister = document.getElementById('switch-register');
+    const switchLogin = document.getElementById('switch-login');
+    const loginFormElement = document.getElementById('login-form');
+
+
+
+    // 3. REGISTER BUTTON CLICK HANDLER
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            console.log("Register button clicked - showing auth form");
+            // Scroll to auth container or show it
+            document.getElementById('auth-container').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
         });
+    }
 
-        const data = await response.json();
-        console.log('🟢 API Response:', data);
-        console.log('Response status:', response.status);
 
-        if (!response.ok) {
-            throw new Error(data.error || `Signup failed with status ${response.status}`);
+
+    // 6. REGISTER FUNCTIONALITY
+    function handleRegister(event) {
+        event.preventDefault();
+        console.log("Register form submitted");
+
+        // Get form values
+        const fullName = document.getElementById("hero-full-name").value.trim();
+        const email = document.getElementById("hero-email").value.trim();
+        const phone = document.getElementById("hero-phone").value.trim();
+        const referralCode = document.getElementById("hero-code").value.trim();
+        const password = document.getElementById("hero-password").value;
+        const confirmPassword = document.getElementById("hero-confirm-password").value;
+
+        // Get the submit button for loading state
+        const submitButton = event.target.querySelector('button[type="submit"]');
+
+        // Validate required fields
+        if (!fullName || !email || !phone || !password || !confirmPassword) {
+            alert("Please fill in all required fields.");
+            return;
         }
 
-        alert('✅ Registration Successful! Please, tap login!');
-        
-        this.reset();
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert("Please enter a valid email address.");
+            return;
+        }
 
-        // Redirect
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 2000);
+        // Validate phone (basic - at least 10 digits)
+        const phoneRegex = /^[0-9]{10,15}$/;
+        if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+            alert("Please enter a valid phone number (10-15 digits).");
+            return;
+        }
 
-    } catch (error) {
-        console.error('🔴 ERROR:', error);
+        // Validate password match
+        if (password !== confirmPassword) {
+            alert("Passwords do not match. Please re-enter your password.");
+            return;
+        }
+
+        // Validate password length
+        if (password.length < 6) {
+            alert("Password must be at least 6 characters long.");
+            return;
+        }
+
+        // Show loading state on button
+        if (submitButton) {
+            submitButton.textContent = "Creating Account...";
+            submitButton.disabled = true;
+            submitButton.style.opacity = "0.7";
+        }
+
+        // Show loading page
+        const loadingPage = document.getElementById("loadingPage");
+        if (loadingPage) {
+            loadingPage.style.display = "flex";
+        }
+
+        // Prepare registration data
+        const registerData = {
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            referralCode: referralCode || null,
+            password: password
+        };
+
+
+        console.log("Sending registration request:", registerData);
+
+        // Send POST request to /api/register
+        fetch("/api/signup", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(registerData),
+            
+        })
+        .then(response => {
+            console.log("Registration response status:", response.status);
+            
+            if (!response.ok) {
+                if (response.status === 400) {
+                    throw new Error("Bad request - check your input data");
+                } else if (response.status === 409) {
+                    throw new Error("User already exists with this email or phone");
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Registration successful, response data:", data);
+            
+            if (data.success) {
+                alert("Registration successful! Welcome to Finicashi.");
+                
+                
+                window.location.href = "/profile";
+            } else {
+                throw new Error(data.message || "Registration failed");
+            }
+        })
+        .catch(error => {
+            console.error("Registration failed:", error);
+            
+            // Show appropriate error message
+            if (error.message.includes("already exists")) {
+                alert("An account with this email or phone already exists. Please login instead.");
+            } else if (error.message.includes("Bad request")) {
+                alert("Please check your information and try again.");
+            } else {
+                alert("Registration failed: " + error.message);
+            }
+            
+            // Reset button state
+            if (submitButton) {
+                submitButton.textContent = "Create Account";
+                submitButton.disabled = false;
+                submitButton.style.opacity = "1";
+            }
+            
+            // Hide loading page
+            if (loadingPage) {
+                loadingPage.style.display = "none";
+            }
+        });
+    }
+
+    // 7. ATTACH EVENT LISTENERS TO FORMS
+    if (authLoginForm) {
+        authLoginForm.addEventListener("submit", handleLogin);
+        console.log("Attached login handler to main form");
+    }
+
+    if (modalLoginForm) {
+        modalLoginForm.addEventListener("submit", handleModalLogin);
+        console.log("Attached login handler to modal form");
+    }
+
+    if (registerForm) {
+        registerForm.addEventListener("submit", handleRegister);
+        console.log("Attached register handler to form");
+    }
+
+    // 8. BACKGROUND SLIDESHOW
+    function initBackgroundSlideshow() {
+        const slides = document.querySelectorAll('.background-slide');
+        let currentSlide = 0;
         
-        // ERROR
-        btn.textContent = 'Sign Up';
-        btn.disabled = false;
-        btn.style.backgroundColor = ''; // Reset background
+        if (slides.length === 0) return;
         
-        if (messageBox) {
-            messageBox.textContent = error.message || 'Registration failed. Please try again.';
-            messageBox.style.backgroundColor = '#f8d7da';
-            messageBox.style.color = '#721c24';
-            messageBox.style.border = '1px solid #f5c6cb';
+        function showNextSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
         }
         
-        // Also show alert as fallback
-        alert('Error: ' + (error.message || 'Registration failed'));
+        // Change slide every 5 seconds
+        setInterval(showNextSlide, 5000);
     }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const ref = urlParams.get("ref");
-
-    if (ref) {
-        document.getElementById("hero-code").value = ref;
-    }
-});
-
-
     
-//new HeroRegistration();
-// toggle login password
-function togglePassword() {
-    const passwordInput = document.getElementById('password');
-    const toggleButton = document.querySelector('.password-toggle i');
-    
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleButton.className = 'fas fa-eye-slash';
-    } else {
-        passwordInput.type = 'password';
-        toggleButton.className = 'fas fa-eye';
+    initBackgroundSlideshow();
+
+    // 9. REFERRAL CODE AUTO-DETECT
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = params.get("ref");
+    if (referralCode) {
+        const input = document.getElementById("hero-code");
+        if (input) {
+            input.value = referralCode.toUpperCase();
+            console.log("Referral code auto-filled:", referralCode);
+        }
     }
-}                
-// RESET PASSWORD//
 
-
-  
+    console.log("Auth system initialization complete");
+});
