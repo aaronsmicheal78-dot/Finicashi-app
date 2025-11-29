@@ -371,7 +371,7 @@ class Package(db.Model, BaseMixin):
     last_bonus_date = db.Column(db.DateTime, nullable=True)
     next_bonus_date = db.Column(db.DateTime, nullable=True)
     bonus_count = db.Column(db.Integer, default=0)
-    max_bonus_amount = db.Column(db.Numeric(15, 2), default=0)  # 75% of package_amount
+    max_bonus_amount = db.Column(db.Numeric(15, 2), default=0)  
     
     total_days_paid = db.Column(db.Integer, default=0)
     is_bonus_locked = db.Column(db.Boolean, default=False)

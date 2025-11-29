@@ -55,35 +55,15 @@ def process_package_purchase(payment):
     catalog_id=package_catalog.id,
     status='pending'
     ).first()
-    #if existing_package:
-    # Package already exists for this user and catalog
-       #print(f"Package already exists for user {user.id}, catalog {package_catalog.id}")
-       #return existing_package, "package_already_exists"
-
+   
     if not existing_package:
-       from blueprints.payments_helpers import create_user_package
-        # Only create a new package if none exists
+       from blueprints.payments_helpers import create_user_package   
        new_package = create_user_package(user, package_catalog)
+    
 
-    # Create user package
-    # new_package = Package(
-    #     user_id=user.id,
-    #     catalog_id=package_catalog.id,
-    #     package=package_catalog.name,
-    #     type="purchased",
-    #     status='active',
-    #     package_amount=package_catalog.amount,  
-    #     daily_bonus_rate=Decimal("0.05"),
-    #     total_bonus_paid=Decimal("0.00"),
-    #     activated_at=datetime.now(timezone.utc),
-    #     expires_at=datetime.now(timezone.utc) + timedelta(days=package_catalog.duration_days)
-    # )
-    # db.session.add(new_package)
-    # db.session.commit()
     print("✅ Package created for user")
     print("SESSION USER REFERRER:", user.referred_by)
 
-    # Process bonuses
     try:
         print("🔄 Starting 20-level bonus processing...")
         print("SESSION USER REFERRER:", user.referred_by)

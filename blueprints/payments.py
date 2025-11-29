@@ -25,7 +25,7 @@ from flask import Blueprint, request, jsonify, session
 from blueprints.payments_helpers import  (validate_payment_input, handle_existing_payment,
     create_payment_record, send_to_marzpay
 )
-from blueprints.package_helpers import PackagePurchaseValidator
+
 
 
 bp = Blueprint("payments", __name__)  
@@ -334,7 +334,8 @@ from .withdraw_helpers import (
 
 
 # MarzPay configuration
-MARZ_BASE_URL = os.environ.get("MARZ_BASE_URL", "https://api.marzpay.com/v1")
+#api.MARZ_BASE_URL = os.environ.get("MARZ_BASE_URL")
+MARZ_BASE_URL = 'https://wallet.wearemarz.com/api/v1'
 #=================================================================================================================
 @bp.route("/payments/withdraw", methods=["POST"])
 def withdraw():
@@ -349,6 +350,7 @@ def withdraw():
 
     print("MOBILE DEBUG:", request.headers)
     print("BODY:", request.data)
+    logger.info(f"WITHDRAW PROCESSING STARTED: {data}, {amount}, {phone_number}")
 
 
     if not request.is_json:
