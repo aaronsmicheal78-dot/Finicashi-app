@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(payload),
-             // credentials: "include",
+              credentials: "include",
             });
 
             const result = await response.json();
