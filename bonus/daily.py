@@ -1,389 +1,377 @@
-# bonus/daily_bonus_processor.py
+
+
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from sqlalchemy.exc import SQLAlchemyError
 import uuid
 import logging
-
+from flask import session
 from extensions import db
 from models import User, Wallet, Package, Bonus, Transaction
 
 logger = logging.getLogger(__name__)
 
-class BonusProcessingError(Exception):
-    """Custom exception for bonus processing errors"""
+class BonusSecurityError(Exception):
+    """Security-related bonus errors"""
     pass
 
-class DecimalConversionError(BonusProcessingError):
-    """Raised when decimal conversion fails"""
+class BonusValidationError(Exception):
+    """Bonus validation errors"""
     pass
 
-class PackageValidationError(BonusProcessingError):
-    """Raised when package validation fails"""
-    pass
+class DailyBonusProcessor:
+    """Secure daily bonus processor with comprehensive validation"""
+    
+    DAILY_RATE = Decimal("0.05")  # 5%
+    MAX_PAYOUT_RATE = Decimal("0.75")  # 75%
+    BONUS_COOLDOWN_HOURS = 24
+    
+    def __init__(self, user_id):
+        self.user_id = user_id
+    # def run(self):
+    #     self.current_time = datetime.utcnow()
+    #     self.processed_count = 0
+    #     self.errors = []
+    def run(self):
+        """Entry point for external callers"""
+        self.current_time = datetime.utcnow()
+        self.processed_count = 0
+        self.errors = []
 
-def safe_decimal_convert(value, field_name: str = "value") -> Decimal:
-    """
-    Safely convert a value to Decimal with proper error handling
-    
-    Args:
-        value: Value to convert to Decimal
-        field_name: Name of the field for error reporting
-    
-    Returns:
-        Decimal value
-    
-    Raises:
-        DecimalConversionError: If conversion fails
-    """
-    if value is None:
-        raise DecimalConversionError(f"{field_name} cannot be None")
-    
-    try:
-        if isinstance(value, (int, float, str)):
-            return Decimal(str(value)).quantize(Decimal("0.01"), ROUND_HALF_UP)
-        elif isinstance(value, Decimal):
-            return value.quantize(Decimal("0.01"), ROUND_HALF_UP)
-        else:
-            raise DecimalConversionError(f"Unsupported type for {field_name}: {type(value)}")
-    except (InvalidOperation, ValueError, TypeError) as e:
-        raise DecimalConversionError(f"Failed to convert {field_name} '{value}' to Decimal: {e}")
+        # call the main processor
+        return self.process_user_bonus(self.user_id)
 
-def validate_package_for_bonus(package: Package, current_time: datetime) -> Tuple[bool, Optional[str]]:
-    """
-    Validate if a package is eligible for bonus calculation
     
-    Returns:
-        Tuple of (is_valid, reason_if_invalid)
-    """
-    try:
-        # Check package amount
-        if not package.package_amount:
-            return False, "Package amount is missing"
+    
+    def safe_decimal(self, value, field_name: str) -> Decimal:
+        """Secure decimal conversion with validation"""
+        if value is None:
+            raise BonusValidationError(f"{field_name} cannot be None")
         
-        package_amount = safe_decimal_convert(package.package_amount, "package_amount")
-        if package_amount <= Decimal("0"):
-            return False, "Package amount must be positive"
+        try:
+            if isinstance(value, (int, float, str)):
+                return Decimal(str(value)).quantize(Decimal("0.01"), ROUND_HALF_UP)
+            elif isinstance(value, Decimal):
+                return value.quantize(Decimal("0.01"), ROUND_HALF_UP)
+            else:
+                raise BonusValidationError(f"Invalid type for {field_name}: {type(value)}")
+        except (InvalidOperation, ValueError, TypeError) as e:
+            raise BonusValidationError(f"Decimal conversion failed for {field_name}: {e}")
+    
+    def validate_user(self, user: User) -> bool:
+        """Comprehensive user validation"""
+        if not user:
+            raise BonusSecurityError("User not found")
         
-        # Check activation date
-        activation_date = package.activated_at or package.created_at
-        if not activation_date:
-            return False, "Missing activation date"
+        if not user.is_active:
+            raise BonusValidationError("User account is inactive")
         
-        # Check expiry
-        expiry_date = activation_date + timedelta(days=60)
-        if current_time > expiry_date:
-            return False, "Package expired"
+        if user.is_suspended:
+            raise BonusSecurityError("User account is suspended")
         
-        # Check status
+        return True
+    
+    def validate_package_status(self, package: Package) -> bool:
+        """Validate package status and lifecycle"""
+        if not package:
+            raise BonusValidationError("Package not found")
+        
         if package.status != 'active':
-            return False, f"Package status is '{package.status}', not 'active'"
+            raise BonusValidationError(f"Package status is '{package.status}', not 'active'")
         
-        return True, None
+        if package.is_bonus_locked:
+            raise BonusSecurityError("Package bonus is locked")
         
-    except (DecimalConversionError, Exception) as e:
-        return False, f"Package validation error: {e}"
-
-def calculate_daily_bonus(package: Package) -> Tuple[Decimal, Decimal, Decimal]:
-    """
-    Calculate daily bonus for a package
+        # Check activation
+        if not package.activated_at:
+            raise BonusValidationError("Package not activated")
+        
+        # Check expiration
+        if package.expires_at and self.current_time > package.expires_at:
+            package.status = 'expired'
+            db.session.add(package)
+            raise BonusValidationError("Package has expired")
+        
+        # Standard 60-day expiration
+        standard_expiry = package.activated_at + timedelta(days=60)
+        if self.current_time > standard_expiry:
+            package.status = 'expired'
+            db.session.add(package)
+            raise BonusValidationError("Package has expired (60-day limit)")
+        
+        return True
     
-    Returns:
-        Tuple of (daily_bonus, max_payout, remaining_limit)
-    """
-    try:
-        package_amount = safe_decimal_convert(package.package_amount, "package_amount")
-        current_total_paid = safe_decimal_convert(package.total_bonus_paid or Decimal("0"), "total_bonus_paid")
+    def validate_bonus_timing(self, package: Package) -> bool:
+        """Validate bonus timing and cooldown"""
+        # First bonus check
+        if not package.last_bonus_date:
+            # Allow first bonus 24 hours after activation
+            first_bonus_time = package.activated_at + timedelta(hours=24)
+            if self.current_time < first_bonus_time:
+                raise BonusValidationError("First bonus not yet available (24-hour cooldown)")
+            return True
         
-        # Daily bonus rate: 2.5%
-        daily_bonus_rate = Decimal("0.05")
-        daily_bonus = (package_amount * daily_bonus_rate).quantize(Decimal("0.01"), ROUND_HALF_UP)
+        # Subsequent bonuses - check cooldown
+        if package.next_bonus_date and self.current_time < package.next_bonus_date:
+            time_remaining = package.next_bonus_date - self.current_time
+            hours_remaining = time_remaining.total_seconds() / 3600
+            raise BonusValidationError(f"Bonus cooldown active. {hours_remaining:.1f} hours remaining")
         
-        # Maximum payout: 75% of package amount
-        max_payout = (package_amount * Decimal("0.75")).quantize(Decimal("0.01"), ROUND_HALF_UP)
+        # Ensure at least 24 hours between bonuses
+        if package.last_bonus_date:
+            time_since_last = self.current_time - package.last_bonus_date
+            if time_since_last < timedelta(hours=24):
+                raise BonusSecurityError("Minimum 24 hours between bonuses not met")
+        
+        return True
+    
+    def validate_bonus_limits(self, package: Package) -> Tuple[Decimal, Decimal, Decimal]:
+        """Validate and calculate bonus limits"""
+        package_amount = self.safe_decimal(package.package_amount, "package_amount")
+        current_total_paid = self.safe_decimal(package.total_bonus_paid or Decimal("0"), "total_bonus_paid")
+        
+        # Calculate max payout (75% of package)
+        max_payout = (package_amount * self.MAX_PAYOUT_RATE).quantize(Decimal("0.01"), ROUND_HALF_UP)
+        
+        # Update max_bonus_amount if not set
+        if not package.max_bonus_amount or package.max_bonus_amount != max_payout:
+            package.max_bonus_amount = max_payout
+        
+        # Check if max payout reached
+        if current_total_paid >= max_payout:
+            package.status = 'completed'
+            db.session.add(package)
+            raise BonusValidationError("Maximum bonus payout reached")
+        
+        # Calculate daily bonus (5% of package)
+        daily_bonus = (package_amount * self.DAILY_RATE).quantize(Decimal("0.01"), ROUND_HALF_UP)
+        
+        # Apply remaining limit
         remaining_limit = max_payout - current_total_paid
+        if daily_bonus > remaining_limit:
+            daily_bonus = remaining_limit
+        
+        if daily_bonus <= Decimal("0"):
+            raise BonusValidationError("No bonus available - limit reached")
         
         return daily_bonus, max_payout, remaining_limit
-        
-    except DecimalConversionError as e:
-        logger.error(f"Decimal conversion error for package {package.id}: {e}")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error calculating bonus for package {package.id}: {e}")
-        raise BonusProcessingError(f"Bonus calculation failed: {e}")
-
-def update_package_status(package: Package, daily_bonus: Decimal, remaining_limit: Decimal) -> str:
-    """
-    Update package status based on bonus payout
     
-    Returns:
-        New package status
-    """
-    try:
-        if remaining_limit <= Decimal("0"):
-            package.status = "completed"
-            return "completed"
-        
-        # Update total bonus paid
-        current_total_paid = safe_decimal_convert(package.total_bonus_paid or Decimal("0"), "total_bonus_paid")
-        package.total_bonus_paid = current_total_paid + daily_bonus
-        
-        # Check if package reached max payout after this bonus
-        package_amount = safe_decimal_convert(package.package_amount, "package_amount")
-        max_payout = (package_amount * Decimal("0.75")).quantize(Decimal("0.01"), ROUND_HALF_UP)
-        
-        if package.total_bonus_paid >= max_payout:
-            package.status = "completed"
-            return "completed"
-        
-        return "active"
-        
-    except DecimalConversionError as e:
-        logger.error(f"Decimal error updating package {package.id}: {e}")
-        raise
-    except Exception as e:
-        logger.error(f"Error updating package status {package.id}: {e}")
-        raise BonusProcessingError(f"Package status update failed: {e}")
-
-def create_bonus_records(user_id: int, total_bonus: Decimal, wallet_id: int, 
-                        now: datetime, db_session) -> str:
-    """
-    Create bonus and transaction records
+    def update_package_after_bonus(self, package: Package, daily_bonus: Decimal) -> None:
+        """Update package after successful bonus payment"""
+        try:
+            # Update bonus tracking
+            package.last_bonus_date = self.current_time
+            package.next_bonus_date = self.current_time + timedelta(hours=self.BONUS_COOLDOWN_HOURS)
+            package.bonus_count += 1
+            package.total_days_paid += 1
+            
+            # Update total bonus paid
+            current_total = self.safe_decimal(package.total_bonus_paid or Decimal("0"), "total_bonus_paid")
+            package.total_bonus_paid = current_total + daily_bonus
+            
+            # Check if package completed
+            if package.total_bonus_paid >= package.max_bonus_amount:
+                package.status = 'completed'
+                logger.info(f"Package {package.id} completed - max payout reached")
+            
+            package.updated_at = self.current_time
+            
+        except Exception as e:
+            raise BonusValidationError(f"Failed to update package: {e}")
     
-    Returns:
-        Transaction reference
-    """
-    try:
-        # Create bonus record
-        bonus_record = Bonus(
-            user_id=user_id,
-            type="daily",
-            amount=total_bonus,
-            status="active",
-            created_at=now
-        )
-        db_session.add(bonus_record)
-        
-        # Create transaction
-        transaction_ref = f"BONUS-{uuid.uuid4().hex[:10].upper()}"
-        transaction = Transaction(
-            wallet_id=wallet_id,
-            type="bonus",
-            amount=total_bonus,
-            status="successful",
-            reference=transaction_ref,
-            created_at=now
-        )
-        db_session.add(transaction)
-        
-        return transaction_ref
-        
-    except Exception as e:
-        logger.error(f"Error creating bonus records for user {user_id}: {e}")
-        raise BonusProcessingError(f"Failed to create bonus records: {e}")
-
-def get_or_create_wallet(user_id: int, db_session) -> Wallet:
-    """Get existing wallet or create a new one"""
-    try:
+    def create_bonus_transaction(self, user_id: int, wallet_id: int, 
+                               amount: Decimal, package_id: int) -> str:
+        """Create audit trail for bonus payment"""
+        try:
+            # Create bonus record
+            bonus = Bonus(
+                user_id=user_id,
+                package_id=package_id,
+                type="daily",
+                amount=amount,
+                status="paid",
+                paid_at=self.current_time,
+                created_at=self.current_time
+            )
+            db.session.add(bonus)
+            
+            # Create transaction
+            transaction_ref = f"BONUS-{uuid.uuid4().hex[:12].upper()}"
+            transaction = Transaction(
+                wallet_id=wallet_id,
+                package_id=package_id,
+                type="bonus_credit",
+                amount=amount,
+                status="completed",
+                reference=transaction_ref,
+                description=f"Daily bonus for package {package_id}",
+                created_at=self.current_time
+            )
+            db.session.add(transaction)
+            
+            return transaction_ref
+            
+        except Exception as e:
+            raise BonusSecurityError(f"Failed to create bonus records: {e}")
+    
+    def get_user_wallet(self, user_id: int) -> Wallet:
+        """Get or create user wallet with validation"""
         wallet = Wallet.query.filter_by(user_id=user_id).first()
         if not wallet:
             wallet = Wallet(
-                user_id=user_id, 
+                user_id=user_id,
                 balance=Decimal("0.00"),
-                created_at=datetime.utcnow()
+                created_at=self.current_time
             )
-            db_session.add(wallet)
-            # Flush to get wallet ID but don't commit yet
-            db_session.flush()
+            db.session.add(wallet)
+            db.session.flush()
+        
+        # Validate wallet
+        if wallet.is_locked:
+            raise BonusSecurityError("Wallet is locked")
+        
         return wallet
-    except SQLAlchemyError as e:
-        logger.error(f"Database error getting/creating wallet for user {user_id}: {e}")
-        raise BonusProcessingError(f"Wallet operation failed: {e}")
-
-def process_user_daily_bonus(user_id: int) -> dict:
-    """
-    Calculate and credit daily bonuses for a user with enhanced error handling.
     
-    Returns:
-        dict: Processing summary with total_bonus_today and updated wallet balance
-    """
-    db_session = db.session
-    now = datetime.utcnow()
-    
-    response_data = {
-        "success": False,
-        "total_bonus_today": 0.0,
-        "wallet_balance": 0.0,
-        "packages_processed": 0,
-        "packages_expired": 0,
-        "packages_completed": 0,
-        "packages_skipped": 0,
-        "processed_packages": [],
-        "error": None
-    }
-
-    try:
-        # Validate user
-        user = User.query.get(user_id)
-        if not user:
-            response_data["error"] = f"User {user_id} not found"
-            return response_data
+    def process_single_package(self, package: Package, wallet: Wallet) -> Dict:
+        """Process bonus for a single package with full validation"""
+        package_result = {
+            "package_id": package.id,
+            "package_name": package.package,
+            "success": False,
+            "bonus_amount": 0.0,
+            "error": None,
+            "transaction_ref": None
+        }
+        
+        try:
+            # Comprehensive validation chain
+            self.validate_package_status(package)
+            self.validate_bonus_timing(package)
+            daily_bonus, max_payout, remaining_limit = self.validate_bonus_limits(package)
             
-        if not user.is_active:
-            response_data["error"] = f"User {user_id} is not active"
-            return response_data
-
-        # Get or create wallet
-        wallet = get_or_create_wallet(user_id, db_session)
-        original_balance = safe_decimal_convert(wallet.balance, "wallet_balance")
-
-        # Fetch active packages
-        packages = Package.query.filter_by(user_id=user_id, status='active').all()
-        if not packages:
-            response_data.update({
+            # All validations passed - process bonus
+            old_balance = self.safe_decimal(wallet.balance, "wallet_balance")
+            wallet.balance = old_balance + daily_bonus
+            wallet.updated_at = self.current_time
+            
+            # Update package
+            self.update_package_after_bonus(package, daily_bonus)
+            
+            # Create audit trail
+            transaction_ref = self.create_bonus_transaction(
+                package.user_id, wallet.id, daily_bonus, package.id
+            )
+            
+            package_result.update({
                 "success": True,
-                "wallet_balance": float(original_balance)
+                "bonus_amount": float(daily_bonus),
+                "transaction_ref": transaction_ref,
+                "old_balance": float(old_balance),
+                "new_balance": float(wallet.balance),
+                "remaining_limit": float(remaining_limit - daily_bonus)
             })
-            return response_data
-
-        total_bonus_today = Decimal("0.00")
-        packages_updated = []
-        expired_packages = []
-        completed_packages = []
-        skipped_packages = []
-
-        for package in packages:
-            try:
-                # Validate package
-                is_valid, reason = validate_package_for_bonus(package, now)
-                if not is_valid:
-                    if "expired" in reason.lower():
-                        package.status = "expired"
-                        expired_packages.append(package.id)
-                    else:
-                        skipped_packages.append({
-                            "package_id": package.id,
-                            "reason": reason
-                        })
-                    db_session.add(package)
-                    continue
-
-                # Calculate bonus
-                daily_bonus, max_payout, remaining_limit = calculate_daily_bonus(package)
-                
-                # Apply remaining limit constraint
-                if remaining_limit <= Decimal("0"):
-                    package.status = "completed"
-                    completed_packages.append(package.id)
-                    db_session.add(package)
-                    continue
-                    
-                if daily_bonus > remaining_limit:
-                    daily_bonus = remaining_limit
-
-                if daily_bonus <= Decimal("0"):
-                    skipped_packages.append({
-                        "package_id": package.id,
-                        "reason": "Daily bonus is zero or negative"
-                    })
-                    continue
-
-                # Update package
-                old_status = package.status
-                new_status = update_package_status(package, daily_bonus, remaining_limit - daily_bonus)
-                
-                if new_status == "completed":
-                    completed_packages.append(package.id)
-                
-                packages_updated.append({
-                    "package_id": package.id,
-                    "package_name": package.package,
-                    "bonus_today": float(daily_bonus),
-                    "total_paid": float(package.total_bonus_paid),
-                    "remaining_limit": float(remaining_limit - daily_bonus),
-                    "previous_status": old_status,
-                    "new_status": new_status
+            
+            self.processed_count += 1
+            logger.info(f"Bonus paid for package {package.id}: ${daily_bonus}")
+            
+        except (BonusValidationError, BonusSecurityError) as e:
+            package_result["error"] = str(e)
+            logger.warning(f"Bonus skipped for package {package.id}: {e}")
+        except Exception as e:
+            package_result["error"] = f"Unexpected error: {str(e)}"
+            logger.error(f"Unexpected error processing package {package.id}: {e}")
+        
+        return package_result
+    
+    def process_user_bonus(self, user_id: int) -> Dict:
+        """Main method to process daily bonus for a user"""
+        response = {
+            "success": False,
+            "user_id": user_id,
+            "total_bonus": 0.0,
+            "wallet_balance": 0.0,
+            "packages_processed": 0,
+            "packages_successful": 0,
+            "packages_failed": 0,
+            "processed_packages": [],
+            "timestamp": self.current_time.isoformat(),
+            "error": None
+        }
+        
+        db_session = db.session
+        
+        try:
+            # Begin transaction
+           #db_session.begin()
+            
+            # Validate user
+            user = User.query.get(user_id)
+            self.validate_user(user)
+            
+            # Get wallet
+            wallet = self.get_user_wallet(user_id)
+            initial_balance = self.safe_decimal(wallet.balance, "wallet_balance")
+            
+            # Get eligible packages
+            packages = Package.query.filter_by(
+                user_id=user_id, 
+                status='active'
+            ).all()
+            
+            if not packages:
+                response.update({
+                    "success": True,
+                    "wallet_balance": float(initial_balance),
+                    "message": "No active packages found"
                 })
+                return response
+            
+            total_bonus = Decimal("0.00")
+            processed_packages = []
+            
+            # Process each package
+            for package in packages:
+                result = self.process_single_package(package, wallet)
+                processed_packages.append(result)
                 
-                db_session.add(package)
-                total_bonus_today += daily_bonus
-
-            except (DecimalConversionError, PackageValidationError, BonusProcessingError) as e:
-                logger.warning(f"Skipping package {package.id} due to error: {e}")
-                skipped_packages.append({
-                    "package_id": package.id,
-                    "reason": f"Processing error: {str(e)}"
-                })
-                continue
-            except Exception as e:
-                logger.error(f"Unexpected error processing package {package.id}: {e}")
-                skipped_packages.append({
-                    "package_id": package.id,
-                    "reason": f"Unexpected error: {str(e)}"
-                })
-                continue
-
-        # Commit if there's any bonus to award
-        if total_bonus_today > Decimal("0"):
-            try:
-                # Update wallet
-                wallet.balance = original_balance + total_bonus_today
-                wallet.updated_at = now
-                db_session.add(wallet)
-                
-                # Create bonus and transaction records
-                transaction_ref = create_bonus_records(user_id, total_bonus_today, wallet.id, now, db_session)
-                
-                # Commit all changes
+                if result["success"]:
+                    total_bonus += self.safe_decimal(result["bonus_amount"], "bonus_amount")
+            
+            # Commit only if we have successful processing
+            if total_bonus > Decimal("0"):
                 db_session.commit()
-                
-                logger.info(f"Successfully processed daily bonus for user {user_id}: "
-                           f"${total_bonus_today} credited, transaction: {transaction_ref}")
-                           
-            except Exception as e:
+                logger.info(f"Daily bonus completed for user {user_id}: ${total_bonus}")
+            else:
                 db_session.rollback()
-                logger.error(f"Failed to commit bonus transaction for user {user_id}: {e}")
-                raise BonusProcessingError(f"Transaction commit failed: {e}")
-        else:
-            # Commit package status changes even if no bonus awarded
-            if expired_packages or completed_packages or skipped_packages:
-                try:
-                    db_session.commit()
-                    logger.info(f"Updated package statuses for user {user_id}: "
-                               f"{len(expired_packages)} expired, {len(completed_packages)} completed")
-                except Exception as e:
-                    db_session.rollback()
-                    logger.error(f"Failed to commit package status changes for user {user_id}: {e}")
-
-        response_data.update({
-            "success": True,
-            "total_bonus_today": float(total_bonus_today),
-            "wallet_balance": float(wallet.balance),
-            "packages_processed": len(packages_updated),
-            "packages_expired": len(expired_packages),
-            "packages_completed": len(completed_packages),
-            "packages_skipped": len(skipped_packages),
-            "processed_packages": packages_updated,
-            "skipped_packages": skipped_packages
-        })
-
-        return response_data
-
-    except BonusProcessingError as e:
-        db_session.rollback()
-        logger.error(f"Bonus processing error for user {user_id}: {e}")
-        response_data["error"] = str(e)
-        return response_data
+            
+            # Prepare response
+            successful_packages = [p for p in processed_packages if p["success"]]
+            failed_packages = [p for p in processed_packages if not p["success"]]
+            
+            response.update({
+                "success": True,
+                "total_bonus": float(total_bonus),
+                "wallet_balance": float(wallet.balance),
+                "packages_processed": len(processed_packages),
+                "packages_successful": len(successful_packages),
+                "packages_failed": len(failed_packages),
+                "processed_packages": processed_packages
+            })
+            
+        except (BonusSecurityError, BonusValidationError) as e:
+            db_session.rollback()
+            response["error"] = str(e)
+            logger.error(f"Bonus processing failed for user {user_id}: {e}")
+            
+        except SQLAlchemyError as e:
+            db_session.rollback()
+            response["error"] = f"Database error: {str(e)}"
+            logger.error(f"Database error processing bonus for user {user_id}: {e}")
+            
+        except Exception as e:
+            db_session.rollback()
+            response["error"] = f"Unexpected error: {str(e)}"
+            logger.error(f"Unexpected error processing bonus for user {user_id}: {e}", exc_info=True)
         
-    except SQLAlchemyError as e:
-        db_session.rollback()
-        logger.error(f"Database error during bonus processing for user {user_id}: {e}")
-        response_data["error"] = f"Database error: {str(e)}"
-        return response_data
-        
-    except Exception as e:
-        db_session.rollback()
-        logger.error(f"Unexpected error processing daily bonus for user {user_id}: {e}", exc_info=True)
-        response_data["error"] = f"Unexpected error: {str(e)}"
-        return response_data
+        return response

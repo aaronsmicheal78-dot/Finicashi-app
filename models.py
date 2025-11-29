@@ -366,8 +366,16 @@ class Package(db.Model, BaseMixin):
     expires_at = db.Column(db.DateTime, nullable=True)
     daily_bonus_rate = db.Column(db.Numeric(10, 5), nullable=False, default=0.05)  
     total_bonus_paid = db.Column(db.Numeric(10, 2), default=0)
-   
 
+    # New columns for Package model
+    last_bonus_date = db.Column(db.DateTime, nullable=True)
+    next_bonus_date = db.Column(db.DateTime, nullable=True)
+    bonus_count = db.Column(db.Integer, default=0)
+    max_bonus_amount = db.Column(db.Numeric(15, 2), default=0)  # 75% of package_amount
+    
+    total_days_paid = db.Column(db.Integer, default=0)
+    is_bonus_locked = db.Column(db.Boolean, default=False)
+    
     user = db.relationship('User', back_populates='packages')
     catalog = db.relationship('PackageCatalog', backref='user_packages')
 

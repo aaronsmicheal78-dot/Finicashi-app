@@ -1,6 +1,11 @@
 
 from flask import Blueprint, jsonify, session, render_template, redirect, url_for,g, current_app
 from models import User, db, Package, Wallet, ReferralBonus
+from decimal import Decimal, ROUND_DOWN
+from flask import session, jsonify, current_app
+from datetime import date, datetime
+from models import Bonus
+
 
 
 bp = Blueprint('profile',__name__, url_prefix="")
@@ -325,30 +330,24 @@ def get_current_user_total_earnings():
             "error": "Internal server error",
             "message": "Unable to calculate statistics at this time"
         }), 500
-
-
-from decimal import Decimal, ROUND_DOWN
-from flask import session, jsonify, current_app
-from datetime import date, datetime
-from models import Bonus
-from bonus.daily import process_user_daily_bonus
-
 @bp.route('/api/user/today-bonus')
 def get_today_bonus():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Not logged in"}), 401
 
-   
-    bonus_summary = process_user_daily_bonus(user_id)
+    from bonus.daily import DailyBonusProcessor
+    print(DailyBonusProcessor)
+    processor = DailyBonusProcessor(user_id)
+    bonus_summary = processor.run()  # Returns the dict with keys: total_bonus, packages_successful, packages_failed
 
     return jsonify({
         "success": True,
         "wallet_balance": bonus_summary["wallet_balance"],
-        "total_bonus_today": bonus_summary["total_bonus_today"],
+        "total_bonus_today": bonus_summary["total_bonus"],
         "processed_packages": bonus_summary["processed_packages"],
-        "packages_completed": bonus_summary["packages_completed"],
-        "packages_expired": bonus_summary["packages_expired"]
+        "packages_completed": bonus_summary["packages_successful"],
+        "packages_expired": bonus_summary["packages_failed"]
     })
 
 
