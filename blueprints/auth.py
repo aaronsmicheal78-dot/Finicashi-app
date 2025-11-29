@@ -220,7 +220,7 @@ def signup():
  # --------------------------------------------------
  #      2️⃣ Login Route
  # --------------------------------------------------
-@bp.route("/api/login", methods=["POST", "GET"])
+@bp.route("/api/login", methods=["POST"])
 def login():
    
     """
@@ -232,8 +232,12 @@ def login():
     }
      """
     print("Route-HIT: login processing....")
+    print("HEADERS:", request.headers)
+    print("RAW BODY:", request.data)
+    print("JSON PARSED:", request.get_json(silent=True))
+
     
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True) # or request.form
     email_or_phone = data.get("email_or_phone", "").strip().lower()
     password = data.get("password", "")
 
@@ -241,7 +245,8 @@ def login():
     print("Content-Type:", request.headers.get("Content-Type"))
     print("Body:", request.get_data())
 
-
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
     
     if not email_or_phone or not password:
         return jsonify({"error": "Email/Phone and password are required"}), 400

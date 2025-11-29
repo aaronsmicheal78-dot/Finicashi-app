@@ -188,14 +188,18 @@ def create_app():
         app.config["PROPAGATE_EXCEPTIONS"] = True
         app.config["DEBUG"] = False
 
-        if not app.debug:
-            app.config.update(
-            SESSION_COOKIE_SECURE=True,
+    if not app.debug:
+        app.config.update(
+            SESSION_COOKIE_SECURE=True,        
             SESSION_COOKIE_HTTPONLY=True,
+            SESSION_COOKIE_SAMESITE="None",   
             REMEMBER_COOKIE_SECURE=True,
             REMEMBER_COOKIE_HTTPONLY=True,
+            REMEMBER_COOKIE_SAMESITE="None",
         )
-    CORS(app)
+
+    CORS(app, supports_credentials=True)
+    
         #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
         #cache.init_app(app)
         # ------------------------------------------------------------------------------------------
