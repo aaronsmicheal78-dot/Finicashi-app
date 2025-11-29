@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 # ==========================================================
 class WithdrawalConfig:
     MIN_WITHDRAWAL = Decimal("5000")
-    MAX_WITHDRAWAL = Decimal("1000000")
+    MAX_WITHDRAWAL = Decimal("100000")
     HOLD_PERIOD_HOURS = 24
-    PROCESSING_FEE_PERCENT = Decimal("1.0")  
+    PROCESSING_FEE_PERCENT = Decimal("2.0")  
     ACTUAL_BALANCE_THRESHOLD = Decimal("10000")
     
     @staticmethod
@@ -113,10 +113,10 @@ class WithdrawalValidator:
                 return False, "Insufficient balance"
             
             # # 5️⃣ Available/mature balance check
-            # if not WithdrawalValidator._is_available_balance_mature(user):
-            #     available_now = Decimal(str(WithdrawalValidator._get_mature_available_balance(user)))
-            #     if amount_dec > available_now:
-            #         return False, "Patiently, Your balance is still on hold for 24 hours. Thank you"
+            if not WithdrawalValidator._is_available_balance_mature(user):
+                available_now = Decimal(str(WithdrawalValidator._get_mature_available_balance(user)))
+                if amount_dec > available_now:
+                    return False, "Patiently, Your balance is still on hold for 24 hours. Thank you"
             
             # 6️⃣ Duplicate pending withdrawals check
             five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)

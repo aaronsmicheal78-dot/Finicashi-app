@@ -165,6 +165,7 @@ from flask_migrate import Migrate
 from extensions import db
 from sqlalchemy import text
 from datetime import datetime
+from flask_cors import CORS
 #from flask_caching import Cache
 
 
@@ -172,6 +173,7 @@ from datetime import datetime
 # --------------------------------------------------------------------------------------------------------
 #       Global instances
 # --------------------------------------------------------------------------------------------------------
+
 login_manager = LoginManager()
 migrate = Migrate()
 
@@ -193,7 +195,7 @@ def create_app():
             REMEMBER_COOKIE_SECURE=True,
             REMEMBER_COOKIE_HTTPONLY=True,
         )
-    
+    CORS(app)
         #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
         #cache.init_app(app)
         # ------------------------------------------------------------------------------------------
