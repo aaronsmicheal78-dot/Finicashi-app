@@ -341,12 +341,18 @@ def withdraw():
     """
     Main withdrawal endpoint with MarzPay integration
     """
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    
 
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     amount = data.get("amount")
     phone_number = data.get("phone") or data.get("phone_number")
+
+    print("MOBILE DEBUG:", request.headers)
+    print("BODY:", request.data)
+
+
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
    
     if not amount or not phone_number:
         return jsonify({"error": "Amount and phone number are required"}), 400
