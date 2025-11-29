@@ -436,9 +436,11 @@ function handleModalLogin(event) {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
-        },
+            
+        }, 
         body: JSON.stringify(loginData)
     })
+    
     .then(response => {
         console.log("Modal response status:", response.status);
         

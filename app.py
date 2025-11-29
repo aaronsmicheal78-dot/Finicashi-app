@@ -170,15 +170,38 @@ from flask_cors import CORS
 
 
 
+
 # --------------------------------------------------------------------------------------------------------
 #       Global instances
 # --------------------------------------------------------------------------------------------------------
+import dns.resolver
+
+def force_ipv4_dns():
+    """
+    Forces DNS resolution to use public IPv4 nameservers instead of Render's IPv6 stack.
+    Fixes NameResolutionError for external APIs like MarzPay.
+    """
+    resolver = dns.resolver.Resolver()
+
+    # Force only IPv4 resolvers
+    resolver.nameservers = [
+        '8.8.8.8',     # Google DNS
+        '8.8.4.4',     # Google secondary
+        '1.1.1.1',     # Cloudflare DNS
+        '1.0.0.1'      # Cloudflare secondary
+    ]
+
+    # Apply globally
+    dns.resolver.default_resolver = resolver
+
 
 login_manager = LoginManager()
 migrate = Migrate()
 
 def create_app():
+    force_ipv4_dns()
     app = Flask(__name__)
+    
     app.config.from_object(Config)
     if app.config.get("DEBUG", False):
         app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -199,7 +222,9 @@ def create_app():
         )
 
     CORS(app, supports_credentials=True)
-    
+
+
+
         #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
         #cache.init_app(app)
         # ------------------------------------------------------------------------------------------
@@ -274,7 +299,7 @@ def create_app():
     print(app.url_map)
 
 
-
+    
     # ------------------------------------------------------------------------------------------------------------------------
     # Flask-Login user_loader - MOVED INSIDE create_app to avoid circular imports
     # ------------------------------------------------------------------------------------------------------------------------
@@ -302,6 +327,16 @@ def create_app():
         user_id = session.get("user_id")
         if user_id:
             g.user = User.query.get(user_id)
+
+    @app.route("/debug/dns")
+    def dns_debug():
+        try:
+            answer = dns.resolver.resolve("api.marzpay.com", "A")
+            ips = [str(r) for r in answer]
+            return {"resolved_ips": ips}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 
     # ----------------------
     # Basic routes

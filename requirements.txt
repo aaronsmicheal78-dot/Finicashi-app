@@ -15,6 +15,8 @@ redis==7.1.0
 Flask_Caching==2.3.1
 gevent==25.9.1
 flask_cors==4.0.0
+dnspython==2.8.0
+
 
 
 

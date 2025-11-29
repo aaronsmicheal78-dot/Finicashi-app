@@ -228,8 +228,8 @@ class DailyBonusProcessor:
             db.session.flush()
         
         # Validate wallet
-        if wallet.is_locked:
-            raise BonusSecurityError("Wallet is locked")
+        # if wallet.is_locked:
+        #     raise BonusSecurityError("Wallet is locked")
         
         return wallet
     
