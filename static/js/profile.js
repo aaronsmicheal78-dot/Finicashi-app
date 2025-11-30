@@ -1258,11 +1258,3 @@ function updateRecentActivitySummary(data) {
     const ts = new Date(latest.timestamp);
     lastTimeEl.textContent = ts.toLocaleString();
 }
-document.getElementById('recentActivityList').addEventListener('click', function(e) {
-  // Find the closest li if clicked inside the li
-  let item = e.target.closest('.activity-item');
-  if (!item) return;
-
-  // Toggle the expanded class
-  item.classList.toggle('expanded');
-});
