@@ -29,10 +29,7 @@ class DailyBonusProcessor:
     
     def __init__(self, user_id):
         self.user_id = user_id
-    # def run(self):
-    #     self.current_time = datetime.utcnow()
-    #     self.processed_count = 0
-    #     self.errors = []
+  
     def run(self):
         """Entry point for external callers"""
         self.current_time = datetime.utcnow()
@@ -200,12 +197,12 @@ class DailyBonusProcessor:
             transaction_ref = f"BONUS-{uuid.uuid4().hex[:12].upper()}"
             transaction = Transaction(
                 wallet_id=wallet_id,
-                package_id=package_id,
+                #package_id=package_id,
                 type="bonus_credit",
                 amount=amount,
                 status="completed",
                 reference=transaction_ref,
-                description=f"Daily bonus for package {package_id}",
+                #description=f"Daily bonus for package {package_id}",
                 created_at=self.current_time
             )
             db.session.add(transaction)
@@ -236,7 +233,7 @@ class DailyBonusProcessor:
     def process_single_package(self, package: Package, wallet: Wallet) -> Dict:
         """Process bonus for a single package with full validation"""
         package_result = {
-            "package_id": package.id,
+            #"package_id": package.id,
             "package_name": package.package,
             "success": False,
             "bonus_amount": 0.0,

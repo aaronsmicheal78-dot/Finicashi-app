@@ -376,7 +376,8 @@ def withdraw():
             return jsonify({"error": message}), 400
 
        
-        merchant_reference = withdrawal_data['reference']  
+        merchant_reference = withdrawal_data['reference'] 
+        amount = withdrawal_data['net_amount']
         
         CALL_BACK_URL = "https://finicashi-app.onrender.com/withdraw/callback"
         
@@ -390,7 +391,7 @@ def withdraw():
         
         payload = {
             "reference": withdrawal_data['reference'],
-            "amount": int(amount), 
+            "amount":  withdrawal_data['net_amount'],                                                  #int(amount), 
             "phone_number": formatted_phone,  
             "country": "UG",
             "description": "customer_withdraw",

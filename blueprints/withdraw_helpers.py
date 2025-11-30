@@ -16,7 +16,7 @@ class WithdrawalConfig:
     MIN_WITHDRAWAL = Decimal("5000")
     MAX_WITHDRAWAL = Decimal("100000")
     HOLD_PERIOD_HOURS = 24
-    PROCESSING_FEE_PERCENT = Decimal("2.0")  
+    PROCESSING_FEE_PERCENT = Decimal("5.0")  
     ACTUAL_BALANCE_THRESHOLD = Decimal("10000")
     
     @staticmethod
@@ -99,6 +99,9 @@ class WithdrawalValidator:
             if amount_dec > Decimal(str(WithdrawalConfig.MAX_WITHDRAWAL)):
                 return False, f"Maximum withdrawal is {WithdrawalConfig.MAX_WITHDRAWAL} UGX"
             
+            
+
+
             # 3️⃣ User validation
             user = User.query.get(user_id)
             if not user:
@@ -302,7 +305,7 @@ class WithdrawalRecordManager:
             withdrawal = Withdrawal(
                 user_id=user_id,
                 amount=amount,
-                net_amount=net_amount,
+                net_amount=str(net_amount),
                 fee=fee,
                 phone=phone,
                 status="pending",
@@ -430,7 +433,7 @@ class WithdrawalProcessor:
             withdrawal_data = {
                 'withdrawal_id': withdrawal.id,
                 'external_ref': withdrawal.external_ref,
-                'net_amount': withdrawal.net_amount,
+                'net_amount': str(withdrawal.net_amount),
                 'fee': withdrawal.fee,
                 'reference': withdrawal.reference,
                 'balances': {

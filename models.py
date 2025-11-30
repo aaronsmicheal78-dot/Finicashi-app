@@ -344,6 +344,9 @@ class Bonus(db.Model, BaseMixin):
     type = db.Column(db.String(50)) # signup, daily, 
     status = db.Column(db.String(20), default='active')
     created_at = db.Column(db.DateTime, default=db.func.now())
+    package_id = db.Column(db.Integer, db.ForeignKey('packages.id'))
+    paid_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
 
     user = db.relationship('User', back_populates='bonuses')
    
