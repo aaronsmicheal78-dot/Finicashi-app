@@ -222,65 +222,6 @@
   </li>
 </template>
 
-        <!-- Recent Activity
-        <div class="card mb-24">
-          <h3 class="section-title">Recent Activity</h3>
-          <ul class="activity-list" id="recentActivityList">
-            <li class="activity-item" data-type="bonus">
-              <div class="activity-icon">
-                <i class="fas fa-gift"></i>
-              </div>
-              <div class="activity-details">
-                <div class="activity-title">Referral Bonus</div>
-                <div class="activity-time">loading...</div>
-              </div>
-              <div class="activity-amount text-success">+UGX.0.00</div>
-            </li>
-            <li class="activity-item" data-type="deposit">
-              <div class="activity-icon">
-                <i class="fas fa-arrow-down"></i>
-              </div>
-              <div class="activity-details">
-                <div class="activity-title">Deposit</div>
-                <div class="activity-time">loading...</div>
-              </div>
-              <div class="activity-amount">UGX. 0.00</div>
-            </li>
-            <li class="activity-item" data-type="withdraw">
-              <div class="activity-icon">
-                <i class="fas fa-arrow-up"></i>
-              </div>
-              <div class="activity-details">
-                <div class="activity-title">Withdrawal</div>
-                <div class="activity-time">loading...</div>
-              </div>
-              <div class="activity-amount text-warning">-UGX. </div>
-            </li>
-            <li class="activity-item" data-type="bonus">
-              <div class="activity-icon">
-                <i class="fas fa-gift"></i>
-              </div>
-              <div class="activity-details">
-                <div class="activity-title">Level Up Bonus</div>
-                <div class="activity-time">loading...</div>
-              </div>
-              <div class="activity-amount text-success">+UGX. 0.00</div>
-            </li>
-          </ul>
-        </div> -->
-
-        <!-- User Package Card -->
-         <!-- User Packages Card -->
-
-
-<!-- <div class="package-card-profile">
-    <div class="package-card-header">
-        <h3 class="card-header-text">Your Packages</h3>
-    </div>
-    <div class="package-card-body" id="packages-container">
-        <------- Individual package items will be dynamically injected here -->
-    <!-- </div>
-</div> -----> 
 
  
  <div class="package-card-profile">
@@ -387,19 +328,38 @@
                 <i class="fas fa-chart-pie" style="font-size: 24px; color: var(--text-light);"></i>
               </div>
             </div>
-            <div class="main-stat-card" id="statRecent" data-type="recent-activity">
-              <h3>
-                <span>Recent Activity Summary</span>
-                <div class="card-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                  <i class="fas fa-clock"></i>
-                </div>
-              </h3>
-              <div class="main-stat-value">0</div>
-              <div class="main-stat-label">Transactions this week</div>
-              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-history" style="font-size: 24px; color: var(--text-light);"></i>
-              </div>
-            </div>
+
+            <!-- Recent Activity Summary Card -->
+<div class="main-stat-card" id="statRecent" data-type="recent-activity">
+  <h3>
+    <span>Recent Activity Summary</span>
+    <div class="card-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+      <i class="fas fa-clock"></i>
+    </div>
+  </h3>
+
+  <div class="main-stat-value" id="activityWeekCount">0</div>
+  <div class="main-stat-label">Transactions this week</div>
+
+  <!-- Clean Summary Preview -->
+  <div class="stat-preview-box">
+    <div class="stat-preview-row">
+      <span class="stat-preview-label">Last Activity</span>
+      <span class="stat-preview-value" id="lastActivityTitle">—</span>
+    </div>
+    <div class="stat-preview-row">
+      <span class="stat-preview-label">Amount</span>
+      <span class="stat-preview-value" id="lastActivityAmount">—</span>
+    </div>
+    <div class="stat-preview-row">
+      <span class="stat-preview-label">Time</span>
+      <span class="stat-preview-value" id="lastActivityTime">—</span>
+    </div>
+  </div>
+</div>
+
+
+
             <div class="main-stat-card" id="statNotifications" data-type="notifications">
               <h3>
                 <span>Notifications</span>

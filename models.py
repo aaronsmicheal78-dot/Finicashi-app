@@ -8,6 +8,7 @@ from extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
 from enum import Enum
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 # ===========================================================
 # ENUM DEFINITIONS
@@ -237,6 +238,7 @@ class Transaction(db.Model, BaseMixin):
     amount = db.Column(db.Numeric(precision=18, scale=2), nullable=False)
     status = db.Column(db.String(20), default='pending', nullable=False)
     reference = db.Column(db.String(120), unique=True, nullable=True, index=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     wallet = db.relationship('Wallet', back_populates='transactions')
 
@@ -318,6 +320,10 @@ class Withdrawal(db.Model, BaseMixin):
     fee = db.Column(db.Numeric(12,2), default=0)
     actual_balance_deducted = db.Column(db.Float, default=0.0)
     available_balance_deducted = db.Column(db.Float, default=0.0)
+
+    wallet_balance_deducted = db.Column(db.Numeric(15, 2), default=0)
+    previous_wallet_balance = db.Column(db.Numeric(15, 2), default=0)
+
     hold_period_applied = db.Column(db.Boolean, default=False) 
     reference = db.Column(db.String(255), nullable=True)
     external_ref = db.Column(db.String(128), index=True)
@@ -341,7 +347,7 @@ class Bonus(db.Model, BaseMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     amount = db.Column(db.Numeric(precision=18, scale=2),  nullable=True)
-    type = db.Column(db.String(50)) # signup, daily, 
+    type = db.Column(db.String(50))  
     status = db.Column(db.String(20), default='active')
     created_at = db.Column(db.DateTime, default=db.func.now())
     package_id = db.Column(db.Integer, db.ForeignKey('packages.id'))
@@ -365,7 +371,8 @@ class Package(db.Model, BaseMixin):
     package_amount = db.Column(db.Numeric(10, 2), nullable=False)  
     total_bonus_received = db.Column(db.Numeric(10, 2), default=0) 
     
-    activated_at = db.Column(db.DateTime, default=db.func.now())
+    
+    activated_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     expires_at = db.Column(db.DateTime, nullable=True)
     daily_bonus_rate = db.Column(db.Numeric(10, 5), nullable=False, default=0.05)  
     total_bonus_paid = db.Column(db.Numeric(10, 2), default=0)

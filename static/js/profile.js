@@ -965,6 +965,11 @@ class RecentActivityManager {
             }
         });
         document.dispatchEvent(event);
+        document.addEventListener('activitiesUpdated', (event) => {
+    const activities = event.detail.activities || [];
+    updateRecentActivitySummary({ activities }); 
+});
+
     }
 
     // =============================================
@@ -1206,3 +1211,50 @@ class BonusDashboard {
     }
 }
 
+// Initialize RecentActivityManager when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize EarningsDashboard (you already have this)
+    window.earningsDashboard = new EarningsDashboard();
+    
+    // Initialize RecentActivityManager (MISSING - add this)
+    window.activityManager = new RecentActivityManager();
+
+        document.addEventListener('activitiesUpdated', (event) => {
+        const activities = event.detail.activities || [];
+        updateRecentActivitySummary({ activities });
+    });
+    
+    console.log("✅ RecentActivityManager initialized");
+});
+
+//recent summary
+function updateRecentActivitySummary(data) {
+    const activities = data.activities || [];
+
+    // Elements
+    const weekCountEl = document.getElementById("activityWeekCount");
+    const lastTitleEl = document.getElementById("lastActivityTitle");
+    const lastAmountEl = document.getElementById("lastActivityAmount");
+    const lastTimeEl = document.getElementById("lastActivityTime");
+
+    // 1. Set weekly transaction count
+    weekCountEl.textContent = activities.length;
+
+    if (activities.length === 0) {
+        lastTitleEl.textContent = "No activity yet";
+        lastAmountEl.textContent = "—";
+        lastTimeEl.textContent = "—";
+        return;
+    }
+
+    // 2. Get MOST RECENT activity
+    const latest = activities[0];
+
+    // 3. Update summary fields
+    lastTitleEl.textContent = latest.title;
+    lastAmountEl.textContent = `${latest.amount.toLocaleString()} ${latest.currency}`;
+    
+    // Format time
+    const ts = new Date(latest.timestamp);
+    lastTimeEl.textContent = ts.toLocaleString();
+}

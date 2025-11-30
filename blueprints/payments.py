@@ -197,24 +197,7 @@ def initiate_payment():
                 db.session.add(payment)
                 db.session.commit()
                 logging.info("=== PAYMENT PROCESS COMPLETED SUCCESSFULLY ===")
-                
-                # return jsonify({
-                #     "reference": payment.reference,
-                #     "status": payment.status,
-                #     "message": "Payment completed successfully"
-                # }), 200
-            #else:
-                #return jsonify({"error": "Insufficient balance"}), 400
-                
-   
-
-
-
-
-
-
-
-
+        
                 # USE THE HELPER FOR PACKAGE + BONUS PROCESSING
                 try:
                     from bonus.payment_processor import process_package_purchase
@@ -653,97 +636,4 @@ def get_withdrawal_status(withdrawal_id):
         return jsonify({"error": "Failed to fetch withdrawal status"}), 500
 
 #==================================================================================================
-@bp.route('////////withdraw/callbacksss--///', methods=['POST'])
-def withdraw_callback_original():
-    try:
-        # Get the callback data from Marz
-        callback_data = request.get_json()
-        
-        if not callback_data:
-            return jsonify({"error": "No JSON data received"}), 400
-        
-        # Extract relevant data from callback
-        marz_reference = callback_data.get('reference')
-        marz_status = callback_data.get('status')
-        marz_amount = callback_data.get('amount')
-        
-        if not marz_reference:
-            return jsonify({"error": "Missing reference in callback"}), 400
-        
-        print(f"Callback received - Reference: {marz_reference}, Status: {marz_status}, Amount: {marz_amount}", flush=True)
-        
-        # Find the withdrawal with the matching reference
-        withdrawal = Withdrawal.query.filter(
-            and_(
-                Withdrawal.merchant_reference == marz_reference,
-                Withdrawal.status == 'pending'
-            )
-        ).first()
-        
-        if not withdrawal:
-            print(f"Withdrawal not found for reference: {marz_reference}", flush=True)
-            return jsonify({"error": "Withdrawal not found"}), 404
-        
-        # Update withdrawal status based on Marz response
-        if marz_status == 'success' or marz_status == 'completed':
-            # Get the user associated with this withdrawal
-            user = User.query.get(withdrawal.user_id)
-            
-            if not user:
-                return jsonify({"error": "User not found"}), 404
-            
-            # Check if user has sufficient balance
-            if user.balance < withdrawal.amount:
-                withdrawal.status = 'failed'
-                withdrawal.note = 'Insufficient balance'
-                db.session.commit()
-                return jsonify({"error": "Insufficient balance"}), 400
-            
-            # Deduct the amount from user's balance
-            user.balance -= withdrawal.amount
-            
-            # Update withdrawal status
-            withdrawal.status = 'completed'
-            withdrawal.transaction_id = callback_data.get('transaction_id')
-            
-            db.session.commit()
-            
-            return jsonify({
-                "message": "Callback processed successfully",
-                "status": "completed",
-                "user_id": user.id,
-                "amount_deducted": withdrawal.amount,
-                "new_balance": user.balance
-            }), 200
-        
-        elif marz_status == 'failed':
-            # Update withdrawal status to failed
-            withdrawal.status = 'failed'
-            withdrawal.note = f"Failed by provider: {callback_data.get('reason', 'Unknown reason')}"
-            db.session.commit()
-            
-            print(f"Withdrawal failed - Reference: {marz_reference}, Reason: {callback_data.get('reason', 'Unknown')}", flush=True)
-            
-            return jsonify({
-                "message": "Withdrawal marked as failed",
-                "status": "failed"
-            }), 200
-        
-        else:
-            # Handle other statuses (pending, processing, etc.)
-            withdrawal.status = marz_status
-            db.session.commit()
-            
-            return jsonify({
-                "message": f"Withdrawal status updated to {marz_status}",
-                "status": marz_status
-            }), 200
-            
-    except Exception as e:
-        print(f"Error processing callback: {str(e)}", flush=True)
-        db.session.rollback()
-        return jsonify({"error": "Internal server error processing callback"}), 500
-
-
-
 

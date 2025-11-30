@@ -20,6 +20,8 @@ class BonusValidationError(Exception):
     """Bonus validation errors"""
     pass
 
+TEST_MODE = True
+
 class DailyBonusProcessor:
     """Secure daily bonus processor with comprehensive validation"""
     
@@ -90,13 +92,6 @@ class DailyBonusProcessor:
             db.session.add(package)
             raise BonusValidationError("Package has expired")
         
-        # Standard 60-day expiration
-        standard_expiry = package.activated_at + timedelta(days=60)
-        if self.current_time > standard_expiry:
-            package.status = 'expired'
-            db.session.add(package)
-            raise BonusValidationError("Package has expired (60-day limit)")
-        
         return True
     
     def validate_bonus_timing(self, package: Package) -> bool:
@@ -115,12 +110,7 @@ class DailyBonusProcessor:
             hours_remaining = time_remaining.total_seconds() / 3600
             raise BonusValidationError(f"Bonus cooldown active. {hours_remaining:.1f} hours remaining")
         
-        # Ensure at least 24 hours between bonuses
-        if package.last_bonus_date:
-            time_since_last = self.current_time - package.last_bonus_date
-            if time_since_last < timedelta(hours=24):
-                raise BonusSecurityError("Minimum 24 hours between bonuses not met")
-        
+       
         return True
     
     def validate_bonus_limits(self, package: Package) -> Tuple[Decimal, Decimal, Decimal]:
@@ -159,6 +149,7 @@ class DailyBonusProcessor:
         try:
             # Update bonus tracking
             package.last_bonus_date = self.current_time
+            
             package.next_bonus_date = self.current_time + timedelta(hours=self.BONUS_COOLDOWN_HOURS)
             package.bonus_count += 1
             package.total_days_paid += 1
@@ -270,7 +261,7 @@ class DailyBonusProcessor:
             })
             
             self.processed_count += 1
-            logger.info(f"Bonus paid for package {package.id}: ${daily_bonus}")
+            logger.info(f"Bonus paid for package {package.id}: {daily_bonus}")
             
         except (BonusValidationError, BonusSecurityError) as e:
             package_result["error"] = str(e)
@@ -311,10 +302,13 @@ class DailyBonusProcessor:
             initial_balance = self.safe_decimal(wallet.balance, "wallet_balance")
             
             # Get eligible packages
-            packages = Package.query.filter_by(
-                user_id=user_id, 
-                status='active'
-            ).all()
+            packages = (
+            Package.query
+            .filter_by(user_id=user_id, status='active')
+            .with_for_update()
+            .all()
+        )
+    
             
             if not packages:
                 response.update({
@@ -336,11 +330,11 @@ class DailyBonusProcessor:
                     total_bonus += self.safe_decimal(result["bonus_amount"], "bonus_amount")
             
             # Commit only if we have successful processing
-            if total_bonus > Decimal("0"):
+            if any(p["success"] for p in processed_packages):
                 db_session.commit()
-                logger.info(f"Daily bonus completed for user {user_id}: ${total_bonus}")
             else:
                 db_session.rollback()
+
             
             # Prepare response
             successful_packages = [p for p in processed_packages if p["success"]]
