@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        :root {
+            /* Enhanced Color Palette */
+            --primary: #2962ff;
+            --primary-dark: #0039cb;
+            --primary-light: #768fff;
+            --secondary: #00c853;
+            --secondary-dark: #009624;
+            --secondary-light: #5efc82;
+            --accent: #ff6d00;
+            --accent-light: #ff9e40;
+            --neutral-dark: #1a237e;
+            --neutral: #455a64;
+            --neutral-light: #cfd8dc;
+            --neutral-bg: #f8fafc;
+            --white: #ffffff;
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-warning: linear-gradient(135deg, #ff6d00 0%, #ff9e40 100%);
+            
+            /* Enhanced Typography */
+            --font-primary: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --font-heading: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            
+            /* Enhanced Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-xxl: 3rem;
+            
+            /* Enhanced Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-pill: 50px;
+            
+            /* Enhanced Shadows */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 8px 25px rgba(0,0,0,0.12);
+            --shadow-lg: 0 15px 40px rgba(0,0,0,0.15);
+            --shadow-glow: 0 0 20px rgba(41, 98, 255, 0.15);
+            
+            /* Enhanced Transitions */
+            --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+       
+        /* Mobile-First Header Styles */
+      
+
+        /* Policy Toggle Button */
+        .policy-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .toggle-btn {
+            background: var(--gradient-primary);
+            color: var(--white);
+            border: none;
+            padding: var(--space-md) var(--space-xl);
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .toggle-btn i {
+            font-size: 1.2rem;
+        }
+
+        /* Policy Container - Hidden by Default */
+        .policy-container {
+           /* display: none;*/
+            flex-direction: column;
+            gap: var(--space-md);
+            margin-top: var(--space-md);
+        }
+
+        .policy-container.active {
+            display: flex;
+        }
+
+        /* Policy Sidebar - Mobile First */
+        .policy-sidebar {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            box-shadow: var(--shadow-md);
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .policy-sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .policy-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: var(--space-sm);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .policy-subtitle {
+            color: var(--neutral);
+            text-align: center;
+            margin-bottom: var(--space-md);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .policy-nav {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-xs);
+        }
+
+        .policy-nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            color: var(--neutral);
+            font-weight: 500;
+            font-size: 0.85rem;
+            border: 1px solid var(--neutral-light);
+        }
+
+        .policy-nav-item:hover {
+            background: var(--neutral-bg);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .policy-nav-item.active {
+            background: var(--gradient-primary);
+            color: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .policy-nav-item i {
+            font-size: 0.9rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Policy Content */
+        .policy-content {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .policy-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .policy-section {
+            margin-bottom: var(--space-xl);
+            scroll-margin-top: var(--space-md);
+        }
+
+        .policy-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+            padding-bottom: var(--space-sm);
+            border-bottom: 1px solid var(--neutral-light);
+        }
+
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            background: var(--gradient-primary);
+            color: var(--white);
+            box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--neutral-dark);
+        }
+
+        .policy-rules {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-md);
+        }
+
+        .rule-card {
+            background: var(--neutral-bg);
+            border-radius: var(--radius-sm);
+            padding: var(--space-md);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition-normal);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+        }
+
+        .rule-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .rule-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--gradient-primary);
+            color: var(--white);
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .rule-text {
+            color: var(--neutral);
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .closing-message {
+            background: var(--gradient-success);
+            color: var(--white);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            margin-top: var(--space-xl);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .closing-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .closing-message h3 {
+            font-size: 1.2rem;
+            margin-bottom: var(--space-sm);
+            position: relative;
+            z-index: 1;
+        }
+
+        .closing-message p {
+            font-size: 0.95rem;
+            position: relative;
+            z-index: 1;
+            font-style: italic;
+        }
+
+        /* Tablet Styles */
+        @media (min-width: 768px) {
+            body {
+                padding: var(--space-lg);
+            }
+            
+            .dashboard-header {
+                padding: var(--space-lg);
+                margin-bottom: var(--space-lg);
+            }
+            
+            .logo {
+                gap: var(--space-md);
+            }
+            
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .logo-text {
+                font-size: 1.4rem;
+            }
+            
+            .notification-icon, .settings-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .user-avatar {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .policy-nav {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .policy-rules {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Desktop Styles */
+        @media (min-width: 1024px) {
+            .dashboard-container {
+                max-width: 1400px;
+            }
+            
+            .policy-container {
+                flex-direction: row;
+                gap: var(--space-lg);
+            }
+            
+            .policy-sidebar {
+                width: 280px;
+                flex-shrink: 0;
+                position: sticky;
+                top: var(--space-md);
+                padding: var(--space-lg);
+            }
+            
+            .policy-nav {
+                grid-template-columns: 1fr;
+            }
+            
+            .policy-content {
+                flex: 1;
+                padding: var(--space-lg);
+            }
+            
+            .policy-rules {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        /* Large Desktop Styles */
+        @media (min-width: 1200px) {
+            .policy-sidebar {
+                position: sticky;
+                top: var(--space-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-toggle">
+            <button class="toggle-btn" id="policyToggle">
+                <i class="fas fa-file-alt"></i>
+                View Policy Document
+            </button>
+        </div>
+        <div class="policy-container" id="policyContainer">
+            <aside class="policy-sidebar">
+                <h1 class="policy-title">Policy Document</h1>
+                <p class="policy-subtitle">"Earn. Connect. Grow Together."</p>
+                
+                <nav class="policy-nav">
+                    <div class="policy-nav-item active" data-target="membership">
+                        <i class="fas fa-users"></i>
+                        <span>Membership</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="packages">
+                        <i class="fas fa-box"></i>
+                        <span>Packages</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="referral">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Referral</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="bonus">
+                        <i class="fas fa-gem"></i>
+                        <span>Bonus</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="withdrawals">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Withdrawals</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="team">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Team</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="ranks">
+                        <i class="fas fa-trophy"></i>
+                        <span>Ranks</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="rewards">
+                        <i class="fas fa-gift"></i>
+                        <span>Rewards</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="fairplay">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Fair Play</span>
+                    </div>
+                    <div class="policy-nav-item" data-target="community">
+                        <i class="fas fa-headset"></i>
+                        <span>Community</span>
+                    </div>
+                </nav>
+            </aside>
+            
+            <main class="policy-content">
+                <section id="membership" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h2 class="section-title">🧩 1. MEMBERSHIP & ELIGIBILITY</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">1</span>
+                            <span class="rule-text">All participants must register with verified phone numbers and active accounts.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">2</span>
+                            <span class="rule-text">Membership is open to individuals aged 18 years and above.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">3</span>
+                            <span class="rule-text">Each member account is unique — no duplicate or shared accounts allowed.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">4</span>
+                            <span class="rule-text">Members must maintain an active package subscription to qualify for bonuses.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">5</span>
+                            <span class="rule-text">Inactive members do not earn bonuses from any level until reactivated.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="packages" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <h2 class="section-title">💼 2. PACKAGES & SUBSCRIPTIONS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">6</span>
+                            <span class="rule-text">Members choose from available investment packages based on their ability and goals.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">7</span>
+                            <span class="rule-text">Each package defines its own bonus rate and qualification levels.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">8</span>
+                            <span class="rule-text">Upgrading to a higher package unlocks higher bonus potential.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">9</span>
+                            <span class="rule-text">Bonuses earned under a previous package do not transfer after upgrade.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">10</span>
+                            <span class="rule-text">Multiple packages may be owned by one member, but each operates independently.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="referral" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h2 class="section-title">🔗 3. REFERRAL STRUCTURE</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">11</span>
+                            <span class="rule-text">Each member receives a unique referral code upon registration.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">12</span>
+                            <span class="rule-text">Referral codes only benefit their registered owners.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">13</span>
+                            <span class="rule-text">Sharing someone else's referral code builds their network, not yours.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">14</span>
+                            <span class="rule-text">Direct referrals earn you an instant 10% bonus from your referee's first investment.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">15</span>
+                            <span class="rule-text">Indirect referrals earn you continuous bonuses up to the 50th generation, provided you stay active.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="bonus" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-gem"></i>
+                        </div>
+                        <h2 class="section-title">💎 4. BONUS QUALIFICATION & ACCUMULATION</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">16</span>
+                            <span class="rule-text">Investment-based bonuses begin accumulating after 14 days from your activation date.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">17</span>
+                            <span class="rule-text">Referral-based bonuses are credited instantly once your referral completes payment.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">18</span>
+                            <span class="rule-text">Bonuses only grow while your account remains active.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">19</span>
+                            <span class="rule-text">Cancelling a package results in loss of all accumulated bonuses tied to that package.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">20</span>
+                            <span class="rule-text">You can view your real-time bonus progress in your dashboard anytime.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="withdrawals" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h2 class="section-title">💰 5. WITHDRAWALS & TRANSACTIONS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">21</span>
+                            <span class="rule-text">Withdrawals and deposits are instant through supported payment channels.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">22</span>
+                            <span class="rule-text">All transaction charges are covered by the member.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">23</span>
+                            <span class="rule-text">Qualified bonuses can be withdrawn after 2 weeks from the date of qualification.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">24</span>
+                            <span class="rule-text">Bonus withdrawals are separate from subscription funds — each balance operates independently.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">25</span>
+                            <span class="rule-text">Minimum withdrawal waiting time is 24 hours after your initial subscription.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="team" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <h2 class="section-title">👥 6. TEAM & GROUP NETWORKING</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">26</span>
+                            <span class="rule-text">Members can form teams of 5 or 10 people.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">27</span>
+                            <span class="rule-text">A team receives a group code linking members to shared achievements.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">28</span>
+                            <span class="rule-text">A 10-member team qualifies for double group bonuses if all members are active.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">29</span>
+                            <span class="rule-text">Groups must maintain full activity — inactive members affect the group's bonus eligibility.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">30</span>
+                            <span class="rule-text">Crossing or leaving a group results in loss of previous group points.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="ranks" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h2 class="section-title">🪙 7. RANKS & LEADERSHIP LEVELS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">31</span>
+                            <span class="rule-text">Finicashi recognizes five progressive ranks: Starter → Builder → Connector → Influencer → Ambassador.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">32</span>
+                            <span class="rule-text">Ranks are earned through total active referrals and team volume.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">33</span>
+                            <span class="rule-text">Higher ranks unlock deeper referral levels and special incentives.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">34</span>
+                            <span class="rule-text">Rank maintenance requires consistent monthly activity.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">35</span>
+                            <span class="rule-text">Top performers are featured on our public leaderboard weekly.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="rewards" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <h2 class="section-title">🌱 8. REWARD STYLES & BONUS VARIANTS</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">36</span>
+                            <span class="rule-text">Members earn from four main sources: Direct Bonus, Indirect Bonus, Group Bonus, and Activity Rewards.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">37</span>
+                            <span class="rule-text">Consistent members receive Weekly Loyalty Points convertible to cash.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">38</span>
+                            <span class="rule-text">Achieving milestones (10, 50, 100, 500 referrals) unlocks Bronze, Silver, Gold, and Platinum awards.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">39</span>
+                            <span class="rule-text">Special seasonal campaigns may offer Double Bonus Weeks or Team Challenges.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">40</span>
+                            <span class="rule-text">Global pool bonuses are shared among the top 5% most active members monthly.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="fairplay" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h2 class="section-title">🛡️ 9. FAIR PLAY & ACCOUNTABILITY</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">41</span>
+                            <span class="rule-text">Finicashi promotes honesty, transparency, and fairness for all members.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">42</span>
+                            <span class="rule-text">Creating fake accounts or self-referrals is strictly prohibited.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">43</span>
+                            <span class="rule-text">Any fraudulent activity leads to loss of bonuses and possible account suspension.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">44</span>
+                            <span class="rule-text">Members are encouraged to report suspicious activity via the 24/7 helpline.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">45</span>
+                            <span class="rule-text">Finicashi reserves the right to audit or review member accounts periodically.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="community" class="policy-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h2 class="section-title">📞 10. COMMUNITY, SUPPORT & GUIDANCE</h2>
+                    </div>
+                    
+                    <div class="policy-rules">
+                        <div class="rule-card">
+                            <span class="rule-number">46</span>
+                            <span class="rule-text">Our support team is available 24/7 via chat, WhatsApp, and Telegram.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">47</span>
+                            <span class="rule-text">All members are encouraged to join official groups for mentorship and updates.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">48</span>
+                            <span class="rule-text">Always read and understand our terms and policy before purchasing or upgrading any package.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">49</span>
+                            <span class="rule-text">Networking works best when done with integrity, teamwork, and patience.</span>
+                        </div>
+                        <div class="rule-card">
+                            <span class="rule-number">50</span>
+                            <span class="rule-text">Plan, strategize, and grow your Finicashi family — because your network is your net worth.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="closing-message">
+                    <h3>✨ Closing Message</h3>
+                    <p>"Finicashi is built on community, consistency, and connection. The more you grow your network, the more your bonuses grow with you. Team up, stay active, and let success ripple through your referrals."</p>
+                </div>
+            </main>
+        </div>
+    </div>
+<script>
+          // Add interactivity to policy navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.policy-nav-item');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    navItems.forEach(navItem => navItem.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Get the target section ID
+                    const targetId = this.getAttribute('data-target');
+                    
+                    // Scroll to the target section
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+            
+            // Highlight the active section based on scroll position
+            window.addEventListener('scroll', function() {
+                const sections = document.querySelectorAll('.policy-section');
+                let current = '';
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (scrollY >= (sectionTop - 150)) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-target') === current) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        });
+</script>
+</body>
+</html>

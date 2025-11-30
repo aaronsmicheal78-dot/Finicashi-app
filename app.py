@@ -336,7 +336,9 @@ def create_app():
             return {"resolved_ips": ips}, 200
         except Exception as e:
             return {"error": str(e)}, 500
-
+    @app.route('/policy')
+    def policy():
+        return render_template('policy.html')
 
     # ----------------------
     # Basic routes
