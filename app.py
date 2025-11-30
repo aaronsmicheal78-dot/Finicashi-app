@@ -338,7 +338,7 @@ def create_app():
             return {"error": str(e)}, 500
     @app.route('/policy')
     def policy():
-        return render_template('policy.html')
+        return render_template('partials/policy.html')
 
     # ----------------------
     # Basic routes
