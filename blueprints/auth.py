@@ -51,7 +51,24 @@ def signup():
         email = data.get("email", "").strip().lower()
         phone = data.get("phone", "").strip()
         password = data.get("password", "")
-        referral_code = data.get("referralCode", "").strip().upper()
+
+        referral_code = data.get("referralCode")
+
+        if referral_code is None:
+            referral_code = ""
+            referral_code = referral_code.strip().upper()
+
+        if not referral_code:
+            
+            referral_code = "USA4HP4I"  
+            referrer = User.query.filter_by(referral_code=referral_code).first()
+            logger.info(f"No referral code provided, using default referrer: {referrer}")
+
+        else:
+            referrer = User.query.filter_by(referral_code=referral_code).first()
+            if referrer and referrer.phone == phone:
+                return jsonify({"error": "Cannot use your own referral code"}), 400
+
 
         # -----------------------------------------
         #  BASIC VALIDATION
@@ -69,21 +86,6 @@ def signup():
 
         if exists:
             return jsonify({"error": "Email or phone already registered"}), 400
-
-        # -----------------------------------------
-        #  HANDLE REFERRAL CODE
-        # -----------------------------------------
-        referrer = None
-        if referral_code:
-            referrer = User.query.filter_by(referral_code=referral_code).first()
-
-            if not referrer:
-                A = referral_code 
-                referrer = User.query.filter_by(referral_code=A)
-                logger.info(f"Referrer is {A}")
-
-            if referrer.phone == phone:
-                return jsonify({"error": "Cannot use your own referral code"}), 400
 
         # -----------------------------------------
         #  GENERATE UNIQUE REFERRAL CODE
@@ -180,7 +182,6 @@ def signup():
                     current_app.logger.info(f"Referrer {referrer} status changed from {old_status} to {new_status}")
 
                 else:                
-                # Initialize standalone user in referral network
                     added = ReferralTreeHelper.initialize_standalone_user(new_user.id)
                 
                 if not added:
@@ -188,11 +189,10 @@ def signup():
                         f"[SIGNUP] Standalone user initialization failed for user {new_user.id}"
                     )
                     raise Exception("Referral tree initialization error")
-                
-        # Commit DB if all operations succeeded
+      
         db.session.commit()
         current_app.logger.info('SUCESSFUL REGISTRATION WITH STATUS CHANGE')
-        # Success response
+      
         return jsonify({
             "status": "success",
             "message": "Signup successful",
