@@ -2885,3 +2885,19 @@ M/*obile-First Referral Modal Styles*/
   font-weight: 600;
   color: #111;
 }
+.activity-item {
+  border: 1px solid #ddd;
+  margin-bottom: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.activity-details {
+  display: none; /* hidden by default */
+  margin-top: 5px;
+}
+
+.activity-item.expanded .activity-details {
+  display: block; /* show when expanded */
+}
