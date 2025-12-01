@@ -505,756 +505,756 @@ document.getElementById("copyRefBtn").addEventListener("click", () => {
 // RECENT ACTIVITY MANAGER - Production Ready
 // =============================================
 
-class RecentActivityManager {
-    constructor() {
-        this.config = {
-            apiEndpoint: '/api/recent_activity',
-            refreshInterval: 60000, // 1 minute
-            maxRetries: 3,
-            pageSize: 20,
-            cacheDuration: 30000 // 30 seconds
-        };
+// class RecentActivityManager {
+//     constructor() {
+//         this.config = {
+//             apiEndpoint: `/api/recent_activity`,                                          //'/api/recent_activity',
+//             refreshInterval: 60000, // 1 minute
+//             maxRetries: 3,
+//             pageSize: 20,
+//             cacheDuration: 30000 // 30 seconds
+//         };
         
-        this.elements = {
-            list: document.getElementById('recentActivityList'),
-            loadingMsg: document.getElementById('activityLoadingMsg'),
-            emptyMsg: document.getElementById('activityEmptyMsg'),
-            template: document.getElementById('activityItemTemplate')
-        };
+//         this.elements = {
+//             list: document.getElementById('recentActivityList'),
+//             loadingMsg: document.getElementById('activityLoadingMsg'),
+//             emptyMsg: document.getElementById('activityEmptyMsg'),
+//             template: document.getElementById('activityItemTemplate')
+//         };
         
-        this.state = {
-            isLoading: false,
-            lastUpdate: null,
-            currentPage: 1,
-            hasMore: false,
-            activities: [],
-            cache: null,
-            cacheTimestamp: null
-        };
+//         this.state = {
+//             isLoading: false,
+//             lastUpdate: null,
+//             currentPage: 1,
+//             hasMore: false,
+//             activities: [],
+//             cache: null,
+//             cacheTimestamp: null
+//         };
         
-        this.activityStyles = {
-            bonus: {
-                icon: 'fa-gift',
-                color: 'text-success',
-                prefix: '+',
-                bgColor: 'bg-success-light'
-            },
-            deposit: {
-                icon: 'fa-arrow-down',
-                color: 'text-info',
-                prefix: '+',
-                bgColor: 'bg-info-light'
-            },
-            withdraw: {
-                icon: 'fa-arrow-up',
-                color: 'text-warning',
-                prefix: '-',
-                bgColor: 'bg-warning-light'
-            }
-        };
+//         this.activityStyles = {
+//             bonus: {
+//                 icon: 'fa-gift',
+//                 color: 'text-success',
+//                 prefix: '+',
+//                 bgColor: 'bg-success-light'
+//             },
+//             deposit: {
+//                 icon: 'fa-arrow-down',
+//                 color: 'text-info',
+//                 prefix: '+',
+//                 bgColor: 'bg-info-light'
+//             },
+//             withdraw: {
+//                 icon: 'fa-arrow-up',
+//                 color: 'text-warning',
+//                 prefix: '-',
+//                 bgColor: 'bg-warning-light'
+//             }
+//         };
         
-        this.init();
-    }
+//         this.init();
+//     }
 
-    // =============================================
-    // INITIALIZATION
-    // =============================================
+//     // =============================================
+//     // INITIALIZATION
+//     // =============================================
 
-    init() {
-        if (!this.validateElements()) {
-            console.error('Required DOM elements not found');
-            return;
-        }
+//     init() {
+//         if (!this.validateElements()) {
+//             console.error('Required DOM elements not found');
+//             return;
+//         }
         
-        this.bindEvents();
-        this.loadActivities();
-        this.startAutoRefresh();
-    }
+//         this.bindEvents();
+//         this.loadActivities();
+//         this.startAutoRefresh();
+//     }
 
-    validateElements() {
-        const required = ['list', 'loadingMsg', 'emptyMsg'];
-        return required.every(id => this.elements[id] !== null);
-    }
+//     validateElements() {
+//         const required = ['list', 'loadingMsg', 'emptyMsg'];
+//         return required.every(id => this.elements[id] !== null);
+//     }
 
-    bindEvents() {
-        // Scroll loading for infinite scroll
-        window.addEventListener('scroll', this.handleScroll.bind(this));
+//     bindEvents() {
+//         // Scroll loading for infinite scroll
+//         window.addEventListener('scroll', this.handleScroll.bind(this));
         
-        // Refresh on visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && this.shouldRefresh()) {
-                this.loadActivities();
-            }
-        });
-    }
+//         // Refresh on visibility change
+//         document.addEventListener('visibilitychange', () => {
+//             if (!document.hidden && this.shouldRefresh()) {
+//                 this.loadActivities();
+//             }
+//         });
+//     }
 
-    // =============================================
-    // DATA FETCHING & CACHING
-    // =============================================
+//     // =============================================
+//     // DATA FETCHING & CACHING
+//     // =============================================
 
-    async loadActivities(page = 1, useCache = true) {
-        if (this.state.isLoading) return;
+//     async loadActivities(page = 1, useCache = true) {
+//         if (this.state.isLoading) return;
         
-        // Check cache
-        if (useCache && this.isCacheValid()) {
-            this.renderFromCache();
-            return;
-        }
+//         // Check cache
+//         if (useCache && this.isCacheValid()) {
+//             this.renderFromCache();
+//             return;
+//         }
         
-        this.setLoadingState(true);
+//         this.setLoadingState(true);
         
-        try {
-            const url = `${this.config.apiEndpoint}?page=${page}&page_size=${this.config.pageSize}`;
-            const response = await this.fetchWithRetry(url);
+//         try {
+//             const url =  `${this.config.apiEndpoint}?page=${page}&page_size=${this.config.pageSize}`;                                                 //`${this.config.apiEndpoint}?page=${page}&page_size=${this.config.pageSize}`;
+//             const response = await this.fetchWithRetry(url);
             
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+//             if (!response.ok) {
+//                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+//             }
             
-            const data = await response.json();
-            await this.handleDataResponse(data, page);
+//             const data = await response.json();
+//             await this.handleDataResponse(data, page);
             
-        } catch (error) {
-            this.handleError(error);
-        } finally {
-            this.setLoadingState(false);
-        }
-    }
+//         } catch (error) {
+//             this.handleError(error);
+//         } finally {
+//             this.setLoadingState(false);
+//         }
+//     }
 
-    async fetchWithRetry(url, retries = this.config.maxRetries) {
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
+//     async fetchWithRetry(url, retries = this.config.maxRetries) {
+//         for (let attempt = 1; attempt <= retries; attempt++) {
+//             try {
+//                 const response = await fetch(url, {
+//                     method: 'GET',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         'Cache-Control': 'no-cache'
+//                     }
+//                 });
                 
-                if (response.ok) return response;
+//                 if (response.ok) return response;
                 
-                if (attempt === retries) {
-                    throw new Error(`Failed after ${retries} attempts`);
-                }
+//                 if (attempt === retries) {
+//                     throw new Error(`Failed after ${retries} attempts`);
+//                 }
                 
-                // Exponential backoff
-                await this.delay(Math.pow(2, attempt) * 1000);
+//                 // Exponential backoff
+//                 await this.delay(Math.pow(2, attempt) * 1000);
                 
-            } catch (error) {
-                if (attempt === retries) throw error;
-                await this.delay(Math.pow(2, attempt) * 1000);
-            }
-        }
-    }
+//             } catch (error) {
+//                 if (attempt === retries) throw error;
+//                 await this.delay(Math.pow(2, attempt) * 1000);
+//             }
+//         }
+//     }
 
-    async handleDataResponse(data, page) {
-        // Validate response structure
-        if (!data || typeof data !== 'object') {
-            throw new Error('Invalid response format');
-        }
+//     async handleDataResponse(data, page) {
+//         // Validate response structure
+//         if (!data || typeof data !== 'object') {
+//             throw new Error('Invalid response format');
+//         }
         
-        const activities = data.activities || [];
-        const pagination = data.pagination || {};
+//         const activities = data.activities || [];
+//         const pagination = data.pagination || {};
         
-        // Update state
-        this.state.currentPage = page;
-        this.state.hasMore = pagination.has_next || false;
-        this.state.lastUpdate = new Date();
+//         // Update state
+//         this.state.currentPage = page;
+//         this.state.hasMore = pagination.has_next || false;
+//         this.state.lastUpdate = new Date();
         
-        if (page === 1) {
-            this.state.activities = activities;
-        } else {
-            this.state.activities = [...this.state.activities, ...activities];
-        }
+//         if (page === 1) {
+//             this.state.activities = activities;
+//         } else {
+//             this.state.activities = [...this.state.activities, ...activities];
+//         }
         
-        // Cache the data
-        this.updateCache(data);
+//         // Cache the data
+//         this.updateCache(data);
         
-        // Render UI
-        this.renderActivities();
+//         // Render UI
+//         this.renderActivities();
         
-        // Update empty state
-        this.updateEmptyState(activities.length === 0 && page === 1);
+//         // Update empty state
+//         this.updateEmptyState(activities.length === 0 && page === 1);
         
-        // Dispatch custom event for other components
-        this.dispatchActivityUpdateEvent(activities.length);
-    }
+//         // Dispatch custom event for other components
+//         this.dispatchActivityUpdateEvent(activities.length);
+//     }
 
-    // =============================================
-    // CACHE MANAGEMENT
-    // =============================================
+//     // =============================================
+//     // CACHE MANAGEMENT
+//     // =============================================
 
-    updateCache(data) {
-        this.state.cache = data;
-        this.state.cacheTimestamp = Date.now();
-    }
+//     updateCache(data) {
+//         this.state.cache = data;
+//         this.state.cacheTimestamp = Date.now();
+//     }
 
-    isCacheValid() {
-        if (!this.state.cache || !this.state.cacheTimestamp) return false;
+//     isCacheValid() {
+//         if (!this.state.cache || !this.state.cacheTimestamp) return false;
         
-        const cacheAge = Date.now() - this.state.cacheTimestamp;
-        return cacheAge < this.config.cacheDuration;
-    }
+//         const cacheAge = Date.now() - this.state.cacheTimestamp;
+//         return cacheAge < this.config.cacheDuration;
+//     }
 
-    renderFromCache() {
-        if (this.state.cache) {
-            this.state.activities = this.state.cache.activities || [];
-            this.renderActivities();
-            this.updateEmptyState(this.state.activities.length === 0);
-        }
-    }
+//     renderFromCache() {
+//         if (this.state.cache) {
+//             this.state.activities = this.state.cache.activities || [];
+//             this.renderActivities();
+//             this.updateEmptyState(this.state.activities.length === 0);
+//         }
+//     }
 
-    shouldRefresh() {
-        if (!this.state.lastUpdate) return true;
+//     shouldRefresh() {
+//         if (!this.state.lastUpdate) return true;
         
-        const timeSinceLastUpdate = Date.now() - this.state.lastUpdate.getTime();
-        return timeSinceLastUpdate > this.config.refreshInterval;
-    }
+//         const timeSinceLastUpdate = Date.now() - this.state.lastUpdate.getTime();
+//         return timeSinceLastUpdate > this.config.refreshInterval;
+//     }
 
-    // =============================================
-    // RENDERING ENGINE
-    // =============================================
+//     // =============================================
+//     // RENDERING ENGINE
+//     // =============================================
 
-    renderActivities() {
-        if (!this.state.activities.length) {
-            this.elements.list.innerHTML = '';
-            return;
-        }
+//     renderActivities() {
+//         if (!this.state.activities.length) {
+//             this.elements.list.innerHTML = '';
+//             return;
+//         }
         
-        const fragment = document.createDocumentFragment();
+//         const fragment = document.createDocumentFragment();
         
-        this.state.activities.forEach(activity => {
-            const activityElement = this.createActivityElement(activity);
-            if (activityElement) {
-                fragment.appendChild(activityElement);
-            }
-        });
+//         this.state.activities.forEach(activity => {
+//             const activityElement = this.createActivityElement(activity);
+//             if (activityElement) {
+//                 fragment.appendChild(activityElement);
+//             }
+//         });
         
-        // Clear and update
-        this.elements.list.innerHTML = '';
-        this.elements.list.appendChild(fragment);
+//         // Clear and update
+//         this.elements.list.innerHTML = '';
+//         this.elements.list.appendChild(fragment);
         
-        // Add animation
-        this.animateNewActivities();
-    }
+//         // Add animation
+//         this.animateNewActivities();
+//     }
 
-    createActivityElement(activity) {
-        // Use template if available, otherwise create manually
-        if (this.elements.template) {
-            try {
-                const template = this.elements.template.content.cloneNode(true);
-                const activityItem = template.querySelector('.activity-item');
-                const icon = template.querySelector('.activity-icon i');
-                const title = template.querySelector('.activity-title');
-                const time = template.querySelector('.activity-time');
-                const amount = template.querySelector('.activity-amount');
+//     createActivityElement(activity) {
+//         // Use template if available, otherwise create manually
+//         if (this.elements.template) {
+//             try {
+//                 const template = this.elements.template.content.cloneNode(true);
+//                 const activityItem = template.querySelector('.activity-item');
+//                 const icon = template.querySelector('.activity-icon i');
+//                 const title = template.querySelector('.activity-title');
+//                 const time = template.querySelector('.activity-time');
+//                 const amount = template.querySelector('.activity-amount');
                 
-                if (activityItem) {
-                    const style = this.activityStyles[activity.type] || this.activityStyles.deposit;
+//                 if (activityItem) {
+//                     const style = this.activityStyles[activity.type] || this.activityStyles.deposit;
                     
-                    activityItem.setAttribute('data-type', activity.type);
-                    activityItem.classList.add('activity-item--animated');
+//                     activityItem.setAttribute('data-type', activity.type);
+//                     activityItem.classList.add('activity-item--animated');
                     
-                    icon.className = `fas ${style.icon}`;
-                    title.textContent = activity.title || 'Transaction';
-                    time.textContent = this.formatTimestamp(activity.timestamp);
-                    amount.textContent = this.formatAmount(activity, style);
-                    amount.className = `activity-amount ${style.color}`;
+//                     icon.className = `fas ${style.icon}`;
+//                     title.textContent = activity.title || 'Transaction';
+//                     time.textContent = this.formatTimestamp(activity.timestamp);
+//                     amount.textContent = this.formatAmount(activity, style);
+//                     amount.className = `activity-amount ${style.color}`;
                     
-                    if (style.bgColor) {
-                        activityItem.classList.add(style.bgColor);
-                    }
+//                     if (style.bgColor) {
+//                         activityItem.classList.add(style.bgColor);
+//                     }
                     
-                    return activityItem;
-                }
-            } catch (error) {
-                console.error('Error creating activity from template:', error);
-            }
-        }
+//                     return activityItem;
+//                 }
+//             } catch (error) {
+//                 console.error('Error creating activity from template:', error);
+//             }
+//         }
         
-        // Fallback: create element manually
-        return this.createFallbackActivityElement(activity);
-    }
+//         // Fallback: create element manually
+//         return this.createFallbackActivityElement(activity);
+//     }
 
-    createFallbackActivityElement(activity) {
-        const style = this.activityStyles[activity.type] || this.activityStyles.deposit;
+//     createFallbackActivityElement(activity) {
+//         const style = this.activityStyles[activity.type] || this.activityStyles.deposit;
         
-        const li = document.createElement('li');
-        li.className = `activity-item activity-item--animated`;
-        li.setAttribute('data-type', activity.type);
+//         const li = document.createElement('li');
+//         li.className = `activity-item activity-item--animated`;
+//         li.setAttribute('data-type', activity.type);
         
-        li.innerHTML = `
-            <div class="activity-icon">
-                <i class="fas ${style.icon}"></i>
-            </div>
-            <div class="activity-details">
-                <div class="activity-title">${this.escapeHtml(activity.title || 'Transaction')}</div>
-                <div class="activity-time">${this.formatTimestamp(activity.timestamp)}</div>
-            </div>
-            <div class="activity-amount ${style.color}">
-                ${this.formatAmount(activity, style)}
-            </div>
-        `;
+//         li.innerHTML = `
+//             <div class="activity-icon">
+//                 <i class="fas ${style.icon}"></i>
+//             </div>
+//             <div class="activity-details">
+//                 <div class="activity-title">${this.escapeHtml(activity.title || 'Transaction')}</div>
+//                 <div class="activity-time">${this.formatTimestamp(activity.timestamp)}</div>
+//             </div>
+//             <div class="activity-amount ${style.color}">
+//                 ${this.formatAmount(activity, style)}
+//             </div>
+//         `;
         
-        if (style.bgColor) {
-            li.classList.add(style.bgColor);
-        }
+//         if (style.bgColor) {
+//             li.classList.add(style.bgColor);
+//         }
         
-        return li;
-    }
+//         return li;
+//     }
 
-    // =============================================
-    // FORMATTING UTILITIES
-    // =============================================
+//     // =============================================
+//     // FORMATTING UTILITIES
+//     // =============================================
 
-    formatTimestamp(timestamp) {
-        if (!timestamp) return 'Recently';
+//     formatTimestamp(timestamp) {
+//         if (!timestamp) return 'Recently';
         
-        try {
-            const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return 'Recently';
+//         try {
+//             const date = new Date(timestamp);
+//             if (isNaN(date.getTime())) return 'Recently';
             
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
+//             const now = new Date();
+//             const diffMs = now - date;
+//             const diffMins = Math.floor(diffMs / 60000);
+//             const diffHours = Math.floor(diffMs / 3600000);
+//             const diffDays = Math.floor(diffMs / 86400000);
             
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            if (diffDays < 7) return `${diffDays}d ago`;
+//             if (diffMins < 1) return 'Just now';
+//             if (diffMins < 60) return `${diffMins}m ago`;
+//             if (diffHours < 24) return `${diffHours}h ago`;
+//             if (diffDays < 7) return `${diffDays}d ago`;
             
-            return date.toLocaleDateString();
+//             return date.toLocaleDateString();
             
-        } catch (error) {
-            return 'Recently';
-        }
-    }
+//         } catch (error) {
+//             return 'Recently';
+//         }
+//     }
 
-    formatAmount(activity, style) {
-        const amount = activity.amount || 0;
-        const currency = activity.currency || 'UGX';
-        const formattedAmount = typeof amount === 'number' 
-            ? amount.toLocaleString() 
-            : Number(amount).toLocaleString();
+//     formatAmount(activity, style) {
+//         const amount = activity.amount || 0;
+//         const currency = activity.currency || 'UGX';
+//         const formattedAmount = typeof amount === 'number' 
+//             ? amount.toLocaleString() 
+//             : Number(amount).toLocaleString();
         
-        return `${style.prefix}${currency} ${formattedAmount}`;
-    }
+//         return `${style.prefix}${currency} ${formattedAmount}`;
+//     }
 
-    escapeHtml(unsafe) {
-        if (!unsafe) return '';
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+//     escapeHtml(unsafe) {
+//         if (!unsafe) return '';
+//         return unsafe
+//             .replace(/&/g, "&amp;")
+//             .replace(/</g, "&lt;")
+//             .replace(/>/g, "&gt;")
+//             .replace(/"/g, "&quot;")
+//             .replace(/'/g, "&#039;");
+//     }
 
-    // =============================================
-    // ANIMATIONS & UI EFFECTS
-    // =============================================
+//     // =============================================
+//     // ANIMATIONS & UI EFFECTS
+//     // =============================================
 
-    animateNewActivities() {
-        const items = this.elements.list.querySelectorAll('.activity-item--animated');
+//     animateNewActivities() {
+//         const items = this.elements.list.querySelectorAll('.activity-item--animated');
         
-        items.forEach((item, index) => {
-            item.style.animationDelay = `${index * 0.05}s`;
+//         items.forEach((item, index) => {
+//             item.style.animationDelay = `${index * 0.05}s`;
             
-            setTimeout(() => {
-                item.classList.remove('activity-item--animated');
-            }, 500 + (index * 50));
-        });
-    }
+//             setTimeout(() => {
+//                 item.classList.remove('activity-item--animated');
+//             }, 500 + (index * 50));
+//         });
+//     }
 
-    // =============================================
-    // STATE MANAGEMENT
-    // =============================================
+//     // =============================================
+//     // STATE MANAGEMENT
+//     // =============================================
 
-    setLoadingState(loading) {
-        this.state.isLoading = loading;
+//     setLoadingState(loading) {
+//         this.state.isLoading = loading;
         
-        if (this.elements.loadingMsg) {
-            this.elements.loadingMsg.style.display = loading ? 'block' : 'none';
-        }
+//         if (this.elements.loadingMsg) {
+//             this.elements.loadingMsg.style.display = loading ? 'block' : 'none';
+//         }
         
-        if (loading) {
-            this.elements.list.classList.add('loading');
-        } else {
-            this.elements.list.classList.remove('loading');
-        }
-    }
+//         if (loading) {
+//             this.elements.list.classList.add('loading');
+//         } else {
+//             this.elements.list.classList.remove('loading');
+//         }
+//     }
 
-    updateEmptyState(isEmpty) {
-        if (this.elements.emptyMsg) {
-            this.elements.emptyMsg.style.display = isEmpty ? 'block' : 'none';
-        }
+//     updateEmptyState(isEmpty) {
+//         if (this.elements.emptyMsg) {
+//             this.elements.emptyMsg.style.display = isEmpty ? 'block' : 'none';
+//         }
         
-        if (isEmpty) {
-            this.elements.list.classList.add('empty');
-        } else {
-            this.elements.list.classList.remove('empty');
-        }
-    }
+//         if (isEmpty) {
+//             this.elements.list.classList.add('empty');
+//         } else {
+//             this.elements.list.classList.remove('empty');
+//         }
+//     }
 
-    // =============================================
-    // EVENT HANDLERS
-    // =============================================
+//     // =============================================
+//     // EVENT HANDLERS
+//     // =============================================
 
-    handleScroll() {
-        if (!this.state.hasMore || this.state.isLoading) return;
+//     handleScroll() {
+//         if (!this.state.hasMore || this.state.isLoading) return;
         
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const scrollHeight = document.documentElement.scrollHeight;
-        const clientHeight = window.innerHeight;
+//         const scrollTop = window.scrollY || document.documentElement.scrollTop;
+//         const scrollHeight = document.documentElement.scrollHeight;
+//         const clientHeight = window.innerHeight;
         
-        // Load more when 80% from bottom
-        if (scrollTop + clientHeight >= scrollHeight * 0.8) {
-            this.loadActivities(this.state.currentPage + 1, false);
-        }
-    }
+//         // Load more when 80% from bottom
+//         if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+//             this.loadActivities(this.state.currentPage + 1, false);
+//         }
+//     }
 
-    handleError(error) {
-        console.error('Activity loading error:', error);
+//     handleError(error) {
+//         console.error('Activity loading error:', error);
         
-        // Show error state
-        this.elements.list.innerHTML = `
-            <li class="activity-error">
-                <div class="activity-icon">
-                    <i class="fas fa-exclamation-triangle text-danger"></i>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Failed to load activities</div>
-                    <div class="activity-time">Click to retry</div>
-                </div>
-                <div class="activity-amount">
-                    <button onclick="window.activityManager.loadActivities()" class="btn-retry">
-                        <i class="fas fa-redo"></i>
-                    </button>
-                </div>
-            </li>
-        `;
+//         // Show error state
+//         this.elements.list.innerHTML = `
+//             <li class="activity-error">
+//                 <div class="activity-icon">
+//                     <i class="fas fa-exclamation-triangle text-danger"></i>
+//                 </div>
+//                 <div class="activity-details">
+//                     <div class="activity-title">Failed to load activities</div>
+//                     <div class="activity-time">Click to retry</div>
+//                 </div>
+//                 <div class="activity-amount">
+//                     <button onclick="window.activityManager.loadActivities()" class="btn-retry">
+//                         <i class="fas fa-redo"></i>
+//                     </button>
+//                 </div>
+//             </li>
+//         `;
         
-        this.elements.list.classList.add('error');
-    }
+//         this.elements.list.classList.add('error');
+//     }
 
-    // =============================================
-    // AUTO-REFRESH & UTILITIES
-    // =============================================
+//     // =============================================
+//     // AUTO-REFRESH & UTILITIES
+//     // =============================================
 
-    startAutoRefresh() {
-        setInterval(() => {
-            if (this.shouldRefresh() && !this.state.isLoading) {
-                this.loadActivities(1, false);
-            }
-        }, this.config.refreshInterval);
-    }
+//     startAutoRefresh() {
+//         setInterval(() => {
+//             if (this.shouldRefresh() && !this.state.isLoading) {
+//                 this.loadActivities(1, false);
+//             }
+//         }, this.config.refreshInterval);
+//     }
 
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+//     delay(ms) {
+//         return new Promise(resolve => setTimeout(resolve, ms));
+//     }
 
-    dispatchActivityUpdateEvent(count) {
-        const event = new CustomEvent('activitiesUpdated', {
-            detail: {
-                count: count,
-                timestamp: new Date(),
-                activities: this.state.activities
-            }
-        });
-        document.dispatchEvent(event);
-        document.addEventListener('activitiesUpdated', (event) => {
-    const activities = event.detail.activities || [];
-    updateRecentActivitySummary({ activities }); 
-});
+//     dispatchActivityUpdateEvent(count) {
+//         const event = new CustomEvent('activitiesUpdated', {
+//             detail: {
+//                 count: count,
+//                 timestamp: new Date(),
+//                 activities: this.state.activities
+//             }
+//         });
+//         document.dispatchEvent(event);
+//         document.addEventListener('activitiesUpdated', (event) => {
+//     const activities = event.detail.activities || [];
+//     updateRecentActivitySummary({ activities }); 
+// });
 
-    }
+//     }
 
-    // =============================================
-    // PUBLIC METHODS
-    // =============================================
+//     // =============================================
+//     // PUBLIC METHODS
+//     // =============================================
 
-    refresh() {
-        this.loadActivities(1, false);
-    }
+//     refresh() {
+//         this.loadActivities(1, false);
+//     }
 
-    addActivity(activity) {
-        this.state.activities.unshift(activity);
+//     addActivity(activity) {
+//         this.state.activities.unshift(activity);
         
-        if (this.state.activities.length > this.config.pageSize * 2) {
-            this.state.activities = this.state.activities.slice(0, this.config.pageSize);
-        }
+//         if (this.state.activities.length > this.config.pageSize * 2) {
+//             this.state.activities = this.state.activities.slice(0, this.config.pageSize);
+//         }
         
-        this.renderActivities();
-    }
+//         this.renderActivities();
+//     }
 
-    getStats() {
-        return {
-            total: this.state.activities.length,
-            lastUpdate: this.state.lastUpdate,
-            types: this.state.activities.reduce((acc, activity) => {
-                acc[activity.type] = (acc[activity.type] || 0) + 1;
-                return acc;
-            }, {})
-        };
-    }
-}
+//     getStats() {
+//         return {
+//             total: this.state.activities.length,
+//             lastUpdate: this.state.lastUpdate,
+//             types: this.state.activities.reduce((acc, activity) => {
+//                 acc[activity.type] = (acc[activity.type] || 0) + 1;
+//                 return acc;
+//             }, {})
+//         };
+//     }
+// }
 
-class DailyBonusNotifier {
-    constructor() {
-        this.notificationContainer = null;
-        this.init();
-    }
+// class DailyBonusNotifier {
+//     constructor() {
+//         this.notificationContainer = null;
+//         this.init();
+//     }
 
-    init() {
-        // Create notification container
-        this.createNotificationContainer();
+//     init() {
+//         // Create notification container
+//         this.createNotificationContainer();
         
-        // Check for new bonuses on page load
-        this.checkForNewBonuses();
+//         // Check for new bonuses on page load
+//         this.checkForNewBonuses();
         
-        // Set up periodic checks (every 30 seconds)
-        setInterval(() => this.checkForNewBonuses(), 30000);
-    }
+//         // Set up periodic checks (every 30 seconds)
+//         setInterval(() => this.checkForNewBonuses(), 30000);
+//     }
 
-    createNotificationContainer() {
-        this.notificationContainer = document.createElement('div');
-        this.notificationContainer.id = 'bonus-notifications';
-        this.notificationContainer.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            max-width: 350px;
-        `;
-        document.body.appendChild(this.notificationContainer);
-    }
+//     createNotificationContainer() {
+//         this.notificationContainer = document.createElement('div');
+//         this.notificationContainer.id = 'bonus-notifications';
+//         this.notificationContainer.style.cssText = `
+//             position: fixed;
+//             top: 20px;
+//             right: 20px;
+//             z-index: 10000;
+//             max-width: 350px;
+//         `;
+//         document.body.appendChild(this.notificationContainer);
+//     }
 
-    async checkForNewBonuses() {
-        try {
-            const response = await fetch('/api/user/today-bonus');
-            const data = await response.json();
+//     async checkForNewBonuses() {
+//         try {
+//             const response = await fetch('/api/user/today-bonus');
+//             const data = await response.json();
             
-            if (data.has_bonus && data.amount > 0) {
-                this.showBonusNotification(data.amount, data.package_name);
+//             if (data.has_bonus && data.amount > 0) {
+//                 this.showBonusNotification(data.amount, data.package_name);
                 
-                // Mark as seen to prevent duplicate notifications
-                await this.markBonusAsSeen(data.bonus_id);
-            }
-        } catch (error) {
-            console.log('Error checking bonuses:', error);
-        }
-    }
+//                 // Mark as seen to prevent duplicate notifications
+//                 await this.markBonusAsSeen(data.bonus_id);
+//             }
+//         } catch (error) {
+//             console.log('Error checking bonuses:', error);
+//         }
+//     }
 
-    showBonusNotification(amount, packageName = '') {
-        // Check if notification already exists
-        const existingNotification = document.querySelector('.bonus-notification');
-        if (existingNotification) {
-            existingNotification.remove();
-        }
+//     showBonusNotification(amount, packageName = '') {
+//         // Check if notification already exists
+//         const existingNotification = document.querySelector('.bonus-notification');
+//         if (existingNotification) {
+//             existingNotification.remove();
+//         }
 
-        const notification = document.createElement('div');
-        notification.className = 'bonus-notification';
-        notification.style.cssText = `
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            animation: slideIn 0.5s ease-out;
-            position: relative;
-            min-width: 300px;
-        `;
+//         const notification = document.createElement('div');
+//         notification.className = 'bonus-notification';
+//         notification.style.cssText = `
+//             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+//             color: white;
+//             padding: 15px 20px;
+//             margin-bottom: 10px;
+//             border-radius: 10px;
+//             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+//             animation: slideIn 0.5s ease-out;
+//             position: relative;
+//             min-width: 300px;
+//         `;
 
-        const message = packageName 
-            ? `Your daily bonus of $${amount} for ${packageName} has been paid! 🎉`
-            : `Your daily bonus of $${amount} has been paid! 🎉`;
+//         const message = packageName 
+//             ? `Your daily bonus of $${amount} for ${packageName} has been paid! 🎉`
+//             : `Your daily bonus of $${amount} has been paid! 🎉`;
 
-        notification.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">Daily Bonus Paid!</div>
-                    <div style="font-size: 14px; opacity: 0.9;">${message}</div>
-                </div>
-                <button class="close-bonus-notification" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; margin-left: 10px;">×</button>
-            </div>
-        `;
+//         notification.innerHTML = `
+//             <div style="display: flex; align-items: center; justify-content: space-between;">
+//                 <div>
+//                     <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">Daily Bonus Paid!</div>
+//                     <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+//                 </div>
+//                 <button class="close-bonus-notification" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; margin-left: 10px;">×</button>
+//             </div>
+//         `;
 
-        // Add close button functionality
-        notification.querySelector('.close-bonus-notification').addEventListener('click', () => {
-            this.removeNotification(notification);
-        });
+//         // Add close button functionality
+//         notification.querySelector('.close-bonus-notification').addEventListener('click', () => {
+//             this.removeNotification(notification);
+//         });
 
-        // Auto-remove after 8 seconds
-        setTimeout(() => {
-            this.removeNotification(notification);
-        }, 8000);
+//         // Auto-remove after 8 seconds
+//         setTimeout(() => {
+//             this.removeNotification(notification);
+//         }, 8000);
 
-        this.notificationContainer.appendChild(notification);
+//         this.notificationContainer.appendChild(notification);
 
-        // Add CSS animation
-        this.addNotificationStyles();
-    }
+//         // Add CSS animation
+//         this.addNotificationStyles();
+//     }
 
-    removeNotification(notification) {
-        notification.style.animation = 'slideOut 0.5s ease-in';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 500);
-    }
+//     removeNotification(notification) {
+//         notification.style.animation = 'slideOut 0.5s ease-in';
+//         setTimeout(() => {
+//             if (notification.parentNode) {
+//                 notification.parentNode.removeChild(notification);
+//             }
+//         }, 500);
+//     }
 
-    addNotificationStyles() {
-        if (!document.getElementById('bonus-notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'bonus-notification-styles';
-            styles.textContent = `
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                @keyframes slideOut {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                }
-                .bonus-notification:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-                    transition: all 0.3s ease;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-    }
+//     addNotificationStyles() {
+//         if (!document.getElementById('bonus-notification-styles')) {
+//             const styles = document.createElement('style');
+//             styles.id = 'bonus-notification-styles';
+//             styles.textContent = `
+//                 @keyframes slideIn {
+//                     from {
+//                         transform: translateX(100%);
+//                         opacity: 0;
+//                     }
+//                     to {
+//                         transform: translateX(0);
+//                         opacity: 1;
+//                     }
+//                 }
+//                 @keyframes slideOut {
+//                     from {
+//                         transform: translateX(0);
+//                         opacity: 1;
+//                     }
+//                     to {
+//                         transform: translateX(100%);
+//                         opacity: 0;
+//                     }
+//                 }
+//                 .bonus-notification:hover {
+//                     transform: translateY(-2px);
+//                     box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+//                     transition: all 0.3s ease;
+//                 }
+//             `;
+//             document.head.appendChild(styles);
+//         }
+//     }
 
-    async markBonusAsSeen(bonusId) {
-        try {
-            await fetch('/api/user/mark-bonus-seen', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ bonus_id: bonusId })
-            });
-        } catch (error) {
-            console.log('Error marking bonus as seen:', error);
-        }
-    }
-}
+//     async markBonusAsSeen(bonusId) {
+//         try {
+//             await fetch('/api/user/mark-bonus-seen', {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                 },
+//                 body: JSON.stringify({ bonus_id: bonusId })
+//             });
+//         } catch (error) {
+//             console.log('Error marking bonus as seen:', error);
+//         }
+//     }
+// }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    new DailyBonusNotifier();
-});
+// // Initialize when DOM is loaded
+// document.addEventListener('DOMContentLoaded', function() {
+//     new DailyBonusNotifier();
+// });
 
-// Add this to your dashboard to show recent bonuses
-class BonusDashboard {
-    constructor() {
-        this.container = document.getElementById('bonus-history');
-        if (this.container) {
-            this.loadBonusHistory();
-        }
-    }
+// // Add this to your dashboard to show recent bonuses
+// class BonusDashboard {
+//     constructor() {
+//         this.container = document.getElementById('bonus-history');
+//         if (this.container) {
+//             this.loadBonusHistory();
+//         }
+//     }
 
-    async loadBonusHistory() {
-        try {
-            const response = await fetch('/api/user/bonus-history');
-            const bonuses = await response.json();
+//     async loadBonusHistory() {
+//         try {
+//             const response = await fetch('/api/user/bonus-history');
+//             const bonuses = await response.json();
             
-            this.renderBonusHistory(bonuses);
-        } catch (error) {
-            console.log('Error loading bonus history:', error);
-        }
-    }
+//             this.renderBonusHistory(bonuses);
+//         } catch (error) {
+//             console.log('Error loading bonus history:', error);
+//         }
+//     }
 
-    renderBonusHistory(bonuses) {
-        if (!bonuses.length) {
-            this.container.innerHTML = '<p>No bonus history available.</p>';
-            return;
-        }
+//     renderBonusHistory(bonuses) {
+//         if (!bonuses.length) {
+//             this.container.innerHTML = '<p>No bonus history available.</p>';
+//             return;
+//         }
 
-        const html = `
-            <div class="bonus-history-header">
-                <h3>Recent Daily Bonuses</h3>
-            </div>
-            <div class="bonus-list">
-                ${bonuses.map(bonus => `
-                    <div class="bonus-item">
-                        <div class="bonus-amount">+$${bonus.amount}</div>
-                        <div class="bonus-details">
-                            <div class="bonus-type">Daily Bonus</div>
-                            <div class="bonus-date">${new Date(bonus.date).toLocaleDateString()}</div>
-                        </div>
-                        <div class="bonus-package">Package #${bonus.package_id}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
+//         const html = `
+//             <div class="bonus-history-header">
+//                 <h3>Recent Daily Bonuses</h3>
+//             </div>
+//             <div class="bonus-list">
+//                 ${bonuses.map(bonus => `
+//                     <div class="bonus-item">
+//                         <div class="bonus-amount">+$${bonus.amount}</div>
+//                         <div class="bonus-details">
+//                             <div class="bonus-type">Daily Bonus</div>
+//                             <div class="bonus-date">${new Date(bonus.date).toLocaleDateString()}</div>
+//                         </div>
+//                         <div class="bonus-package">Package #${bonus.package_id}</div>
+//                     </div>
+//                 `).join('')}
+//             </div>
+//         `;
 
-        this.container.innerHTML = html;
-    }
-}
+//         this.container.innerHTML = html;
+//     }
+// }
 
-// Initialize RecentActivityManager when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize EarningsDashboard (you already have this)
-    window.earningsDashboard = new EarningsDashboard();
+// // Initialize RecentActivityManager when DOM is ready
+// document.addEventListener('DOMContentLoaded', function() {
+//     // Initialize EarningsDashboard (you already have this)
+//     window.earningsDashboard = new EarningsDashboard();
     
-    // Initialize RecentActivityManager (MISSING - add this)
-    window.activityManager = new RecentActivityManager();
+//     // Initialize RecentActivityManager (MISSING - add this)
+//     window.activityManager = new RecentActivityManager();
 
-        document.addEventListener('activitiesUpdated', (event) => {
-        const activities = event.detail.activities || [];
-        updateRecentActivitySummary({ activities });
-    });
+//         document.addEventListener('activitiesUpdated', (event) => {
+//         const activities = event.detail.activities || [];
+//         updateRecentActivitySummary({ activities });
+//     });
     
-    console.log("✅ RecentActivityManager initialized");
-});
+//     console.log("✅ RecentActivityManager initialized");
+// });
 
-//recent summary
-function updateRecentActivitySummary(data) {
-    const activities = data.activities || [];
+// //recent summary
+// function updateRecentActivitySummary(data) {
+//     const activities = data.activities || [];
 
-    // Elements
-    const weekCountEl = document.getElementById("activityWeekCount");
-    const lastTitleEl = document.getElementById("lastActivityTitle");
-    const lastAmountEl = document.getElementById("lastActivityAmount");
-    const lastTimeEl = document.getElementById("lastActivityTime");
+//     // Elements
+//     const weekCountEl = document.getElementById("activityWeekCount");
+//     const lastTitleEl = document.getElementById("lastActivityTitle");
+//     const lastAmountEl = document.getElementById("lastActivityAmount");
+//     const lastTimeEl = document.getElementById("lastActivityTime");
 
-    // 1. Set weekly transaction count
-    weekCountEl.textContent = activities.length;
+//     // 1. Set weekly transaction count
+//     weekCountEl.textContent = activities.length;
 
-    if (activities.length === 0) {
-        lastTitleEl.textContent = "No activity yet";
-        lastAmountEl.textContent = "—";
-        lastTimeEl.textContent = "—";
-        return;
-    }
+//     if (activities.length === 0) {
+//         lastTitleEl.textContent = "No activity yet";
+//         lastAmountEl.textContent = "—";
+//         lastTimeEl.textContent = "—";
+//         return;
+//     }
 
-    // 2. Get MOST RECENT activity
-    const latest = activities[0];
+//     // 2. Get MOST RECENT activity
+//     const latest = activities[0];
 
-    // 3. Update summary fields
-    lastTitleEl.textContent = latest.title;
-    lastAmountEl.textContent = `${latest.amount.toLocaleString()} ${latest.currency}`;
+//     // 3. Update summary fields
+//     lastTitleEl.textContent = latest.title;
+//     lastAmountEl.textContent = `${latest.amount.toLocaleString()} ${latest.currency}`;
     
-    // Format time
-    const ts = new Date(latest.timestamp);
-    lastTimeEl.textContent = ts.toLocaleString();
-}
+//     // Format time
+//     const ts = new Date(latest.timestamp);
+//     lastTimeEl.textContent = ts.toLocaleString();
+// }
