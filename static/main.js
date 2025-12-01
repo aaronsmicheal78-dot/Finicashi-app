@@ -189,6 +189,8 @@ function handleRegister(event) {
         
         if (data.success) {
             showAlert("Registration successful! Welcome to Finicashi. Redirecting...", "success");
+           //     if (data.success || response.status === 201) {
+        //showAlert("Registration successful! Welcome to Finicashi. Redirecting...", "success");
             
             // Redirect after successful registration
             setTimeout(() => {
@@ -196,7 +198,7 @@ function handleRegister(event) {
             }, 2000);
         } else {
             // Handle case where response is ok but success is false
-            showAlert("Registration completed but there was an issue. Please contact support.", "warning");
+            showAlert("Registration completed. Please Login.", "warning");
             
             // Reset button state
             if (submitButton) {
