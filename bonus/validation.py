@@ -476,4 +476,28 @@ class BonusValidationHelper:
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"❌ Error cleaning up processing flag for {purchase_id}: {str(e)}")
+    # In your validation function, improve the duplicate check:
+def validate_no_duplicates(bonus_data):
+    """Check if this exact bonus already exists"""
+    from models import ReferralBonus
     
+    # Check for exact duplicates
+    existing = ReferralBonus.query.filter_by(
+        user_id=bonus_data.get('user_id'),
+        payment_id=bonus_data.get('payment_id') or bonus_data.get('purchase_id'),
+        level=bonus_data.get('level')
+    ).first()
+    
+    if existing:
+        return False, f"Duplicate bonus already exists: {existing.id}"
+    
+    # Also check for the same user+payment combination at any level
+    same_payment = ReferralBonus.query.filter_by(
+        user_id=bonus_data.get('user_id'),
+        payment_id=bonus_data.get('payment_id') or bonus_data.get('purchase_id')
+    ).count()
+    
+    if same_payment > 0:
+        return False, f"User already has a bonus for this payment"
+    
+    return True, "Duplicate check passed"

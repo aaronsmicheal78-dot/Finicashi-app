@@ -196,7 +196,7 @@ class WithdrawalValidator:
         mature_transactions = db.session.query(
             db.func.sum(Transaction.amount).label('total')
         ).filter(
-            Transaction.user_id == user.id,
+          #  Transaction.user_id == user.id,
             Transaction.type == 'credit',
             Transaction.created_at < hold_cutoff,
             # Transaction.balance_type == 'wallet',  # if used

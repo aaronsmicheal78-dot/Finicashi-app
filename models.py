@@ -77,7 +77,7 @@ class User(db.Model, BaseMixin):
     # Relationships
     profile = db.relationship('UserProfile', uselist=False, back_populates='user', cascade="all,delete-orphan")
     wallet = db.relationship('Wallet', uselist=False, back_populates='user', cascade="all,delete-orphan")
-    referrals = db.relationship('Referral', back_populates='referrer', foreign_keys='Referral.referrer_id')
+    referrals = db.relationship('Referral', back_populates='referrer', foreign_keys='Referral.referrer_id', overlaps="referrals_made")
     
     bonuses = db.relationship('Bonus', back_populates='user', lazy='dynamic')
     packages = db.relationship('Package', back_populates='user')
@@ -404,7 +404,7 @@ class ReferralBonus(db.Model, BaseMixin):
     referred_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     level = db.Column(db.Integer, nullable=False)  # 1-20
     referrer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    bonus_amount = db.Column(db.Float, nullable=False)
+    bonus_amount = db.Column(db.Numeric(10, 2), nullable=False)
     ancestor_id = db.Column(db.Integer, nullable=True)
     amount = db.column_property(bonus_amount)
    

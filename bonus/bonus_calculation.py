@@ -57,8 +57,10 @@ class BonusCalculationHelper:
                 
                 # Sum bonuses for this level
                 for bonus in level_bonuses:
+                    
+                    current_app.logger.info(f"Adding bonus: {bonus}")
                     total_bonus_amount += Decimal(str(bonus.get('amount', 0)))
-            
+            current_app.logger.info(f"Adding bonus: {total_bonus_amount}")
             audit_info['calculation_end'] = datetime.now(timezone.utc)
             audit_info['levels_processed'] = len(set(bonus.get('level', 0) for bonus in bonuses))
             audit_info['total_bonus_calculated'] = float(total_bonus_amount)
@@ -76,6 +78,16 @@ class BonusCalculationHelper:
             audit_info['error'] = str(e)
             audit_info['calculation_end'] = datetime.now(timezone.utc)
             return False, [], f"Calculation failed: {str(e)}", audit_info
+        
+
+    def safe_decimal(value):
+        import decimal
+        try:
+            return Decimal(str(value))
+        except (TypeError, decimal.InvalidOperation) as e:
+            current_app.logger.error(f"Invalid bonus amount: {value} - {e}")
+            return Decimal('0')
+
         
     @staticmethod
     def _calculate_bonuses_for_level(user: User, payment: Payment, level: int, audit_info: Dict) -> List[Dict]:
@@ -150,42 +162,114 @@ class BonusCalculationHelper:
     #     return bonuses
     # In your bonus_calculation.py, update the _get_users_at_referral_level method:
 
-    
     @staticmethod
     def _get_users_at_referral_level(start_user: User, target_level: int) -> List[User]:
         """
-        FIXED VERSION: Correctly traverse up the referral chain
+        Clean, accurate referral-level traversal.
+        Returns exactly one user at the requested level, or [] if none exists.
         """
         try:
+            if not start_user or target_level < 1:
+                return []
+
+            # -----------------------------------------
+            # LEVEL 1: Direct referrer
+            # -----------------------------------------
+            current_referrer_id = start_user.referred_by
             if target_level == 1:
-                # Direct referrer
-                if start_user.referred_by:
-                    referrer = User.query.get(start_user.referred_by)
-                    current_app.logger.info(f"🔍 Level 1: User {start_user.id} -> Referrer {referrer.id if referrer else 'None'}")
-                    return [referrer] if referrer else []
-                return []
-            
-            # For levels 2+, start from the direct referrer and traverse up
-            current_user_id = start_user.referred_by
-            if not current_user_id:
-                return []
-            
-            # Traverse up the chain (target_level - 1) more times from the direct referrer
-            for step in range(1, target_level):  # We already have level 1, so start from step 1
-                current_user = User.query.get(current_user_id)
-                if not current_user or not current_user.referred_by:
-                    return []  # Chain ended
+                if not current_referrer_id:
+                    current_app.logger.info(f"🔍 Level 1: User {start_user.id} has no referrer")
+                    return []
                 
-                current_user_id = current_user.referred_by  # Move up the chain
-                current_app.logger.info(f"🔍 Level {target_level}, Step {step}: User {current_user.id} -> Referrer {current_user_id}")
-            
-            # Get the final user at the target level
-            final_user = User.query.get(current_user_id)
+                try:
+                    current_referrer_id = int(current_referrer_id)
+                except:
+                    return []
+
+                referrer = User.query.get(current_referrer_id)
+                current_app.logger.info(f"🔍 Level 1: User {start_user.id} → Referrer {referrer.id if referrer else 'None'}")
+                return [referrer] if referrer else []
+
+            # -----------------------------------------
+            # LEVEL 2+ : Traverse up (target_level - 1) hops
+            # -----------------------------------------
+            # First hop = direct referrer (level 1)
+            try:
+                current_referrer_id = int(current_referrer_id) if current_referrer_id else None
+            except:
+                current_referrer_id = None
+
+            if not current_referrer_id:
+                return []
+
+            # We already are at level 1, so do (target_level - 1) extra hops
+            hops_needed = target_level - 1
+
+            for hop in range(hops_needed):
+                current_user = User.query.get(current_referrer_id)
+                if not current_user:
+                    return []
+
+                # If this user has no referrer → chain ends
+                if not current_user.referred_by:
+                    current_app.logger.info(
+                        f"🔍 Chain ended early at hop {hop+1} for target level {target_level}"
+                    )
+                    return []
+
+                try:
+                    current_referrer_id = int(current_user.referred_by)
+                except:
+                    return []
+
+                current_app.logger.info(
+                    f"🔍 Hop {hop+1}/{hops_needed}: "
+                    f"{current_user.id} → Referrer {current_referrer_id}"
+                )
+
+            # Now `current_referrer_id` is the ancestor at the target level
+            final_user = User.query.get(current_referrer_id)
             return [final_user] if final_user else []
-            
+
         except Exception as e:
             current_app.logger.error(f"Error getting users at level {target_level}: {str(e)}")
             return []
+
+    # @staticmethod
+    # def _get_users_at_referral_level(start_user: User, target_level: int) -> List[User]:
+    #     """
+    #     FIXED VERSION: Correctly traverse up the referral chain
+    #     """
+    #     try:
+    #         if target_level == 1:
+    #             # Direct referrer
+    #             if start_user.referred_by:
+    #                 referrer = User.query.get(start_user.referred_by)
+    #                 current_app.logger.info(f"🔍 Level 1: User {start_user.id} -> Referrer {referrer.id if referrer else 'None'}")
+    #                 return [referrer] if referrer else []
+    #             return []
+            
+    #         # For levels 2+, start from the direct referrer and traverse up
+    #         current_user_id = start_user.referred_by
+    #         if not current_user_id:
+    #             return []
+            
+    #         # Traverse up the chain (target_level - 1) more times from the direct referrer
+    #         for step in range(1, target_level):  # We already have level 1, so start from step 1
+    #             current_user = User.query.get(current_user_id)
+    #             if not current_user or not current_user.referred_by:
+    #                 return []  # Chain ended
+                
+    #             current_user_id = current_user.referred_by  # Move up the chain
+    #             current_app.logger.info(f"🔍 Level {target_level}, Step {step}: User {current_user.id} -> Referrer {current_user_id}")
+            
+    #         # Get the final user at the target level
+    #         final_user = User.query.get(current_user_id)
+    #         return [final_user] if final_user else []
+            
+    #     except Exception as e:
+    #         current_app.logger.error(f"Error getting users at level {target_level}: {str(e)}")
+    #         return []
     
     @staticmethod
     def _calculate_single_bonus(target_user: User, payment: Payment, level: int, original_payer_id: int) -> Optional[Dict]:
