@@ -105,7 +105,11 @@ class WithdrawalValidator:
             
             # 4️⃣ Virtual Unified Balance validation
             actual_balance = Decimal(str(user.actual_balance or 0))
-            wallet_balance = Decimal(str(user.wallet.balance or 0))
+            wallet = user.wallet
+            wallet_balance = Decimal(str(wallet.balance)) if wallet and wallet.balance else Decimal("0")
+            if not wallet:
+               logger.warning(f"User {user.id} has no wallet record. Defaulting balance to 0.")
+
             print(f"YOUR Wallet {user} is {wallet_balance}")
             
             # Check total balance sufficiency
@@ -143,24 +147,41 @@ class WithdrawalValidator:
         """
         Check if required wallet balance portion is mature.
         Only check wallet balance if actual_balance is insufficient.
+        Safely handles users without wallets.
         """
+
+        # If actual balance covers withdrawal → no wallet needed
         if withdrawal_amount <= actual_balance:
-            return True  # No wallet balance needed, so maturity doesn't matter
-            
-        wallet_needed = withdrawal_amount - actual_balance
+            return True
+
+        wallet = getattr(user, "wallet", None)
+
+        # If user has NO wallet at all → wallet funds = 0 → not mature
+        if wallet is None:
+            logger.warning(f"User {user.id} has no wallet record. Wallet maturity = 0.")
+            return False
+
+        # Get mature portion safely
         mature_wallet = WithdrawalValidator._get_mature_wallet_balance(user)
-        
+
+        if mature_wallet is None:
+            mature_wallet = Decimal("0")
+
+        wallet_needed = withdrawal_amount - actual_balance
+
         return wallet_needed <= mature_wallet
+
 
     @staticmethod
     def _get_mature_wallet_balance(user: User) -> Decimal:
         """
-        Calculate wallet balance that's mature (24h old)
-        Only wallet credits older than 24 hours are withdrawable
+        Calculate mature wallet balance (funds older than 24 hours).
+        Fully safe version: handles missing wallet, null balances, and missing transactions.
         """
+
         hold_cutoff = datetime.now(timezone.utc) - timedelta(hours=WithdrawalConfig.WALLET_HOLD_PERIOD_HOURS)
-        
-        # Sum mature referral bonuses (older than 24h)
+
+        # 1️⃣ Mature referral bonuses
         mature_bonuses = db.session.query(
             db.func.sum(ReferralBonus.amount).label('total')
         ).filter(
@@ -168,23 +189,35 @@ class WithdrawalValidator:
             ReferralBonus.created_at < hold_cutoff,
             ReferralBonus.status == "active"
         ).scalar() or Decimal('0')
-        
-        # Sum mature transactions that contribute to wallet balance
+
+        mature_bonuses = Decimal(str(mature_bonuses))
+
+        # 2️⃣ Mature credit transactions
         mature_transactions = db.session.query(
             db.func.sum(Transaction.amount).label('total')
         ).filter(
-           # Transaction.user_id == user.id,
+            Transaction.user_id == user.id,
             Transaction.type == 'credit',
             Transaction.created_at < hold_cutoff,
-            #Transaction.balance_type == 'wallet'  
+            # Transaction.balance_type == 'wallet',  # if used
         ).scalar() or Decimal('0')
-        
-        mature_bonuses = Decimal(str(mature_bonuses))
+
         mature_transactions = Decimal(str(mature_transactions))
-        
-        # Cannot exceed total wallet balance
-        total_wallet = Decimal(str(user.wallet.balance or '0'))
-        return min(mature_bonuses + mature_transactions, total_wallet)
+
+        # 3️⃣ Safe wallet retrieval
+        wallet = getattr(user, "wallet", None)
+
+        if wallet is None or wallet.balance is None:
+            logger.warning(f"User {user.id} has no wallet record or wallet.balance is None. Mature wallet = 0.")
+            total_wallet = Decimal("0")
+        else:
+            total_wallet = Decimal(str(wallet.balance))
+
+        # 4️⃣ Final mature amount (cannot exceed actual wallet balance)
+        mature_total = mature_bonuses + mature_transactions
+
+        return min(mature_total, total_wallet)
+
 
 # ==========================================================
 #                  BALANCE MANAGER (VIRTUAL UNIFIED)
@@ -239,9 +272,9 @@ class BalanceManager:
                 'actual_balance': user.actual_balance,
                 'wallet_balance': user.wallet.balance if user.wallet else Decimal('0'),
                 'actual_deducted': actual_deducted,
-                'wallet_deducted': wallet_deducted,
-                'previous_actual': actual_balance,
-                'previous_wallet': wallet_balance
+                'wallet_deducted': wallet_deducted
+              #  'previous_actual': actual_balance,
+               # 'previous_wallet': wallet_balance
             }
             
             return True, "Balance processing successful. Enjoy with Finicash", balance_details
@@ -309,9 +342,9 @@ class WithdrawalRecordManager:
                 reference=reference,
                 external_ref=None,
                 actual_balance_deducted=balance_details.get('actual_deducted', Decimal('0')),
-                wallet_balance_deducted=balance_details.get('wallet_deducted', Decimal('0')),
-                previous_actual_balance=balance_details.get('previous_actual', Decimal('0')),
-                previous_wallet_balance=balance_details.get('previous_wallet', Decimal('0'))
+                wallet_balance_deducted=balance_details.get('wallet_deducted', Decimal('0'))
+              #  previous_actual_balance=balance_details.get('previous_actual', Decimal('0')),
+              #  previous_wallet_balance=balance_details.get('previous_wallet', Decimal('0'))
             )
             
             db.session.add(withdrawal)
