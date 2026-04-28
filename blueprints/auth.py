@@ -254,6 +254,7 @@ def login():
     
     user = User.query.filter(
         (User.email == email_or_phone) | (User.phone == email_or_phone)).first()
+    print('USER FOUND:', user)
 
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401

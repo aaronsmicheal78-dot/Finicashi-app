@@ -91,7 +91,7 @@ class BonusPaymentHelper:
             amount_decimal = Decimal(str(amount))
             new_balance = current_balance + amount_decimal
             wallet.balance = new_balance
-            wallet.updated_at = datetime.utcnow()
+            wallet.updated_at = datetime.now(timezone.utc)
             db.session.add(wallet)
             import uuid
             # Create transaction record
@@ -107,7 +107,7 @@ class BonusPaymentHelper:
                     'user_id': user_id,
                     'processed_at': datetime.now(timezone.utc).isoformat()
                 },
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
             db.session.add(transaction)
 

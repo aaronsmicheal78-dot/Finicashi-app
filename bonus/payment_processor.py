@@ -58,13 +58,13 @@ def process_package_purchase(payment):
     catalog_id=package_catalog.id,
     status='pending'
     ).first()
-   
-    if not existing_package:
-       from blueprints.payments_helpers import create_user_package   
-       new_package = create_user_package(user, package_catalog)
+    print("package already created:", package )
+    if not existing_package: 
+       new_package = existing_package
+    print("Using existing package:", package)                                            
     
 
-    print("✅ Package created for user")
+    # print("✅ Package created for user")
     print("SESSION USER REFERRER:", user.referred_by)
     
 

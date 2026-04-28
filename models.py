@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import enum
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import UniqueConstraint, Index, event, Numeric, text
+from sqlalchemy import UniqueConstraint, Index, event, Numeric, text, DateTime, func
 from extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
 from enum import Enum
@@ -13,6 +13,27 @@ from sqlalchemy.sql import func
 # ===========================================================
 # ENUM DEFINITIONS
 # ===========================================================
+from datetime import timezone
+
+def utc_iso(dt):
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+from typing import Optional
+
+
+def ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+def utc_iso(dt: Optional[datetime]) -> Optional[str]:
+    dt = ensure_utc(dt)
+    return dt.isoformat() if dt else None
 
 class TransactionType(Enum):
     PACKAGE = "package"
@@ -41,10 +62,16 @@ class KycStatus(enum.Enum):
 
 class BaseMixin:
     """Provides created_at and updated_at timestamps to inheriting models."""
-    created_at = db.Column(db.DateTime(timezone=True), default=db.func.now())
-    updated_at = db.Column(db.DateTime(timezone=True),
-                           default=db.func.now(),
-                           onupdate=db.func.now())
+    created_at = db.Column(
+    DateTime(timezone=True),
+    server_default=func.now()
+    )
+
+    updated_at = db.Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
 
 # ===========================================================
 # USER MODELS
@@ -175,16 +202,23 @@ class User(db.Model, BaseMixin):
                     "status": getattr(p, 'status', 'unknown'),
                     "bonus_percentage": float(p.catalog.bonus_percentage) if p.catalog and p.catalog.bonus_percentage else 0,
                     "duration_days": p.catalog.duration_days if p.catalog else None,
-                    "activated_at": p.activated_at.isoformat() if getattr(p, 'activated_at', None) else None,
-                    "expires_at": (
-                        (p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at).isoformat()
-                        if getattr(p, 'expires_at', None) else None
-                    ),
+                    "activated_at": utc_iso(p.activated_at),
+                    "expires_at": utc_iso(p.expires_at),
                     "days_remaining": (
-                        ((p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at)
-                        - datetime.now(timezone.utc)).days
-                        if getattr(p, 'expires_at', None) else None
+                        (ensure_utc(p.expires_at) - datetime.now(timezone.utc)).days
+                        if p.expires_at else None
                     )
+
+                    # "activated_at": p.activated_at.isoformat() if getattr(p, 'activated_at', None) else None,
+                    # "expires_at": (
+                    #     (p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at).isoformat()
+                    #     if getattr(p, 'expires_at', None) else None
+                    # ),
+                    # "days_remaining": (
+                    #     ((p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at)
+                    #     - datetime.now(timezone.utc)).days
+                    #     if getattr(p, 'expires_at', None) else None
+                    # )
                 }
                 for p in active_packages
             ]
@@ -301,9 +335,17 @@ class PackageCatalog(db.Model):
     duration_days = db.Column(db.Integer, default=30)
     features = db.Column(db.JSON)  
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), 
-                          onupdate=db.func.current_timestamp())
+    created_at = db.Column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
+
+    updated_at = db.Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
+
 
 class Withdrawal(db.Model, BaseMixin):
     __tablename__ = 'withdrawals'
@@ -349,7 +391,10 @@ class Bonus(db.Model, BaseMixin):
     amount = db.Column(db.Numeric(precision=18, scale=2),  nullable=True)
     type = db.Column(db.String(50))  
     status = db.Column(db.String(20), default='active')
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(
+    DateTime(timezone=True),
+    server_default=func.now()
+)
     package_id = db.Column(db.Integer, db.ForeignKey('packages.id'))
     paid_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
@@ -373,13 +418,24 @@ class Package(db.Model, BaseMixin):
     
     
     activated_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    expires_at = db.Column(db.DateTime, nullable=True)
+    expires_at = db.Column(
+    DateTime(timezone=True),
+    server_default=None,
+    nullable=True
+)
+
     daily_bonus_rate = db.Column(db.Numeric(10, 5), nullable=False, default=0.05)  
     total_bonus_paid = db.Column(db.Numeric(10, 2), default=0)
 
     # New columns for Package model
-    last_bonus_date = db.Column(db.DateTime, nullable=True)
-    next_bonus_date = db.Column(db.DateTime, nullable=True)
+    last_bonus_date = db.Column(
+    DateTime(timezone=True),
+    nullable=True
+)
+    next_bonus_date = db.Column(
+        DateTime(timezone=True),
+        nullable=True
+    )
     bonus_count = db.Column(db.Integer, default=0)
     max_bonus_amount = db.Column(db.Numeric(15, 2), default=0)  
     
@@ -446,7 +502,10 @@ class Referral(db.Model, BaseMixin):
     ReferralBonus = db.Column(db.Integer, default=0)
     
     status = db.Column(db.String(20), default='pending')  
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(
+    DateTime(timezone=True),
+    server_default=func.now()
+)
     completed_at = db.Column(db.DateTime, nullable=True)
 
     referrer = db.relationship('User', foreign_keys=[referrer_id], backref='referrals_made')
@@ -536,12 +595,12 @@ class IdempotencyKey(db.Model, BaseMixin):
 
     @staticmethod
     def make_expires(ttl_seconds: int = 3600):
-        return datetime.utcnow() + timedelta(seconds=ttl_seconds)
+        return datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
 
     @staticmethod
     def cleanup_expired():
         """Remove expired idempotency keys."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         db.session.query(IdempotencyKey).filter(IdempotencyKey.expires_at < now).delete()
         db.session.commit()
 
@@ -554,7 +613,10 @@ class ReferralNetwork(db.Model, BaseMixin):
     descendant_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)  # Child/lower level user
     depth = db.Column(db.Integer, nullable=False)  # Level distance (1-20)
     path_length = db.Column(db.Integer, nullable=False)  # Direct path length
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp)
+    created_at = db.Column(
+    DateTime(timezone=True),
+    server_default=func.now()
+)
     
     # Index for efficient tree traversal
     __table_args__ = (
@@ -574,7 +636,10 @@ class ReferralBonusPlan(db.Model):
     bonus_percentage = db.Column(db.Numeric(5, 4), nullable=False)  # e.g., 0.10 for 10%
     minimum_qualifying_amount = db.Column(db.Numeric(18, 2), default=0)  # Min package amount to qualify
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(
+    DateTime(timezone=True),
+    server_default=func.now()
+)
     
     __table_args__ = (
         db.CheckConstraint('level >= 1 AND level <= 20', name='chk_level_range'),

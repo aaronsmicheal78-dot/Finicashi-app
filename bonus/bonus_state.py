@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from flask import current_app
 from models import ReferralBonus, User, Payment
@@ -83,7 +83,7 @@ class BonusStateHelper:
                 query = query.filter_by(user_id=user_id)
             
             if days:
-                cutoff_date = datetime.utcnow() - timedelta(days=days)
+                cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
                 query = query.filter(ReferralBonus.paid_at >= cutoff_date)
             
             paid_bonuses = query.all()
@@ -145,7 +145,7 @@ class BonusStateHelper:
         Get comprehensive bonus statistics
         """
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=time_period_days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=time_period_days)
             
             # Total bonuses
             total_bonuses = ReferralBonus.query.filter(

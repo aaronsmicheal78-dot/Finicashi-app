@@ -1,7 +1,7 @@
 import os, re, json, uuid, requests
 from flask import jsonify
 from models import db, Payment, PaymentStatus, PackageCatalog, TransactionType, Package
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 REQUEST_TIMEOUT_SECONDS = int(os.getenv('REQUEST_TIMEOUT_SECONDS', '60'))
@@ -266,8 +266,8 @@ def create_user_package(user, package_catalog: PackageCatalog):
         package_amount=package_catalog.amount,  
         daily_bonus_rate=Decimal("0.05"),
         total_bonus_paid=Decimal("0.00"),
-        activated_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(days=30)  
+        activated_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30)  
     )
     db.session.add(new_package)
     db.session.commit()

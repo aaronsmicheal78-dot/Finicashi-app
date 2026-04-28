@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class WithdrawalConfig:
     MIN_WITHDRAWAL = Decimal("5000")
     MAX_WITHDRAWAL = Decimal("100000")
-    WALLET_HOLD_PERIOD_HOURS = 24  # Wallet balance 24-hour hold
+    WALLET_HOLD_PERIOD_HOURS = 0  # Wallet balance 24-hour hold
     PROCESSING_FEE_PERCENT = Decimal("5.0")  
     
     @staticmethod
@@ -118,11 +118,11 @@ class WithdrawalValidator:
                 return False, "Insufficient balance"
             
             # 5️⃣ Wallet balance maturity check (24-hour hold)
-            if not WithdrawalValidator._is_wallet_balance_mature(user, amount_dec, actual_balance):
-                mature_wallet = WithdrawalValidator._get_mature_wallet_balance(user)
-                available_total = actual_balance + mature_wallet
-                if amount_dec > available_total:
-                    return False, "Patiently, Some wallet funds are still on hold for 24 hours. Thank you"
+            # if not WithdrawalValidator._is_wallet_balance_mature(user, amount_dec, actual_balance):
+            #     mature_wallet = WithdrawalValidator._get_mature_wallet_balance(user)
+            #     available_total = actual_balance + mature_wallet
+            #     if amount_dec > available_total:
+            #         return False, "Patiently, Some wallet funds are still on hold for 24 hours. Thank you"
             
             # 6️⃣ Duplicate pending withdrawals check
             five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)

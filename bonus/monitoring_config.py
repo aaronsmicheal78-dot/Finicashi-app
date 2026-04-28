@@ -1,5 +1,5 @@
 # monitoring_config.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import current_app
 import statistics
 
@@ -58,7 +58,7 @@ class BonusMonitoring:
             'success_rate': success_rate,
             'total_processes': len(self.metrics['processing_times']),
             'threat_level_distribution': threat_counts,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }
     
     def check_anomalies(self) -> List[Dict[str, Any]]:

@@ -10,6 +10,18 @@ import uuid
 
 from logger import app_logger as logger
 
+
+from datetime import datetime, timezone
+
+def utc_iso(dt):
+    if not dt:
+        return None
+    if isinstance(dt, str):
+        return dt
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat()
+
 def safe_marz_headers():
     """
     Returns HTTP headers required to call Marz endpoints securely.

@@ -304,13 +304,18 @@ def get_recent_activity():
         current_app.logger.error(traceback.format_exc())
         return jsonify({'error': 'Internal server error processing request'}), 500
 
-@activity_bp.route('/api/recent_activity/<int:user_id>', methods=['GET'])
-def get_user_recent_activity(user_id):
+@activity_bp.route('/api/recent_activity/user', methods=['GET'])
+def get_user_recent_activity():
     """
     Get recent activities for a SPECIFIC user
     """
-    print(f"USER RECENT ACTIVITY ENDPOINT HIT for user_id: {user_id}")
+    #print(f"USER RECENT ACTIVITY ENDPOINT HIT for user_id: {user_id}")
     try:
+        from flask import session
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "not logged in"})
+        #return get_user_recent_activity(user_id)
         page = request.args.get('page', 1, type=int)
         page_size = request.args.get('page_size', 
                                    current_app.config.get('DEFAULT_PAGE_SIZE', 20), 
