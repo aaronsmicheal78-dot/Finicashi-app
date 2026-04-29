@@ -6,7 +6,7 @@ from extensions import db
 from models import Payment, PackageCatalog, Package, User, ReferralBonus
 from bonus.validation import BonusValidationHelper
 from bonus.bonus_calculation import BonusCalculationHelper
-from bonus.bonus_payment import BonusPaymentHelper
+
 
 
 
@@ -78,7 +78,6 @@ def process_package_purchase(payment):
             print(f"⚠️ Payment {payment.id} already has {existing_bonuses} bonuses - skipping")
             return True, "Bonuses already processed"
 
-        # 1. Check if we can process bonuses for this purchase
         can_process, process_message, validation_result = BonusValidationHelper.can_process_bonuses(payment.id)
         print("SESSION USER REFERRER:", user.referred_by)
 
@@ -101,27 +100,70 @@ def process_package_purchase(payment):
                 return False, f"Bonus calculation failed: {calc_message}"
             
             print(f"📊 Calculation complete: {len(bonus_calculations)} bonuses calculated")
-            
-            # 3. Validate bonuses
+            # After calculate_all_bonuses_secure returns, BEFORE validation
+
+
+           # ✅ ADD THIS DEBUG CODE
+            print("\n🔍 DEBUG - Raw bonus_calculations before validation:")
+            for i, bonus in enumerate(bonus_calculations):
+                print(f"\n  Bonus {i+1}:")
+                print(f"    Keys: {list(bonus.keys())}")
+                print(f"    user_id: {bonus.get('user_id')}")
+                print(f"    referrer_id: {bonus.get('referrer_id')}")
+                print(f"    referred_id: {bonus.get('referred_id')}")
+                print(f"    level: {bonus.get('level')}")
+                print(f"    bonus_amount: {bonus.get('bonus_amount')}")
+                print(f"    status: {bonus.get('status')}")
+                print(f"    type: {bonus.get('type')}")
+                print(f"    security_hash: {bonus.get('security_hash', 'MISSING')[:20] if bonus.get('security_hash') else 'MISSING'}")
+                print(f"    payment_id: {bonus.get('payment_id')}")
+                
+                # Check for missing required fields
+                required_fields = ['user_id', 'referrer_id', 'referred_id', 'payment_id', 
+                                'bonus_amount', 'level', 'status', 'type', 'security_hash']
+                missing = [f for f in required_fields if f not in bonus or bonus.get(f) is None]
+                if missing:
+                    print(f"    ❌ MISSING FIELDS: {missing}")
+
+                    # 3. Validate bonuses
             valid_bonuses, invalid_bonuses, batch_validation = BonusValidationHelper.validate_bonus_batch(bonus_calculations)
             
             print(f"✅ Valid bonuses: {len(valid_bonuses)}, Invalid: {len(invalid_bonuses)}")
             
             # 4. Store valid bonuses
+              # 4. Store valid bonuses
             bonus_ids = []
             bonus_amounts = {}  # Store amounts separately to avoid SQLAlchemy issues
             if valid_bonuses:
                 from bonus.config import generate_security_hash
                 from decimal import Decimal, InvalidOperation
                 
+                # ⭐ GET PURCHASING USER AND REFERRER ONCE
+                purchasing_user = User.query.get(payment.user_id)
+                direct_referrer_id = purchasing_user.referred_by if purchasing_user else None
+                
+                print(f"📌 Purchasing user: {payment.user_id}, Referrer ID: {direct_referrer_id}")
+                
                 for original_data in valid_bonuses:
                     bonus_data = original_data.copy()
-                #for bonus_data in valid_bonuses:
                     try:
                         if 'purchase_id' in bonus_data:
                             bonus_data['payment_id'] = bonus_data.pop('purchase_id')
                         
-                        # Convert amount to Decimal and store it
+                        # ✅ CRITICAL FIX: Ensure referrer_id and referred_id are present
+                        if 'referrer_id' not in bonus_data or bonus_data['referrer_id'] is None:
+                            bonus_data['referrer_id'] = direct_referrer_id
+                            print(f"  ➕ Added missing referrer_id: {direct_referrer_id}")
+                        
+                        if 'referred_id' not in bonus_data or bonus_data['referred_id'] is None:
+                            bonus_data['referred_id'] = payment.user_id
+                            print(f"  ➕ Added missing referred_id: {payment.user_id}")
+                        
+                        # Ensure type is set
+                        if 'type' not in bonus_data:
+                            bonus_data['type'] = 'referral_bonus'
+                        
+                        # Convert amount to Decimal
                         raw_amount = bonus_data.get('bonus_amount') or bonus_data.get('amount') or 0
                         
                         try:
@@ -134,12 +176,19 @@ def process_package_purchase(payment):
                         except (InvalidOperation, ValueError) as e:
                             print(f"⚠️ Invalid bonus amount format: {raw_amount}, using 0")
                             bonus_amount = Decimal('0')
-                        
-                        # Store the amount separately
+                        print(f"  🔍 KEYS BEFORE BONUS CREATION: {list(bonus_data.keys())}")
                         bonus_data['bonus_amount'] = bonus_amount
-                        
+                        print(f"  🔍 DEBUG - bonus_data keys before creation: {list(bonus_data.keys())}")
+                        print(f"  🔍 DEBUG - 'amount' in bonus_data: {'amount' in bonus_data}")
+                        if 'amount' in bonus_data:
+                            print(f"  ➕ Removing 'amount' key (value: {bonus_data['amount']})")
+                            del bonus_data['amount']
+                            print(f"  🔍 Keys after removal: {list(bonus_data.keys())}")
+                        else:
+                            print(f"  ✅ 'amount' key not present")
                         # Create bonus record
                         bonus = ReferralBonus(**bonus_data)
+                        
                         if not bonus.security_hash:
                             bonus.security_hash = generate_security_hash(
                                 bonus.user_id, 
@@ -148,96 +197,70 @@ def process_package_purchase(payment):
                             )
                         
                         db.session.add(bonus)
-                        db.session.flush()  # Flush to get the ID
+                        db.session.flush()
                         
-                        # Store the amount separately to avoid SQLAlchemy column object issues
                         bonus_ids.append(bonus.id)
                         bonus_amounts[bonus.id] = bonus_amount
                         
-                        print(f"✅ Created bonus {bonus.id} with amount {bonus_amount}")
+                        print(f"✅ Created bonus {bonus.id}: user={bonus.user_id}, referrer={bonus_data['referrer_id']}, referred={bonus_data['referred_id']}, amount={bonus_amount}")
                         
                     except Exception as e:
                         print(f"⚠️ Error creating bonus record: {e}")
+                        import traceback
+                        traceback.print_exc()
                         continue
                 
                 # Commit all bonuses at once
                 db.session.commit()
                 print(f"💾 Committed {len(bonus_ids)} bonuses to database")
-                
+   
                 # FIX: Use a fresh session to retrieve bonuses and avoid column object issues
                 from sqlalchemy.orm import Session
-                
                 # 5. Credit wallets using the stored amounts
                 credited_count = 0
                 for bonus_id in bonus_ids:
                     try:
-                        # Get amount from our stored dictionary (not from SQLAlchemy object)
-                        amount = bonus_amounts.get(bonus_id)
-                        
-                        if not amount or amount <= Decimal('0'):
-                            print(f"⚠️ Bonus {bonus_id} has invalid amount: {amount}")
-                            continue
-                        
-                        # Get bonus with fresh query to ensure we get actual values
+                        # Get bonus with fresh query
                         fresh_bonus = db.session.query(ReferralBonus).get(bonus_id)
                         
                         if not fresh_bonus:
-                            print(f"⚠️ Bonus {bonus_id} not found in fresh query")
+                            print(f"⚠️ Bonus {bonus_id} not found")
                             continue
                         
-                        # Verify the amount matches
-                        if hasattr(fresh_bonus.bonus_amount, '__clause_element__'):
-                            print(f"⚠️ Bonus {bonus_id} still has column object, using stored amount")
-                            # Use our stored amount
-                            bonus_amount_to_credit = amount
-                        else:
-                            try:
-                                bonus_amount_to_credit = Decimal(str(fresh_bonus.bonus_amount))
-                            except:
-                                bonus_amount_to_credit = amount
+                        # ✅ FIXED: Use bonus_amount, not amount
+                        amount_from_bonus = fresh_bonus.bonus_amount
+                        if amount_from_bonus is None:
+                            amount_from_bonus = bonus_amounts.get(bonus_id, 0)
                         
-                        print(f"💰 Crediting {bonus_amount_to_credit} to user {fresh_bonus.user_id} (bonus {bonus_id})")
+                        bonus_amount_to_credit = float(amount_from_bonus)
                         
-                        # Credit wallet
-                        success, msg, tx_id = BonusPaymentHelper._credit_user_wallet_atomic(
-                            user_id=fresh_bonus.user_id,
-                            amount=bonus_amount_to_credit,
-                            bonus_id=fresh_bonus.id
-                        )
+                        print(f"💰 Crediting {bonus_amount_to_credit} to user {fresh_bonus.user_id}")
                         
-                        if success:
-                            credited_count += 1
-                            print(f"✅ Successfully credited {bonus_amount_to_credit} to user {fresh_bonus.user_id}")
-                            
-                            # Queue for payout
-                            try:
-                                BonusPaymentHelper.queue_bonus_payout(fresh_bonus.id)
-                                print(f"📤 Queued bonus {fresh_bonus.id} for payout")
-                            except Exception as e:
-                                print(f"⚠️ Failed to queue bonus {fresh_bonus.id} for payout: {e}")
-                        else:
-                            print(f"❌ Failed to credit bonus {fresh_bonus.id}: {msg}")
-                            
+                        # Update bonus status
+                        fresh_bonus.status = 'paid'
+                        fresh_bonus.is_paid_out = True
+                        fresh_bonus.paid_out_at = datetime.utcnow()
+                        
+                        # Credit user wallet
+                        user = User.query.get(fresh_bonus.user_id)
+                        if user:
+                            user.available_balance = (user.available_balance or 0) + Decimal(str(bonus_amount_to_credit))
+                            user.actual_balance = (user.actual_balance or 0) + Decimal(str(bonus_amount_to_credit))
+                        
+                        db.session.commit()
+                        credited_count += 1
+                        print(f"✅ Successfully credited {bonus_amount_to_credit} to user {fresh_bonus.user_id}")
+                        
                     except Exception as e:
-                        print(f"⚠️ Error processing bonus {bonus_id}: {e}")
+                        db.session.rollback()
+                        print(f"❌ Failed to credit bonus {bonus_id}: {e}")
                         import traceback
                         traceback.print_exc()
-                        continue
-                
-                # Calculate total bonus amount
-                total_bonus_amount = sum(bonus_amounts.values())
-                
-                print(f"🎉 Successfully credited {credited_count} out of {len(bonus_ids)} bonuses")
-                print(f"💰 Total bonus amount distributed: {total_bonus_amount}")
-                
-                # Cleanup processing flag
-                BonusValidationHelper.cleanup_processing_flag(payment.id, success=credited_count > 0)
-                
+
                 if credited_count > 0:
+                    print(f"🎉 Successfully credited {credited_count} out of {len(bonus_ids)} bonuses")
+                    
                     return True, f"Successfully processed {credited_count} bonuses"
-                else:
-                    return False, "No bonuses were successfully credited"
-                
             else:
                 print("ℹ️ No valid bonuses to create")
                 BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)

@@ -2,8 +2,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 from flask import current_app
-from sqlalchemy import text, and_
-from models import ReferralBonus, Payment, User, ReferralNetwork, AuditLog
+from models import ReferralBonus, Payment, User, ReferralNetwork
 from extensions import db
 
 class BonusValidationHelper:
@@ -22,13 +21,11 @@ class BonusValidationHelper:
         
             current_app.logger.info(f"🔍 Checking for existing bonus: purchase={purchase_id}, ancestor={ancestor_id}, level={level}, amount={bonus_amount}")
             
-            existing = ReferralBonus.query.with_for_update(
-                skip_locked=True
-            ).filter(
+            existing = ReferralBonus.filter(
                 ReferralBonus.payment_id == purchase_id,
                 ReferralBonus.user_id == ancestor_id, 
                 ReferralBonus.level == level,
-                ReferralBonus.amount == bonus_amount
+                ReferralBonus.bonus_amount == bonus_amount
             ).first()
             
             if existing:
@@ -40,7 +37,7 @@ class BonusValidationHelper:
                 
         except Exception as e:
             current_app.logger.error(f"❌ Error checking existing bonus: {str(e)}")
-            return True, 'validation_error'
+            return False, None
    
     @staticmethod
     def validate_bonus_entry(bonus_data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
@@ -229,38 +226,6 @@ class BonusValidationHelper:
             return False, f"Purchase validation error: {str(e)}"
 
 
-    # @staticmethod
-    # def validate_purchase(payment_id: int) -> Tuple[bool, str]:
-    #     """
-    #     FIXED VERSION: Properly handles unset bonus fields
-    #     """
-    #     try:
-    #         purchase = Payment.query.get(payment_id)
-    #         if not purchase:
-    #             return False, "Purchase not found"
-            
-    #         # Payment status check
-    #         if purchase.status != 'completed':
-    #             return False, f"Purchase status is {purchase.status}, not completed"
-            
-    #         # Amount validation
-    #         if not payment_id.amount or payment_id.amount <= 0:
-    #             return False, "Invalid purchase amount"
-
-    #         # Currency validation
-    #         if getattr(purchase, 'currency', 'UGX') != 'UGX':
-    #             return False, f"Unsupported currency: {purchase.currency}"
-            
-    #         # Minimum amount check
-    #         if purchase.amount < Decimal('10000'):
-    #             return False, "Purchase amount below minimum for bonuses"
-            
-    #         return True, "Valid purchase for bonus processing"
-            
-    #     except Exception as e:
-    #         current_app.logger.error(f"Purchase validation error for {payment_id}: {str(e)}")
-    #         return False, f"Purchase validation error: {str(e)}"
-
     @staticmethod
     def validate_user_eligibility(user_id: int, level: int) -> Tuple[bool, str]:
         """
@@ -356,7 +321,7 @@ class BonusValidationHelper:
                 'purchase_id': bonus_data.get('purchase_id'),
                 'ancestor_id': bonus_data.get('ancestor_id'),
                 'level': bonus_data.get('level'),
-                'amount': bonus_data.get('bonus_amount'),
+                'bonus_amount': bonus_data.get('bonus_amount'),
                 'passed': False,
                 'errors': []
             }

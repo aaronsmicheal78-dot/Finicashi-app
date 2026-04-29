@@ -12,34 +12,6 @@ from extensions import db
 from sqlalchemy import text
 from datetime import datetime
 from flask_cors import CORS
-#from flask_caching import Cache
-
-
-
-
-# --------------------------------------------------------------------------------------------------------
-#       Global instances
-# --------------------------------------------------------------------------------------------------------
-#import dns.resolver
-
-# def force_ipv4_dns():
-#     """
-#     Forces DNS resolution to use public IPv4 nameservers instead of Render's IPv6 stack.
-#     Fixes NameResolutionError for external APIs like MarzPay.
-#     """
-#    # resolver = dns.resolver.Resolver()
-
-#     # Force only IPv4 resolvers
-#     resolver.nameservers = [
-#         '8.8.8.8',     # Google DNS
-#         '8.8.4.4',     # Google secondary
-#         '1.1.1.1',     # Cloudflare DNS
-#         '1.0.0.1'      # Cloudflare secondary
-#     ]
-
-#     # Apply globally
-#     dns.resolver.default_resolver = resolver
-
 
 login_manager = LoginManager()
 migrate = Migrate()
@@ -69,10 +41,6 @@ def create_app():
 
     CORS(app, supports_credentials=True)
 
-
-
-        #cache = Cache(config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': REDIS_URL})
-        #cache.init_app(app)
         # ------------------------------------------------------------------------------------------
     # SIMPLIFIED LOGGING - No rotation to avoid permission errors
     # ------------------------------------------------------------------------------------------
@@ -142,7 +110,7 @@ def create_app():
         app.register_blueprint(activity_bp)
      
     register_blueprints(app)
-    print(app.url_map)
+    #print(app.url_map)
 
 
     
@@ -152,17 +120,6 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-    
-    # from flask_sock import Sock
-
-    # sock = Sock(app)
-
-    # @sock.route('/ws')
-    # def websocket(ws):
-    #     while True:
-    #         data = ws.receive()
-    #         ws.send(f"Received {data}")
-
     
     # ----------------------
     # Global before_request
@@ -192,12 +149,7 @@ def create_app():
     @app.route("/healthz")
     def healthz():
         return {"status": "ok"}, 200
-    
-    @app.route("/crash")
-    def crash():
-        1 / 0
-
-    
+ 
     return app
 
 # ----------------------

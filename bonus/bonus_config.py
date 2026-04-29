@@ -414,11 +414,12 @@ class ProductionBonusOrchestrator:
             # Use database transaction
             for i, bonus_data in enumerate(bonuses):
                 try:
+
                     # Create bonus record with additional security fields
                     bonus = ReferralBonus(
                         user_id=bonus_data['user_id'],
                         payment_id=payment.id,
-                        amount=bonus_data['amount'],
+                        bonus_amount=bonus_data['amount'],
                         level=bonus_data['level'],
                         status='pending',
                         security_hash=self._calculate_bonus_security_hash(bonus_data),
@@ -465,6 +466,7 @@ class ProductionBonusOrchestrator:
             current_app.logger.error(f"❌ Bonus storage failed: {str(e)}")
             security_context['security_checks_failed'].append(f'storage_error: {str(e)}')
             return {'success': False, 'message': f"Storage error: {str(e)}"}
+        
     # Security utility methods
     def _acquire_processing_lock(self, payment_id: int, processing_id: str) -> bool:
         """Acquire processing lock to prevent duplicates"""

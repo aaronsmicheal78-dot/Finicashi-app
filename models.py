@@ -208,17 +208,6 @@ class User(db.Model, BaseMixin):
                         (ensure_utc(p.expires_at) - datetime.now(timezone.utc)).days
                         if p.expires_at else None
                     )
-
-                    # "activated_at": p.activated_at.isoformat() if getattr(p, 'activated_at', None) else None,
-                    # "expires_at": (
-                    #     (p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at).isoformat()
-                    #     if getattr(p, 'expires_at', None) else None
-                    # ),
-                    # "days_remaining": (
-                    #     ((p.expires_at.replace(tzinfo=timezone.utc) if p.expires_at.tzinfo is None else p.expires_at)
-                    #     - datetime.now(timezone.utc)).days
-                    #     if getattr(p, 'expires_at', None) else None
-                    # )
                 }
                 for p in active_packages
             ]
@@ -462,7 +451,7 @@ class ReferralBonus(db.Model, BaseMixin):
     referrer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     bonus_amount = db.Column(db.Numeric(10, 2), nullable=False)
     ancestor_id = db.Column(db.Integer, nullable=True)
-    amount = db.column_property(bonus_amount)
+    #amount = db.Column(db.Numeric(10, 2), nullable=True) 
    
 
     qualifying_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Amount that triggered bonus
@@ -482,7 +471,7 @@ class ReferralBonus(db.Model, BaseMixin):
 
     referrer = db.relationship('User', foreign_keys=[referrer_id], backref='referral_earnings')
     referred_user = db.relationship('User', foreign_keys=[referred_id], backref='referred_by_me')
-    payment = db.relationship('Payment', backref='referral_bonus')
+    payment = db.relationship('Payment', backref='referral_bonus')\
     
     __table_args__ = (
         Index('idx_bonus_level_payout', 'level', 'is_paid_out'),

@@ -1,3 +1,4 @@
+
 # bonus/bonus_calculation.py
 from decimal import Decimal
 from typing import Dict, Any, Tuple, List, Optional
@@ -6,6 +7,7 @@ from flask import current_app
 from sqlalchemy import text
 import hashlib
 import json
+import secrets
 
 from models import Payment, User, ReferralBonus
 from bonus.config import BonusConfigHelper
@@ -45,22 +47,25 @@ class BonusCalculationHelper:
             if not paying_user:
                 return False, [], "Paying user not found", audit_info
             
-            # DEBUG: Log the referral chain
-            current_app.logger.info(f"🔍 Payment user ID: {paying_user.id}, referred_by: {paying_user.referred_by}")
+            # ✅ Get the purchaser's referrer ONCE (the sponsor)
+            purchaser_referrer_id = paying_user.referred_by
+            current_app.logger.info(f"🔍 Purchaser: {paying_user.id}, Referrer (Sponsor): {purchaser_referrer_id}")
+            
+            # Generate batch processing ID
+            processing_id = secrets.token_hex(16)
             
             # Calculate bonuses for each level (1 to 20)
             for level in range(1, BonusConfigHelper.MAX_LEVEL + 1):
                 level_bonuses = BonusCalculationHelper._calculate_bonuses_for_level(
-                    paying_user, payment, level, audit_info
+                    paying_user, payment, level, audit_info, purchaser_referrer_id, processing_id
                 )
                 bonuses.extend(level_bonuses)
                 
                 # Sum bonuses for this level
                 for bonus in level_bonuses:
-                    
                     current_app.logger.info(f"Adding bonus: {bonus}")
-                    total_bonus_amount += Decimal(str(bonus.get('amount', 0)))
-            current_app.logger.info(f"Adding bonus: {total_bonus_amount}")
+                    total_bonus_amount += Decimal(str(bonus.get('bonus_amount', 0)))
+            
             audit_info['calculation_end'] = datetime.now(timezone.utc)
             audit_info['levels_processed'] = len(set(bonus.get('level', 0) for bonus in bonuses))
             audit_info['total_bonus_calculated'] = float(total_bonus_amount)
@@ -78,89 +83,60 @@ class BonusCalculationHelper:
             audit_info['error'] = str(e)
             audit_info['calculation_end'] = datetime.now(timezone.utc)
             return False, [], f"Calculation failed: {str(e)}", audit_info
-        
-
-    def safe_decimal(value):
+    
+    @staticmethod
+    def safe_decimal(value):  # ✅ Keep as static method
+        """Safely convert value to Decimal"""
         import decimal
         try:
             return Decimal(str(value))
         except (TypeError, decimal.InvalidOperation) as e:
             current_app.logger.error(f"Invalid bonus amount: {value} - {e}")
             return Decimal('0')
-
-        
     @staticmethod
-    def _calculate_bonuses_for_level(user: User, payment: Payment, level: int, audit_info: Dict) -> List[Dict]:
+    def _calculate_bonuses_for_level(user: User, payment: Payment, level: int, 
+                                    audit_info: Dict, purchaser_referrer_id: int = None,
+                                    processing_id: str = None) -> List[Dict]:
         """
         Calculate bonuses for a specific level safely.
         """
         bonuses = []
 
         try:
-            # Get all users at this referral level
             users_at_level = BonusCalculationHelper._get_users_at_referral_level(user, level)
             current_app.logger.info(f"🔍 Level {level}: Found {len(users_at_level)} users")
 
             for target_user in users_at_level:
                 try:
+                    # ✅ Pass ALL required parameters
                     bonus_data = BonusCalculationHelper._calculate_single_bonus(
-                        target_user, payment, level, user.id
+                        target_user=target_user,
+                        payment=payment,
+                        level=level,
+                        original_payer_id=user.id,           # The purchaser
+                        purchaser_referrer_id=purchaser_referrer_id,  # The sponsor
+                        processing_id=processing_id
                     )
+                    
                     if bonus_data:
-                        # Ensure 'amount' key exists for logging
-                        bonus_amount = bonus_data.get('amount') or bonus_data.get('bonus_amount')
                         bonuses.append(bonus_data)
+                        bonus_amount = bonus_data.get('bonus_amount', 0)
                         current_app.logger.info(
                             f"💰 Level {level} bonus: User {target_user.id} - {bonus_amount:.2f} UGX"
                         )
                     else:
                         current_app.logger.info(f"User {target_user.id} did not receive a bonus")
+                        
                 except Exception as inner_e:
-                    current_app.logger.error(
-                        f"Error calculating single bonus for User {target_user.id}: {inner_e}"
-                    )
-                    audit_info['security_checks'].append(
-                        f'level_{level}_user_{target_user.id}_error:{inner_e}'
-                    )
-
-            audit_info['security_checks'].append(f'level_{level}_processed:{len(users_at_level)}_users')
+                    current_app.logger.error(f"Error for User {target_user.id}: {inner_e}")
+                    audit_info['security_checks'].append(f'level_{level}_user_{target_user.id}_error:{inner_e}')
 
         except Exception as e:
             current_app.logger.error(f"Error calculating bonuses for level {level}: {str(e)}")
             audit_info['security_checks'].append(f'level_{level}_error:{str(e)}')
 
         return bonuses
-
-    
-    # @staticmethod
-    # def _calculate_bonuses_for_level(user: User, payment: Payment, level: int, audit_info: Dict) -> List[Dict]:
-    #     """
-    #     Calculate bonuses for a specific level
-    #     """
-    #     bonuses = []
-        
-    #     try:
-    #         # Get all users at this referral level
-    #         users_at_level = BonusCalculationHelper._get_users_at_referral_level(user, level)
-            
-    #         current_app.logger.info(f"🔍 Level {level}: Found {len(users_at_level)} users")
-            
-    #         for target_user in users_at_level:
-    #             bonus_data = BonusCalculationHelper._calculate_single_bonus(
-    #                 target_user, payment, level, user.id
-    #             )
-    #             if bonus_data:
-    #                 bonuses.append(bonus_data)
-    #                 current_app.logger.info(f"💰 Level {level} bonus: User {target_user.id} - {bonus_data['amount']} UGX")
-            
-    #         audit_info['security_checks'].append(f'level_{level}_processed:{len(users_at_level)}_users')
-            
-    #     except Exception as e:
-    #         current_app.logger.error(f"Error calculating bonuses for level {level}: {str(e)}")
-    #         audit_info['security_checks'].append(f'level_{level}_error:{str(e)}')
-        
-    #     return bonuses
-    # In your bonus_calculation.py, update the _get_users_at_referral_level method:
+ 
 
     @staticmethod
     def _get_users_at_referral_level(start_user: User, target_level: int) -> List[User]:
@@ -172,9 +148,7 @@ class BonusCalculationHelper:
             if not start_user or target_level < 1:
                 return []
 
-            # -----------------------------------------
             # LEVEL 1: Direct referrer
-            # -----------------------------------------
             current_referrer_id = start_user.referred_by
             if target_level == 1:
                 if not current_referrer_id:
@@ -190,10 +164,7 @@ class BonusCalculationHelper:
                 current_app.logger.info(f"🔍 Level 1: User {start_user.id} → Referrer {referrer.id if referrer else 'None'}")
                 return [referrer] if referrer else []
 
-            # -----------------------------------------
             # LEVEL 2+ : Traverse up (target_level - 1) hops
-            # -----------------------------------------
-            # First hop = direct referrer (level 1)
             try:
                 current_referrer_id = int(current_referrer_id) if current_referrer_id else None
             except:
@@ -202,7 +173,6 @@ class BonusCalculationHelper:
             if not current_referrer_id:
                 return []
 
-            # We already are at level 1, so do (target_level - 1) extra hops
             hops_needed = target_level - 1
 
             for hop in range(hops_needed):
@@ -210,7 +180,6 @@ class BonusCalculationHelper:
                 if not current_user:
                     return []
 
-                # If this user has no referrer → chain ends
                 if not current_user.referred_by:
                     current_app.logger.info(
                         f"🔍 Chain ended early at hop {hop+1} for target level {target_level}"
@@ -227,57 +196,21 @@ class BonusCalculationHelper:
                     f"{current_user.id} → Referrer {current_referrer_id}"
                 )
 
-            # Now `current_referrer_id` is the ancestor at the target level
             final_user = User.query.get(current_referrer_id)
             return [final_user] if final_user else []
 
         except Exception as e:
             current_app.logger.error(f"Error getting users at level {target_level}: {str(e)}")
             return []
-
-    # @staticmethod
-    # def _get_users_at_referral_level(start_user: User, target_level: int) -> List[User]:
-    #     """
-    #     FIXED VERSION: Correctly traverse up the referral chain
-    #     """
-    #     try:
-    #         if target_level == 1:
-    #             # Direct referrer
-    #             if start_user.referred_by:
-    #                 referrer = User.query.get(start_user.referred_by)
-    #                 current_app.logger.info(f"🔍 Level 1: User {start_user.id} -> Referrer {referrer.id if referrer else 'None'}")
-    #                 return [referrer] if referrer else []
-    #             return []
-            
-    #         # For levels 2+, start from the direct referrer and traverse up
-    #         current_user_id = start_user.referred_by
-    #         if not current_user_id:
-    #             return []
-            
-    #         # Traverse up the chain (target_level - 1) more times from the direct referrer
-    #         for step in range(1, target_level):  # We already have level 1, so start from step 1
-    #             current_user = User.query.get(current_user_id)
-    #             if not current_user or not current_user.referred_by:
-    #                 return []  # Chain ended
-                
-    #             current_user_id = current_user.referred_by  # Move up the chain
-    #             current_app.logger.info(f"🔍 Level {target_level}, Step {step}: User {current_user.id} -> Referrer {current_user_id}")
-            
-    #         # Get the final user at the target level
-    #         final_user = User.query.get(current_user_id)
-    #         return [final_user] if final_user else []
-            
-    #     except Exception as e:
-    #         current_app.logger.error(f"Error getting users at level {target_level}: {str(e)}")
-    #         return []
-    
     @staticmethod
-    def _calculate_single_bonus(target_user: User, payment: Payment, level: int, original_payer_id: int) -> Optional[Dict]:
+    def _calculate_single_bonus(target_user: User, payment: Payment, level: int, 
+                                original_payer_id: int, purchaser_referrer_id: int = None,
+                                processing_id: str = None) -> Optional[Dict]:
         """
-        Calculate a single bonus for a target user with validation-ready fields.
+        Calculate a single bonus for a target user with ALL required fields.
         """
         try:
-            # Validate target user exists and is eligible
+            # Validate target user
             if not target_user or not target_user.id:
                 return None
                 
@@ -285,59 +218,84 @@ class BonusCalculationHelper:
                 current_app.logger.info(f"User {target_user.id} not eligible for bonuses")
                 return None
 
-            # Get bonus percentage for this level
+            # Get bonus percentage
             bonus_percentage = BonusConfigHelper.get_bonus_percentage(level)
 
             # Calculate bonus amount
             payment_amount = Decimal(str(payment.amount))
             bonus_amount = payment_amount * bonus_percentage
 
-            # Skip if bonus is too small (less than 1 UGX)
             if bonus_amount < Decimal('1'):
-                current_app.logger.info(f"Bonus too small: {bonus_amount} for level {level}")
                 return None
 
-            # Ensure bonus amount is reasonable
             if bonus_amount > payment_amount:
-                current_app.logger.warning(
-                    f"Bonus amount {bonus_amount} exceeds payment amount {payment_amount}"
-                )
                 return None
 
-            # Get referrer ID
-            referrer_id = getattr(target_user, 'referred_by', None)
-
-            # Build bonus data dict aligned with validation and DB model
+            # CRITICAL: Get the correct referrer (sponsor of purchaser)
+            correct_referrer_id = purchaser_referrer_id
+            
+            # Generate security hash (REQUIRED)
+            security_hash = BonusCalculationHelper._generate_security_hash(
+                target_user.id, payment.id, level, float(bonus_amount)
+            )
+            
+            # Generate processing ID if not provided
+            if not processing_id:
+                processing_id = secrets.token_hex(16)
+            
+            # ✅ COMPLETE BONUS DATA WITH ALL REQUIRED FIELDS
             bonus_data = {
-                'user_id': target_user.id,                    # FK → recipient
-                'ancestor_id': target_user.id,               # For network / validation
-                'referrer_id': referrer_id,                 # FK → referrer
-                'referred_id': original_payer_id,           # FK → original payer
-                'payment_id': payment.id,                    # FK → payment
-               'purchase_id': (payment.id),
-                'level': level,                              # 1-20
-                'bonus_amount': float(bonus_amount),        # Validation expects this key
-                'amount': float(bonus_amount),              # For logging / legacy code
+                # Core required fields (NOT NULL in DB)
+                'user_id': target_user.id,
+                'referrer_id': correct_referrer_id,
+                'referred_id': original_payer_id,
+                'payment_id': payment.id,
+                'level': level,
+                'bonus_amount': float(bonus_amount),
+                'status': 'pending',                    # ⭐ REQUIRED
+                'type': 'referral_bonus',               # ⭐ REQUIRED
+                'security_hash': security_hash,         # ⭐ REQUIRED NOT NULL
+               
+                'processing_id': processing_id,
+                'threat_level': 'low',
+                'is_paid_out': False,
+                
+                'ancestor_id': target_user.id,
                 'bonus_percentage': float(bonus_percentage),
                 'qualifying_amount': float(payment_amount),
                 'calculated_on': datetime.now(timezone.utc).isoformat(),
+                'purchase_id': payment.id,     
             }
 
             current_app.logger.info(
-                f"💰 Calculated bonus: Level {level}, User {target_user.id}, Amount: {bonus_amount:.2f} UGX"
+                f"💰 Calculated bonus: Level {level}, Recipient: {target_user.id}, "
+                f"Referrer: {correct_referrer_id}, Purchaser: {original_payer_id}, "
+                f"Amount: {bonus_amount:.2f} UGX"
             )
 
             return bonus_data
 
         except Exception as e:
-            current_app.logger.error(
-                f"Error calculating single bonus for user "
-                f"{target_user.id if target_user else 'unknown'}: {str(e)}"
-            )
+            current_app.logger.error(f"Error in _calculate_single_bonus: {str(e)}")
             return None
 
+
     
-   
+    @staticmethod
+    def _generate_security_hash(user_id: int, payment_id: int, level: int, amount: float) -> str:
+        """Generate unique security hash for bonus record"""
+        import hashlib
+        from flask import current_app
+        
+        # Create deterministic string
+        hash_string = f"{user_id}|{payment_id}|{level}|{amount}|{datetime.now(timezone.utc).timestamp()}"
+        
+        # Add secret salt from app config
+        salt = current_app.config.get('SECRET_KEY', 'finicashi_default_salt')
+        
+        # Generate SHA256 hash
+        return hashlib.sha256(f"{hash_string}|{salt}".encode()).hexdigest()
+    
     @staticmethod
     def _calculate_bonus_hash(user_id: int, payment_id: int, amount: Decimal, level: int) -> str:
         """Calculate security hash for bonus integrity"""
@@ -358,7 +316,13 @@ class BonusCalculationHelper:
                 return False
             
             start_user = User.query.get(payment.user_id)
+            if not start_user:
+                current_app.logger.error(f"user {payment.user_id} not found")
+                return False
+            
+            direct_referrer_id = start_user.referred_by
             total_bonuses = 0
+            bonuses_created = 0
             
             for level in range(1, 21):  # 20 levels
                 users = BonusCalculationHelper._get_users_at_referral_level(start_user, level)
@@ -371,16 +335,37 @@ class BonusCalculationHelper:
                     
                     if is_eligible:
                         bonus_amount = BonusCalculationHelper.calculate_bonus_amount(level, payment.amount)
-                        
+                        bonus_data = {
+                        'user_id': user.id,
+                       # 'referrer_id':direct_referrer_id,
+                        'payment_id': payment_id,
+                        #'amount': bonus_amount,
+                        'level': level,
+                        'referrer_id': direct_referrer_id,
+                        'referred_id': payment.user_id,
+                        'timestamp': datetime.utcnow().isoformat()
+                    }
+                        security_hash = BonusCalculationHelper._calculate_bonus_security_hash(bonus_data)    
                         # Create bonus
                         bonus = ReferralBonus(
                             user_id=user.id,
                             payment_id=payment_id,
-                            amount=bonus_amount,
+                            bonus_amount=bonus_amount,
+                           # amount=bonus_amount,
                             level=level,
                             status='pending',
-                         
-    #                  
+                            referrer_id=direct_referrer_id,
+                            referred_id=payment.user_id,
+                            type='referral_bonus',
+                            qualifying_amount=payment.amount,
+                            bonus_percentage=BonusCalculationHelper._get_bonus_percentage(level),
+                            calculated_on=datetime.utcnow(),
+                            ancestor_id=direct_referrer_id,
+                            transaction_reference=payment.reference,
+                            security_hash=security_hash,
+                            is_paid_out=False,
+                            threat_level="low",
+                            processing_id='procesing_id'
 
                         )
                         db.session.add(bonus)
@@ -402,4 +387,3 @@ class BonusCalculationHelper:
             db.session.rollback()
             current_app.logger.error(f"Bonus calculation error: {str(e)}")
             return False
-

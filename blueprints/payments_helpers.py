@@ -227,11 +227,31 @@ def send_to_marzpay(payment, phone, amount, package=None):
 
         return marz_data, None
     
-    except requests.HTTPError as e:
-        print("MarzPay HTTP error:", e)
-        print("Response body:", e.response.text)
-        return None, e
-    
+    except requests.exceptions.HTTPError as e:
+        response_text = ""
+        status_code = None
+
+        if e.response is not None:
+            status_code = e.response.status_code
+            response_text = e.response.text
+
+        print("🔥 MarzPay HTTP ERROR")
+        print("STATUS:", status_code)
+        print("BODY:", response_text)
+
+        payment.status = PaymentStatus.FAILED.value
+        payment.raw_response = json.dumps({
+            "status_code": status_code,
+            "error": response_text
+        })
+
+        return None, {
+            "error": "Payment provider rejected request",
+            "status_code": status_code,
+            "details": response_text
+        }
+     
+
     except requests.RequestException as e:
         print(f"MarzPay API Request Exception: {e}")
         payment.status = PaymentStatus.FAILED.value
