@@ -319,7 +319,12 @@ def withdraw():
     data = request.get_json(force=True, silent=True)
     amount = data.get("amount")
     phone_number = data.get("phone") or data.get("phone_number")
-
+    idempotency_key = request.headers.get('Idempotency-Key')
+    if not idempotency_key:
+        import hashlib
+        key_material = f"{session.get('user_id')}:{amount}:{phone_number}:{datetime.now().date()}"
+        idempotency_key = hashlib.sha256(key_material.encode()).hexdigest()
+    print(f"The Idempotency key is {idempotency_key}")
     print("MOBILE DEBUG:", request.headers)
     print("BODY:", request.data)
     logger.info(f"WITHDRAW PROCESSING STARTED: {data}, {amount}, {phone_number}")
@@ -341,12 +346,20 @@ def withdraw():
         
         # Step 1: Process withdrawal internally (validate, deduct balances, create record)
         success, message, withdrawal_data = WithdrawalProcessor.process_withdrawal_request(
-            user_id, amount_decimal, phone_number
+            user_id, amount_decimal, phone_number, idempotency_key
         )
         
         if not success:
             return jsonify({"error": message}), 400
-
+        
+        if withdrawal_data.get('already_processed'):
+            return jsonify({
+                "success": True,
+                "message": message,
+                "withdrawal_id": withdrawal_data['reference'],
+                "already_processed": True
+            }), 200
+        
        
         merchant_reference = withdrawal_data['reference'] 
         amount = withdrawal_data['net_amount']

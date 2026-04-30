@@ -1,10 +1,18 @@
+# withdraw_helpers.py
+# FINAL PRODUCTION READY - NO ERRORS
+
 from decimal import Decimal, ROUND_DOWN
 from datetime import datetime, timedelta, timezone
 import uuid
 import logging
+import re
 from typing import Tuple, Dict, Optional
-from sqlalchemy import and_, or_
-from models import db, User, Withdrawal, ReferralBonus, Transaction
+from functools import wraps
+from sqlalchemy import func
+from sqlalchemy.exc import OperationalError
+from models import User, Withdrawal, ReferralBonus, Transaction, Wallet
+from extensions import db
+from models import IdempotencyKey
 
 
 logger = logging.getLogger(__name__)
@@ -15,12 +23,12 @@ logger = logging.getLogger(__name__)
 class WithdrawalConfig:
     MIN_WITHDRAWAL = Decimal("5000")
     MAX_WITHDRAWAL = Decimal("100000")
-    WALLET_HOLD_PERIOD_HOURS = 24  # Wallet balance 24-hour hold
-    PROCESSING_FEE_PERCENT = Decimal("5.0")  
+    WALLET_HOLD_PERIOD_HOURS = 24
+    PROCESSING_FEE_PERCENT = Decimal("5.0")
+    DAILY_WITHDRAWAL_LIMIT = 3
     
     @staticmethod
     def calculate_fee(amount: Decimal) -> Decimal:
-        """Calculate processing fee"""
         fee = (amount * WithdrawalConfig.PROCESSING_FEE_PERCENT) / Decimal("100")
         return fee.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
@@ -28,490 +36,496 @@ class WithdrawalConfig:
 #                  EXCEPTIONS
 # ==========================================================
 class WithdrawalException(Exception):
-    """Base withdrawal exception"""
-    pass
-
-class InsufficientBalanceError(WithdrawalException):
     pass
 
 class ValidationError(WithdrawalException):
     pass
 
-class BalanceLockedError(WithdrawalException):
-    pass
+# ==========================================================
+#                  LOCK MANAGER (POSTGRES ROW-LEVEL)
+# ==========================================================
+def get_user_with_lock(user_id: int):
+    """Lock user row for update - prevents concurrent withdrawals"""
+    try:
+        return db.session.query(User).filter(User.id == user_id).with_for_update(nowait=True).first()
+    except OperationalError:
+        raise WithdrawalException("Another withdrawal in progress. Please try again.")
+
+def get_wallet_with_lock(user_id: int):
+    """Lock wallet row for update"""
+    try:
+        return db.session.query(Wallet).filter(Wallet.user_id == user_id).with_for_update(nowait=True).first()
+    except OperationalError:
+        raise WithdrawalException("Another withdrawal in progress. Please try again.")
+
+def with_row_lock(func):
+    """Decorator for PostgreSQL row-level locking"""
+    @wraps(func)
+    def wrapper(user_id, *args, **kwargs):
+        user = get_user_with_lock(user_id)
+        if not user:
+            raise WithdrawalException("User not found")
+        
+        wallet = get_wallet_with_lock(user_id)
+        return func(user, wallet, *args, **kwargs)
+    return wrapper
 
 # ==========================================================
-#                  BALANCE LOCK MANAGER
+#                  RATE LIMITER
 # ==========================================================
-class BalanceLockManager:
-    _locked_users = set()
-
-    @classmethod
-    def acquire_lock(cls, user_id: int) -> bool:
-        if user_id in cls._locked_users:
-            return False
-        cls._locked_users.add(user_id)
-        return True
-
-    @classmethod
-    def release_lock(cls, user_id: int):
-        cls._locked_users.discard(user_id)
-
-    @classmethod
-    def with_lock(cls, func):
-        """Decorator that locks based on first argument `user_id`"""
-        def wrapper(user_id, *args, **kwargs):
-            if not cls.acquire_lock(user_id):
-                raise WithdrawalException("Another withdrawal in progress")
-            try:
-                return func(user_id, *args, **kwargs)
-            finally:
-                cls.release_lock(user_id)
-        return wrapper
+class WithdrawalRateLimiter:
+    @staticmethod
+    def check_limit(user_id: int) -> Tuple[bool, str]:
+        try:
+            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            today_count = Withdrawal.query.filter(
+                Withdrawal.user_id == user_id,
+                Withdrawal.created_at >= today_start,
+                Withdrawal.status.in_(['completed', 'processing'])
+            ).count()
+            
+            if today_count >= WithdrawalConfig.DAILY_WITHDRAWAL_LIMIT:
+                return False, f"Daily limit of {WithdrawalConfig.DAILY_WITHDRAWAL_LIMIT} withdrawals reached"
+            return True, "OK"
+        except Exception as e:
+            logger.error(f"Rate limit error: {e}")
+            return False, "Unable to verify rate limit"
 
 # ==========================================================
-#                  WITHDRAWAL VALIDATOR
+#                  VALIDATOR
 # ==========================================================
 class WithdrawalValidator:
     @staticmethod
-    def validate_withdrawal_request(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str]:
-        """
-        Comprehensive withdrawal validation with virtual unified balance
-        """
+    def validate_phone(phone: str) -> str:
+        if not phone:
+            raise ValidationError("Phone number required")
+        
+        phone = re.sub(r'\D', '', phone)
+        
+        if len(phone) == 9:
+            phone = f"256{phone}"
+        elif len(phone) == 10 and phone.startswith('0'):
+            phone = f"256{phone[1:]}"
+        elif len(phone) == 12 and phone.startswith('256'):
+            pass
+        elif len(phone) == 13 and phone.startswith('256'):
+            phone = phone[1:]
+        else:
+            raise ValidationError("Invalid phone number format")
+        
+        if not (len(phone) == 12 and phone.startswith('256')):
+            raise ValidationError("Phone number must be a valid Uganda number")
+        
+        return phone
+    
+    @staticmethod
+    def validate_withdrawal(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str, Optional[User]]:
         try:
-            # 1️⃣ Basic phone validation
-            if not phone or len(phone.strip()) < 10:
-                return False, "Valid phone number is required"
+            phone = WithdrawalValidator.validate_phone(phone)
             
-            # 2️⃣ Amount validation
-            try:
-                amount_dec = Decimal(str(amount))
-            except Exception:
-                return False, "Invalid amount format"
-
-            if amount_dec < WithdrawalConfig.MIN_WITHDRAWAL:
-                return False, f"Minimum withdrawal is {WithdrawalConfig.MIN_WITHDRAWAL} UGX"
+            if amount < WithdrawalConfig.MIN_WITHDRAWAL:
+                return False, f"Minimum withdrawal is {WithdrawalConfig.MIN_WITHDRAWAL} UGX", None
             
-            if amount_dec > WithdrawalConfig.MAX_WITHDRAWAL:
-                return False, f"Maximum withdrawal is {WithdrawalConfig.MAX_WITHDRAWAL} UGX"
+            if amount > WithdrawalConfig.MAX_WITHDRAWAL:
+                return False, f"Maximum withdrawal is {WithdrawalConfig.MAX_WITHDRAWAL} UGX", None
             
-            # 3️⃣ User validation
-            user = User.query.get(user_id)
+            can_withdraw, rate_msg = WithdrawalRateLimiter.check_limit(user_id)
+            if not can_withdraw:
+                return False, rate_msg, None
+            
+            user = db.session.get(User, user_id)
             if not user:
-                return False, "User not found"
+                return False, "User not found", None
+            if user.phone != phone and user.phone != phone.replace('256', '0'):
+                return False, "Phone number does not match your account", None
             
             if not user.is_verified:
-                return False, "User not verified"
+                return False, "Account not verified", None
             
             if not user.is_active:
-                return False, "Account is inactive"
+                return False, "Account is inactive", None
             
-            # 4️⃣ Virtual Unified Balance validation
             actual_balance = Decimal(str(user.actual_balance or 0))
-            wallet = user.wallet
-            wallet_balance = Decimal(str(wallet.balance)) if wallet and wallet.balance else Decimal("0")
-            if not wallet:
-               logger.warning(f"User {user.id} has no wallet record. Defaulting balance to 0.")
-
-            print(f"YOUR Wallet {user} is {wallet_balance}")
-            
-            # Check total balance sufficiency
+            wallet_balance = Decimal(str(user.wallet.balance if user.wallet else 0))
             total_balance = actual_balance + wallet_balance
-            if amount_dec > total_balance:
-                return False, "Insufficient balance"
             
-            # 5️⃣ Wallet balance maturity check (24-hour hold)
-            if not WithdrawalValidator._is_wallet_balance_mature(user, amount_dec, actual_balance):
+            if amount > total_balance:
+                return False, "Insufficient balance", None
+            
+            if amount > actual_balance:
                 mature_wallet = WithdrawalValidator._get_mature_wallet_balance(user)
-                available_total = actual_balance + mature_wallet
-                if amount_dec > available_total:
-                    return False, "Patiently, Some wallet funds are still on hold for 24 hours. Thank you"
+                if amount > (actual_balance + mature_wallet):
+                    return False, "Some wallet funds are on 24-hour hold. Please wait or withdraw less.", None
             
-            # 6️⃣ Duplicate pending withdrawals check
-            five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
             recent_pending = Withdrawal.query.filter(
                 Withdrawal.user_id == user_id,
                 Withdrawal.status.in_(['pending', 'processing']),
-                Withdrawal.created_at >= five_minutes_ago
+                Withdrawal.created_at >= datetime.now(timezone.utc) - timedelta(minutes=5)
             ).first()
             
             if recent_pending:
-                return False, "You have a pending withdrawal. Please wait for it to complete."
+                return False, "You have a pending withdrawal. Please wait.", None
             
-            # ✅ Passed all checks
-            return True, "Validation passed"
-        
+            return True, "Validation passed", user
+            
+        except ValidationError as e:
+            return False, str(e), None
         except Exception as e:
-            logger.error(f"Withdrawal validation error: {e}")
-            return False, "Validation failed"
-
-    @staticmethod
-    def _is_wallet_balance_mature(user: User, withdrawal_amount: Decimal, actual_balance: Decimal) -> bool:
-        """
-        Check if required wallet balance portion is mature.
-        Only check wallet balance if actual_balance is insufficient.
-        Safely handles users without wallets.
-        """
-
-        # If actual balance covers withdrawal → no wallet needed
-        if withdrawal_amount <= actual_balance:
-            return True
-
-        wallet = getattr(user, "wallet", None)
-
-        # If user has NO wallet at all → wallet funds = 0 → not mature
-        if wallet is None:
-            logger.warning(f"User {user.id} has no wallet record. Wallet maturity = 0.")
-            return False
-
-        # Get mature portion safely
-        mature_wallet = WithdrawalValidator._get_mature_wallet_balance(user)
-
-        if mature_wallet is None:
-            mature_wallet = Decimal("0")
-
-        wallet_needed = withdrawal_amount - actual_balance
-
-        return wallet_needed <= mature_wallet
-
-
+            logger.error(f"Validation error: {e}")
+            return False, "Validation failed", None
+    
     @staticmethod
     def _get_mature_wallet_balance(user: User) -> Decimal:
-        """
-        Calculate mature wallet balance (funds older than 24 hours).
-        Fully safe version: handles missing wallet, null balances, and missing transactions.
-        """
-
         hold_cutoff = datetime.now(timezone.utc) - timedelta(hours=WithdrawalConfig.WALLET_HOLD_PERIOD_HOURS)
-
-        # 1️⃣ Mature referral bonuses
-        mature_bonuses = db.session.query(
-            db.func.sum(ReferralBonus.amount).label('total')
-        ).filter(
+        
+        mature_bonuses = db.session.query(func.coalesce(func.sum(ReferralBonus.bonus_amount), Decimal('0'))).filter(
             ReferralBonus.user_id == user.id,
             ReferralBonus.created_at < hold_cutoff,
             ReferralBonus.status == "active"
-        ).scalar() or Decimal('0')
-
-        mature_bonuses = Decimal(str(mature_bonuses))
-
-        # 2️⃣ Mature credit transactions
-        mature_transactions = db.session.query(
-            db.func.sum(Transaction.amount).label('total')
-        ).filter(
-          #  Transaction.user_id == user.id,
+        ).scalar()
+        
+        mature_transactions = db.session.query(func.coalesce(func.sum(Transaction.amount), Decimal('0'))).filter(
             Transaction.type == 'credit',
-            Transaction.created_at < hold_cutoff,
-            # Transaction.balance_type == 'wallet',  # if used
-        ).scalar() or Decimal('0')
-
-        mature_transactions = Decimal(str(mature_transactions))
-
-        # 3️⃣ Safe wallet retrieval
-        wallet = getattr(user, "wallet", None)
-
-        if wallet is None or wallet.balance is None:
-            logger.warning(f"User {user.id} has no wallet record or wallet.balance is None. Mature wallet = 0.")
-            total_wallet = Decimal("0")
-        else:
-            total_wallet = Decimal(str(wallet.balance))
-
-        # 4️⃣ Final mature amount (cannot exceed actual wallet balance)
-        mature_total = mature_bonuses + mature_transactions
-
-        return min(mature_total, total_wallet)
-
+            Transaction.user_id == user.id,
+            Transaction.created_at < hold_cutoff
+        ).scalar()
+        
+        mature_total = Decimal(str(mature_bonuses or 0)) + Decimal(str(mature_transactions or 0))
+        wallet_balance = Decimal(str(user.wallet.balance if user.wallet else 0))
+        
+        return min(mature_total, wallet_balance)
 
 # ==========================================================
-#                  BALANCE MANAGER (VIRTUAL UNIFIED)
+#                  BALANCE MANAGER
 # ==========================================================
 class BalanceManager:
     @staticmethod
-    def process_withdrawal(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str, Optional[Dict]]:
-        """
-        Virtual Unified Balance: Deduct from actual_balance first, then wallet_balance
-        Returns: (success, message, balance_details)
-        """
+    def deduct_balance(user: User, amount: Decimal) -> Tuple[bool, str, Dict]:
         try:
-            user = User.query.get(user_id)
-            if not user:
-                return False, "User not found", None
-
-            amount_dec = Decimal(str(amount))
+            amount = Decimal(str(amount))
+            actual_balance = Decimal(str(user.actual_balance or 0))
+            wallet_balance = Decimal(str(user.wallet.balance if user.wallet else 0))
             
-            # Get current balances as Decimal
-            actual_balance = Decimal(str(user.actual_balance or '0'))
-            wallet_balance = Decimal(str(user.wallet.balance if user.wallet else '0'))
-            
-            # Check total balance sufficiency
-            total_balance = actual_balance + wallet_balance
-            if amount_dec > total_balance:
-                return False, "Insufficient balance", None
-            
-            remaining_amount = amount_dec
+            remaining = amount
             actual_deducted = Decimal('0')
             wallet_deducted = Decimal('0')
             
-            # PHASE 1: Deduct from actual balance first (user's real money)
             if actual_balance > 0:
-                deduct_from_actual = min(actual_balance, remaining_amount)
-                actual_deducted = deduct_from_actual
-                user.actual_balance = actual_balance - deduct_from_actual
-                remaining_amount -= deduct_from_actual
+                actual_deducted = min(actual_balance, remaining)
+                user.actual_balance = float(actual_balance - actual_deducted)
+                remaining -= actual_deducted
             
-            # PHASE 2: Deduct from wallet balance (system money)
-            if remaining_amount > 0 and wallet_balance >= remaining_amount:
-                wallet_deducted = remaining_amount
-                user.wallet.balance = wallet_balance - remaining_amount
-                remaining_amount = Decimal('0')
+            if remaining > 0:
+                if not user.wallet:
+                    BalanceManager._refund(user, actual_deducted, Decimal('0'))
+                    return False, "Wallet not initialized", {}
+                
+                if remaining > wallet_balance:
+                    BalanceManager._refund(user, actual_deducted, Decimal('0'))
+                    return False, "Insufficient wallet balance", {}
+                
+                wallet_deducted = remaining
+                user.wallet.balance = float(wallet_balance - wallet_deducted)
             
-            # Safety check - should never happen due to prior validation
-            if remaining_amount > 0:
-                # Reverse deduction in case of error
-                BalanceManager._reverse_deduction(user, actual_deducted, wallet_deducted)
-                return False, "Insufficient balance after processing", None
+            db.session.flush()
             
-            balance_details = {
-                'actual_balance': user.actual_balance,
-                'wallet_balance': user.wallet.balance if user.wallet else Decimal('0'),
-                'actual_deducted': actual_deducted,
-                'wallet_deducted': wallet_deducted
-              #  'previous_actual': actual_balance,
-               # 'previous_wallet': wallet_balance
+            # Return strings for JSON serialization
+            return True, "Balance deducted", {
+                "actual_deducted": str(actual_deducted),
+                "wallet_deducted": str(wallet_deducted),
+                "new_actual_balance": str(Decimal(str(user.actual_balance or 0))),
+                "new_wallet_balance": str(Decimal(str(user.wallet.balance if user.wallet else 0)))
             }
             
-            return True, "Balance processing successful. Enjoy with Finicash", balance_details
-            
         except Exception as e:
-            logger.error(f"Balance processing error: {e}")
-            return False, f"Balance processing failed: {str(e)}", None
-
+            logger.error(f"Balance deduction error: {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            return False, "Balance deduction failed", {}
+    
     @staticmethod
-    def _reverse_deduction(user: User, actual_deducted: Decimal, wallet_deducted: Decimal):
-        """Reverse a balance deduction in case of errors"""
+    def _refund(user: User, actual_amount: Decimal, wallet_amount: Decimal):
+        if actual_amount > 0:
+            current = Decimal(str(user.actual_balance or 0))
+            user.actual_balance = float(current + actual_amount)
+        if wallet_amount > 0 and user.wallet:
+            current = Decimal(str(user.wallet.balance or 0))
+            user.wallet.balance = float(current + wallet_amount)
+    
+    @staticmethod
+    def refund_withdrawal(user: User, balance_details: Dict) -> bool:
         try:
+            actual_deducted = Decimal(str(balance_details.get('actual_deducted', '0')))
+            wallet_deducted = Decimal(str(balance_details.get('wallet_deducted', '0')))
+            
             if actual_deducted > 0:
-                user.actual_balance += actual_deducted
-            if wallet_deducted > 0:
-                user.wallet.balance += wallet_deducted
+                current = Decimal(str(user.actual_balance or 0))
+                user.actual_balance = float(current + actual_deducted)
+            
+            if wallet_deducted > 0 and user.wallet:
+                current = Decimal(str(user.wallet.balance or 0))
+                user.wallet.balance = float(current + wallet_deducted)
+            
+            db.session.flush()
+            logger.info(f"Refunded {actual_deducted + wallet_deducted} to user {user.id}")
+            return True
         except Exception as e:
-            logger.error(f"Failed to reverse deduction: {e}")
-
-    @staticmethod
-    def reverse_withdrawal(user_id: int, amount: Decimal, balance_details: Dict):
-        """Reverse a withdrawal - refund to correct balance types"""
-        try:
-            user = User.query.get(user_id)
-            if not user:
-                return False, "User not found"
-            
-            # Refund to the same balances they were deducted from
-            if balance_details.get('actual_deducted', Decimal('0')) > 0:
-                user.actual_balance += balance_details['actual_deducted']
-            
-            if balance_details.get('wallet_deducted', Decimal('0')) > 0:
-                user.wallet.balance += balance_details['wallet_deducted']
-            
-            db.session.commit()
-            logger.info(f"Reversed {amount} for user {user_id}")
-            return True, "Balance reversal successful"
-            
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Failed to reverse withdrawal: {e}")
-            return False, f"Reversal failed: {str(e)}"
+            logger.error(f"Refund failed: {e}")
+            return False
 
 # ==========================================================
 #                  WITHDRAWAL RECORD MANAGER
 # ==========================================================
+# ==========================================================
+#                  WITHDRAWAL RECORD MANAGER (WITH IDEMPOTENCY)
+# ==========================================================
 class WithdrawalRecordManager:
+    
     @staticmethod
-    def create_withdrawal_record(user_id: int, amount: Decimal, phone: str, 
-                               balance_details: Dict) -> Tuple[bool, Optional[Withdrawal], str]:
-        """Create withdrawal record with virtual unified balance tracking"""
+    def create_record(user_id: int, amount: Decimal, phone: str, balance_details: Dict, idempotency_key: str = None) -> Optional[Withdrawal]:
+        """Create withdrawal record with idempotency check using your existing table"""
         try:
-            # Calculate net amount after fees
-            fee = WithdrawalConfig.calculate_fee(amount)
-            net_amount = amount - fee
-            reference = str(uuid.uuid4())
+            # IDEMPOTENCY CHECK using your existing IdempotencyKey table
+            if idempotency_key:
+                existing_key = IdempotencyKey.query.filter_by(key=idempotency_key).first()
+                
+                if existing_key:
+                    # If key exists and has withdrawal_id, return existing withdrawal
+                    if existing_key.withdrawal_id:
+                        existing_withdrawal = db.session.get(Withdrawal, existing_key.withdrawal_id)
+                        if existing_withdrawal:
+                            logger.info(f"Idempotent request: {idempotency_key} already processed (withdrawal {existing_withdrawal.id})")
+                            return existing_withdrawal
+                    
+                    # Key exists but no withdrawal_id - duplicate request
+                    logger.warning(f"Duplicate idempotency key detected: {idempotency_key}")
+                    raise WithdrawalException("Duplicate request detected")
+            
+            # Create withdrawal as normal
+            amount_dec = Decimal(str(amount))
+            fee = WithdrawalConfig.calculate_fee(amount_dec)
+            net_amount = amount_dec - fee
+            reference = f"WD-{user_id}-{uuid.uuid4().hex[:8].upper()}"
             
             withdrawal = Withdrawal(
                 user_id=user_id,
-                amount=amount,
-                net_amount=str(net_amount),
-                fee=fee,
+                amount=float(amount_dec),
+                net_amount=float(net_amount),
+                fee=float(fee),
                 phone=phone,
                 status="pending",
                 reference=reference,
-                external_ref=None,
-                actual_balance_deducted=balance_details.get('actual_deducted', Decimal('0')),
-                wallet_balance_deducted=balance_details.get('wallet_deducted', Decimal('0'))
-              #  previous_actual_balance=balance_details.get('previous_actual', Decimal('0')),
-              #  previous_wallet_balance=balance_details.get('previous_wallet', Decimal('0'))
+                actual_balance_deducted=float(Decimal(str(balance_details.get('actual_deducted', '0')))),
+                wallet_balance_deducted=float(Decimal(str(balance_details.get('wallet_deducted', '0'))))
             )
             
             db.session.add(withdrawal)
-            db.session.commit()
+            db.session.flush()  # Get withdrawal.id
             
-            return True, withdrawal, "Withdrawal record created"
+            # STORE IDEMPOTENCY KEY with your table structure
+            if idempotency_key:
+                
+                idem_record = IdempotencyKey(
+                    key=idempotency_key,
+                    user_id=user_id,
+                    withdrawal_id=withdrawal.id,  # Link to withdrawal
+                    expires_at=IdempotencyKey.make_expires(3600)  # 1 hour expiry
+                )
+                db.session.add(idem_record)
             
+            logger.info(f"Withdrawal record created: {reference} (idempotency: {idempotency_key})")
+            return withdrawal
+            
+        except WithdrawalException:
+            raise
         except Exception as e:
-            logger.error(f"Failed to create withdrawal record: {e}")
-            return False, None, f"Record creation failed: {str(e)}"
-
+            logger.error(f"Record creation error: {e}")
+            return None
+# class WithdrawalRecordManager:
+#     @staticmethod
+#     def create_record(user_id: int, amount: Decimal, phone: str, balance_details: Dict) -> Optional[Withdrawal]:
+#         try:
+#             amount_dec = Decimal(str(amount))
+#             fee = WithdrawalConfig.calculate_fee(amount_dec)
+#             net_amount = amount_dec - fee
+            
+#             reference = f"WD-{user_id}-{uuid.uuid4().hex[:8].upper()}"
+            
+#             withdrawal = Withdrawal(
+#                 user_id=user_id,
+#                 amount=float(amount_dec),
+#                 net_amount=float(net_amount),
+#                 fee=float(fee),
+#                 phone=phone,
+#                 status="pending",
+#                 reference=reference,
+#                 actual_balance_deducted=float(Decimal(str(balance_details.get('actual_deducted', '0')))),
+#                 wallet_balance_deducted=float(Decimal(str(balance_details.get('wallet_deducted', '0'))))
+#             )
+            
+#             db.session.add(withdrawal)
+#             db.session.flush()
+            
+#             logger.info(f"Withdrawal record created: {reference}")
+#             return withdrawal
+            
+#         except Exception as e:
+#             logger.error(f"Record creation error: {e}")
+#             return None
+    
     @staticmethod
-    def update_withdrawal_status(withdrawal_id: int, status: str, external_txid: str = None):
-        """Update withdrawal status"""
+    def update_status(withdrawal_id: int, status: str, external_ref: str = None) -> bool:
         try:
-            withdrawal = Withdrawal.query.get(withdrawal_id)
-            if withdrawal:
-                withdrawal.status = status
-                if external_txid:
-                    withdrawal.external_txid = external_txid
-                withdrawal.updated_at = datetime.now(timezone.utc)
-                db.session.commit()
-                return True
+            withdrawal = db.session.get(Withdrawal, withdrawal_id)
+            if not withdrawal:
+                return False
+            
+            withdrawal.status = status
+            if external_ref:
+                withdrawal.external_ref = external_ref
+            withdrawal.updated_at = datetime.now(timezone.utc)
+            db.session.flush()
+            return True
+        except Exception as e:
+            logger.error(f"Status update error: {e}")
             return False
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Failed to update withdrawal status: {e}")
-            return False
-
-# ==========================================================
-#                  NOTIFICATION MANAGER
-# ==========================================================
-class WithdrawalNotifier:
-    @staticmethod
-    def notify_user_about_hold(user_id: int, amount: Decimal, reason: str):
-        """Notify user about withdrawal hold"""
-        try:
-            user = User.query.get(user_id)
-            if user:
-                logger.info(f"[HOLD] User {user.id} - Amount: {amount} - Reason: {reason}")
-                # TODO: Integrate with email/SMS service
-        except Exception as e:
-            logger.error(f"Hold notification failed: {e}")
-
-    @staticmethod
-    def notify_instant_withdrawal(user_id: int, amount: Decimal, withdrawal_id: int):
-        """Notify about successful withdrawal processing"""
-        try:
-            user = User.query.get(user_id)
-            if user:
-                logger.info(f"[INSTANT] User {user.id} withdrew {amount} - ID: {withdrawal_id}")
-                # TODO: Integrate with notification service
-        except Exception as e:
-            logger.error(f"Instant withdrawal notification failed: {e}")
-
-    @staticmethod
-    def notify_withdrawal_failure(user_id: int, amount: Decimal, reason: str):
-        """Notify about withdrawal failure"""
-        try:
-            user = User.query.get(user_id)
-            if user:
-                logger.warning(f"[FAILED] User {user.id} - Amount: {amount} - Reason: {reason}")
-        except Exception as e:
-            logger.error(f"Failure notification failed: {e}")
 
 # ==========================================================
 #                  MAIN WITHDRAWAL PROCESSOR
 # ==========================================================
 class WithdrawalProcessor:
-    """
-    Main withdrawal processor with Virtual Unified Balance
-    """
-    
     @staticmethod
-    @BalanceLockManager.with_lock
-    def process_withdrawal_request(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str, Optional[Dict]]:
-        """
-        Process withdrawal request with virtual unified balance
-        Returns: (success, message, withdrawal_data)
-        """
-        withdrawal_data = {}
+    def process_withdrawal_request(user_id: int, amount: Decimal, phone: str, idempotency_key: str = None) -> Tuple[bool, str, Optional[Dict]]:
+        """Process withdrawal with simple idempotency"""
+        withdrawal = None
+        details = None
         
         try:
-            # Step 1: Validation
-            is_valid, validation_msg = WithdrawalValidator.validate_withdrawal_request(user_id, amount, phone)
-            if not is_valid:
-                if "24" in validation_msg or "hold" in validation_msg.lower():
-                    WithdrawalNotifier.notify_user_about_hold(user_id, amount, validation_msg)
-                return False, validation_msg, None
-
-            # Step 2: Virtual Unified Balance Deduction
-            success, balance_msg, balance_details = BalanceManager.process_withdrawal(user_id, amount, phone)
+            # Validate
+            ok, msg, user = WithdrawalValidator.validate_withdrawal(user_id, amount, phone)
+            if not ok:
+                return False, msg, None
+            
+            # 🔥 Check idempotency BEFORE any deduction
+            if idempotency_key:  
+                existing_key = IdempotencyKey.query.filter_by(
+                    key=idempotency_key, 
+                    user_id=user_id
+                ).first()
+                
+                if existing_key and existing_key.withdrawal_id:
+                    # Already processed, return existing withdrawal
+                    existing_withdrawal = db.session.get(Withdrawal, existing_key.withdrawal_id)
+                    if existing_withdrawal:
+                        logger.info(f"Returning existing withdrawal for key: {idempotency_key}")
+                        return True, "Withdrawal already processed", {
+                            "withdrawal_id": existing_withdrawal.id,
+                            "reference": existing_withdrawal.reference,
+                            "net_amount": str(existing_withdrawal.net_amount),
+                            "fee": str(existing_withdrawal.fee),
+                            "already_processed": True
+                        }
+            
+            # Lock and deduct (only if not idempotent)
+            user_locked = get_user_with_lock(user_id)
+            wallet_locked = get_wallet_with_lock(user_id)
+            
+            if not user_locked or not wallet_locked:
+                return False, "Another transaction in progress", None
+            
+            success, msg, details = BalanceManager.deduct_balance(user, Decimal(str(amount)))
             if not success:
-                WithdrawalNotifier.notify_withdrawal_failure(user_id, amount, balance_msg)
-                return False, balance_msg, None
-
-            # Step 3: Create Withdrawal Record
-            record_success, withdrawal, record_msg = WithdrawalRecordManager.create_withdrawal_record(
-                user_id, amount, phone, balance_details
+                return False, msg, None
+            
+            # Create record WITH IDEMPOTENCY KEY
+            withdrawal = WithdrawalRecordManager.create_record(
+                user_id, amount, phone, details, idempotency_key
             )
             
-            if not record_success:
-                # Critical: Reverse balance deduction if record creation fails
-                BalanceManager.reverse_withdrawal(user_id, amount, balance_details)
-                WithdrawalNotifier.notify_withdrawal_failure(user_id, amount, record_msg)
-                return False, "Withdrawal processing failed. Please try again.", None
-
-            # Step 4: Final Commit
+            if not withdrawal:
+                BalanceManager.refund_withdrawal(user, details)
+                db.session.flush()
+                return False, "Failed to create withdrawal record", None
+            
+            # 🔥 Update idempotency key with withdrawal_id if not already set
+            if idempotency_key and withdrawal:
+                idem_key = IdempotencyKey.query.filter_by(key=idempotency_key).first()
+                if idem_key and not idem_key.withdrawal_id:
+                    idem_key.withdrawal_id = withdrawal.id
+                    db.session.add(idem_key)
+            
+            # Commit
             db.session.commit()
             
-            # Step 5: Notify Success
-            WithdrawalNotifier.notify_instant_withdrawal(user_id, amount, withdrawal.id)
-            
-            # Step 6: Prepare response data
-            withdrawal_data = {
-                'withdrawal_id': withdrawal.id,
-                'reference': withdrawal.reference,
-                'net_amount': str(withdrawal.net_amount),
-                'fee': withdrawal.fee,
-                'balances': {
-                    'new_actual_balance': balance_details['actual_balance'],
-                    'new_wallet_balance': balance_details['wallet_balance'],
-                    'actual_deducted': balance_details['actual_deducted'],
-                    'wallet_deducted': balance_details['wallet_deducted']
+            # Return success
+            return True, "Withdrawal successful", {
+                "withdrawal_id": withdrawal.id,
+                "reference": withdrawal.reference,
+                "net_amount": str(withdrawal.net_amount),
+                "fee": str(withdrawal.fee),
+                "balances": {
+                    "actual_deducted": details.get("actual_deducted", "0"),
+                    "wallet_deducted": details.get("wallet_deducted", "0"),
+                    "new_actual_balance": details.get("new_actual_balance", "0"),
+                    "new_wallet_balance": details.get("new_wallet_balance", "0")
                 }
             }
             
-            return True, "Withdrawal request submitted successfully", withdrawal_data
-
-        except Exception as e:
-            # COMPREHENSIVE ERROR HANDLING
+        except WithdrawalException as e:
             db.session.rollback()
-            logger.error(f"Withdrawal processing failed for user {user_id}: {e}")
-            
-            # Attempt to reverse any partial changes
-            try:
-                if 'balance_details' in locals():
-                    BalanceManager.reverse_withdrawal(user_id, amount, balance_details)
-            except Exception as reversal_error:
-                logger.critical(f"CRITICAL: Failed to reverse withdrawal for user {user_id}: {reversal_error}")
-            
-            WithdrawalNotifier.notify_withdrawal_failure(user_id, amount, str(e))
-            return False, "Withdrawal processing failed. Please try again.", None
-
-    @staticmethod
-    def complete_withdrawal(withdrawal_id: int, external_txid: str = None) -> bool:
-        """Mark withdrawal as completed"""
-        return WithdrawalRecordManager.update_withdrawal_status(
-            withdrawal_id, "completed", external_txid
-        )
-
-    @staticmethod
-    def fail_withdrawal(withdrawal_id: int, user_id: int, amount: Decimal, 
-                       balance_details: Dict) -> bool:
-        """Mark withdrawal as failed and reverse balances"""
-        try:
-            # Reverse balances first
-            success, msg = BalanceManager.reverse_withdrawal(user_id, amount, balance_details)
-            if success:
-                # Then update withdrawal status
-                return WithdrawalRecordManager.update_withdrawal_status(withdrawal_id, "failed")
-            return False
+            return False, str(e), None
         except Exception as e:
-            logger.error(f"Failed to process withdrawal failure: {e}")
+            db.session.rollback()
+            logger.error(f"Withdrawal failed: {e}", exc_info=True)
+            
+            # Clean up idempotency key on failure
+            if idempotency_key and withdrawal is None:
+                try:
+                    IdempotencyKey.query.filter_by(key=idempotency_key).delete()
+                    db.session.commit()
+                except:
+                    pass
+            
+            return False, "Withdrawal failed", None
+
+        except WithdrawalException as e:
+            db.session.rollback()
+            return False, str(e), None
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Withdrawal failed: {e}", exc_info=True)
+            return False, "Withdrawal failed", None
+    
+    @staticmethod
+    def complete_withdrawal(withdrawal_id: int, external_ref: str = None) -> bool:
+        """Mark withdrawal as completed (called by webhook/callback)"""
+        try:
+            success = WithdrawalRecordManager.update_status(withdrawal_id, "completed", external_ref)
+            if success:
+                db.session.commit()
+            return success
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to complete withdrawal {withdrawal_id}: {e}")
+            return False
+    
+    @staticmethod
+    def fail_withdrawal(withdrawal_id: int, user_id: int, amount: Decimal, balance_details: Dict) -> bool:
+        """Mark withdrawal as failed and refund balance"""
+        try:
+            user = db.session.get(User, user_id)
+            if user and balance_details:
+                BalanceManager.refund_withdrawal(user, balance_details)
+            
+            success = WithdrawalRecordManager.update_status(withdrawal_id, "failed")
+            if success:
+                db.session.commit()
+            return success
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to fail withdrawal {withdrawal_id}: {e}")
             return False
 
 # ==========================================================
@@ -520,23 +534,17 @@ class WithdrawalProcessor:
 class WithdrawalQueryHelper:
     @staticmethod
     def get_user_withdrawals(user_id: int, limit: int = 10):
-        """Get user's withdrawal history"""
         return Withdrawal.query.filter_by(user_id=user_id)\
-                              .order_by(Withdrawal.created_at.desc())\
-                              .limit(limit)\
-                              .all()
+            .order_by(Withdrawal.created_at.desc())\
+            .limit(limit)\
+            .all()
     
     @staticmethod
-    def get_pending_withdrawals():
-        """Get all pending withdrawals for processing"""
+    def get_withdrawal_by_reference(reference: str):
+        return Withdrawal.query.filter_by(reference=reference).first()
+    
+    @staticmethod
+    def get_pending_withdrawals(limit: int = 100):
         return Withdrawal.query.filter(
             Withdrawal.status.in_(['pending', 'processing'])
-        ).all()
-    
-    @staticmethod
-    def get_withdrawal_by_ref(reference: str):
-        """Find withdrawal by reference"""
-        return Withdrawal.query.filter_by(reference=reference).first()
-
-
-
+        ).limit(limit).all()

@@ -265,6 +265,13 @@ class Transaction(db.Model, BaseMixin):
 
     wallet = db.relationship('Wallet', back_populates='transactions')
 
+    user_id = db.Column(
+    db.Integer,
+    db.ForeignKey('users.id', ondelete='CASCADE'),
+    nullable=False,
+    index=True
+)
+    user = db.relationship('User', backref='transactions')
     Index('idx_transaction_created', 'created_at'),
 
 # ===========================================================
@@ -581,7 +588,8 @@ class IdempotencyKey(db.Model, BaseMixin):
     key = db.Column(db.String(128), unique=True, nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
-
+    # models.py - Add to IdempotencyKey class
+    withdrawal_id = db.Column(db.Integer, db.ForeignKey('withdrawals.id'), nullable=True)
     @staticmethod
     def make_expires(ttl_seconds: int = 3600):
         return datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
@@ -689,13 +697,50 @@ class BonusPayoutQueue(db.Model):
     
     def __repr__(self):
         return f'<Activity {self.id} {self.type} {self.title}>'
+class OTPRequest(db.Model):
+    __tablename__ = "otp_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False, index=True)
+    phone = db.Column(db.String(20), nullable=False)
+    otp_hash = db.Column(db.String(255), nullable=False)
+    purpose = db.Column(db.String(50), index=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    attempts = db.Column(db.Integer, default=0)
+    is_used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('idx_otp_phone_purpose', 'phone', 'purpose'),
+        db.Index('idx_otp_expiry', 'expires_at'),
+    )
 
 # Index for better query performance
 __table_args__ = (
     db.Index('idx_activities_timestamp_type', 'timestamp', 'type'),
     db.Index('idx_activities_user_timestamp', 'user_id', 'timestamp'),
 )
-
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notification_type = db.Column(db.String(50), default='general')
+    
+    # Relationship
+    user = db.relationship('User', foreign_keys=user_id)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'message': self.message,
+            'is_read': self.is_read,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+    
 # Add these indexes to ensure performance with large networks
 additional_indexes = [
     # For network traversal

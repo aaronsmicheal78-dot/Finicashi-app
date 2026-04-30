@@ -1277,3 +1277,724 @@ async function init() {
 
 init();
 
+
+/*VERIFY OTP */
+const verifyBtn = document.getElementById('verifyOtpBtn');
+if (verifyBtn) {
+    verifyBtn.addEventListener('click', async () => {
+        const otp = document.getElementById('otpInput').value;
+
+        if (!otp) {
+            showAlert("Enter OTP", true);
+            return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = 'Verifying...';
+
+        try {
+            await apiCall('/api/verify-otp', {
+                method: 'POST',
+                body: JSON.stringify({ otp })
+            });
+
+            showAlert("Verification successful!");
+            loadVerificationStatus(); // refresh UI
+
+        } catch (err) {
+            showAlert(`Verification failed: ${err.message}`, true);
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = 'Verify';
+        }
+    });
+}
+/* RESEND VERIFICATION OTP */
+const resendBtn = document.getElementById('resendOtpBtn');
+if (resendBtn) {
+    resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+        resendBtn.innerHTML = 'Sending...';
+
+        try {
+            await apiCall('/api/request-verification', { method: 'POST' });
+            showAlert("OTP resent!");
+        } catch (err) {
+            showAlert(`Resend failed: ${err.message}`, true);
+        }
+
+        resendBtn.disabled = false;
+        resendBtn.innerHTML = 'Resend';
+    });
+}
+
+function attachOTPEvents() {
+    const verifyBtn = document.getElementById('verifyOtpBtn');
+    const resendBtn = document.getElementById('resendOtpBtn');
+
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', async () => {
+            const otp = document.getElementById('otpInput').value;
+
+            if (!otp) {
+                showAlert("Enter OTP", true);
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = 'Verifying...';
+
+            try {
+                await apiCall('/api/verify-otp', {
+                    method: 'POST',
+                    body: JSON.stringify({ otp })
+                });
+
+                showAlert("Verification successful!");
+                loadVerificationStatus(); // refresh final state
+
+            } catch (err) {
+                showAlert(`Verification failed: ${err.message}`, true);
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = 'Verify';
+            }
+        });
+    }
+
+    if (resendBtn) {
+        resendBtn.addEventListener('click', async () => {
+            resendBtn.disabled = true;
+            resendBtn.innerHTML = 'Sending...';
+
+            try {
+                await apiCall('/api/request-verification', { method: 'POST' });
+                showAlert("OTP resent!");
+            } catch (err) {
+                showAlert(`Resend failed: ${err.message}`, true);
+            }
+
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = 'Resend';
+        });
+    }
+}
+``
+
+
+
+// network-dashboard.js
+
+/**
+ * Network Dashboard Module
+ * Handles fetching and displaying user network data
+ */
+
+class NetworkDashboard {
+    constructor(userId) {
+        this.userId = userId;
+        this.apiEndpoint = `/api/user/${userId}/network`;
+        this.elements = {
+            networkSize: null,
+            networkDepth: null,
+            directReferrals: null
+        };
+    }
+
+    /**
+     * Initialize the dashboard
+     */
+    async init() {
+        this.captureElements();
+        await this.loadAndDisplayNetworkData();
+    }
+
+    /**
+     * Capture DOM elements with error handling
+     */
+    captureElements() {
+        this.elements.networkSize = document.getElementById('network-size');
+        this.elements.networkDepth = document.getElementById('network-depth');
+        
+        // Create direct referrals element if it doesn't exist
+        if (!document.getElementById('direct-referrals')) {
+            this.createDirectReferralsElement();
+        }
+        this.elements.directReferrals = document.getElementById('direct-referrals');
+    }
+
+    /**
+     * Create the direct referrals element if missing
+     */
+    createDirectReferralsElement() {
+        const networkCard = document.getElementById('statNetworkGrowth');
+        if (networkCard) {
+            const directReferralsDiv = document.createElement('div');
+            directReferralsDiv.id = 'direct-referrals';
+            directReferralsDiv.className = 'direct-referrals-stats';
+            directReferralsDiv.style.marginTop = '15px';
+            directReferralsDiv.style.padding = '10px';
+            directReferralsDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+            directReferralsDiv.style.borderRadius = '8px';
+            
+            // Insert after the network-depth element
+            const depthElement = document.getElementById('network-depth');
+            if (depthElement && depthElement.parentNode) {
+                depthElement.parentNode.insertBefore(directReferralsDiv, depthElement.nextSibling);
+            } else {
+                networkCard.appendChild(directReferralsDiv);
+            }
+        }
+    }
+
+    /**
+     * Fetch network data from API
+     */
+    async fetchNetworkData() {
+        try {
+            const response = await fetch(this.apiEndpoint);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to fetch network data');
+            }
+            
+            return data.network;
+            
+        } catch (error) {
+            console.error('API fetch error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Format numbers with commas (e.g., 1200 -> 1,200)
+     */
+    formatNumber(num) {
+        if (num === undefined || num === null) return '0';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    /**
+     * Get motivational message based on network size
+     */
+    getMotivationalMessage(networkSize, directDescendants, depth) {
+        if (networkSize === 0) {
+            return "Start building your network today! Every referral counts.";
+        } else if (networkSize < 10) {
+            return "Great start! Keep growing your network.";
+        } else if (networkSize < 50) {
+            return "Impressive growth! You're building a strong community.";
+        } else if (networkSize < 100) {
+            return "Outstanding! Your network is thriving.";
+        } else {
+            return "Exceptional! You're a true network leader! 🎉";
+        }
+    }
+
+    /**
+     * Update the UI with network data
+     */
+    renderNetworkCard(networkData) {
+        const {
+            direct_descendants_count = 0,
+            total_network_size = 0,
+            network_depth = 0
+        } = networkData;
+
+        // Format numbers
+        const formattedNetworkSize = this.formatNumber(total_network_size);
+        const formattedDirectReferrals = this.formatNumber(direct_descendants_count);
+        
+        // Get card container
+        const networkCard = document.getElementById('statNetworkGrowth');
+        
+        // Update network size
+        if (this.elements.networkSize) {
+            this.elements.networkSize.innerHTML = `
+                <div style="margin: 10px 0 5px 0; font-size: 14px; color: #666;">
+                    <i class="fas fa-chart-network"></i> Total Network Size
+                </div>
+                <div style="font-size: 32px; font-weight: bold; color: #2c3e50;">
+                    ${formattedNetworkSize}
+                </div>
+                <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
+                    ${this.getMotivationalMessage(total_network_size, direct_descendants_count, network_depth)}
+                </div>
+            `;
+        }
+        
+        // Update network depth
+        if (this.elements.networkDepth) {
+            this.elements.networkDepth.innerHTML = `
+                <div style="margin: 10px 0 5px 0; font-size: 14px; color: #666;">
+                    <i class="fas fa-layer-group"></i> Network Depth
+                </div>
+                <div style="font-size: 24px; font-weight: bold; color: #3498db;">
+                    ${network_depth} Levels
+                </div>
+                <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
+                    Your influence reaches ${network_depth} levels deep
+                </div>
+            `;
+        }
+        
+        // Update direct referrals
+        if (this.elements.directReferrals) {
+            this.elements.directReferrals.innerHTML = `
+                <div style="margin: 5px 0 5px 0; font-size: 14px; color: #666;">
+                    <i class="fas fa-user-friends"></i> Direct Referrals
+                </div>
+                <div style="font-size: 24px; font-weight: bold; color: #2ecc71;">
+                    ${formattedDirectReferrals} People
+                </div>
+                <div style="font-size: 12px; color: #7f8f8d; margin-top: 5px;">
+                    You directly referred ${formattedDirectReferrals} ${direct_descendants_count === 1 ? 'person' : 'people'}
+                </div>
+            `;
+        }
+        
+        // Update the main stat value (growth indicator)
+        const statValueElement = networkCard?.querySelector('.main-stat-value');
+        if (statValueElement && total_network_size > 0) {
+            // You can calculate growth based on previous data if available
+            // For now, showing a friendly message
+            statValueElement.innerHTML = `🎯 ${formattedNetworkSize}`;
+        }
+        
+        const statLabelElement = networkCard?.querySelector('.main-stat-label');
+        if (statLabelElement) {
+            statLabelElement.innerHTML = `Total Network Members`;
+        }
+    }
+
+    /**
+     * Show loading state
+     */
+    showLoadingState() {
+        const loadingMessage = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+                <p style="margin-top: 10px; color: #666;">Loading network data...</p>
+            </div>
+        `;
+        
+        if (this.elements.networkSize) {
+            this.elements.networkSize.innerHTML = loadingMessage;
+        }
+        if (this.elements.networkDepth) {
+            this.elements.networkDepth.innerHTML = loadingMessage;
+        }
+        if (this.elements.directReferrals) {
+            this.elements.directReferrals.innerHTML = loadingMessage;
+        }
+    }
+
+    /**
+     * Show error state
+     */
+    showErrorState(errorMessage) {
+        const errorHtml = `
+            <div style="text-align: center; padding: 15px; background: #fee; border-radius: 8px; color: #c0392b;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 20px;"></i>
+                <p style="margin-top: 8px; font-size: 13px;">${errorMessage}</p>
+                <button onclick="location.reload()" style="margin-top: 10px; padding: 5px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Retry
+                </button>
+            </div>
+        `;
+        
+        if (this.elements.networkSize) {
+            this.elements.networkSize.innerHTML = errorHtml;
+        }
+        
+        console.error('Network Dashboard Error:', errorMessage);
+    }
+
+    /**
+     * Main function to load and display data
+     */
+    async loadAndDisplayNetworkData() {
+        try {
+            // Show loading state
+            this.showLoadingState();
+            
+            // Fetch data from API
+            const networkData = await this.fetchNetworkData();
+            
+            // Update UI with fetched data
+            this.renderNetworkCard(networkData);
+            
+        } catch (error) {
+            // Handle errors gracefully
+            let userFriendlyMessage = 'Unable to load network data. Please try again later.';
+            
+            if (error.message.includes('404')) {
+                userFriendlyMessage = 'Network data not found.';
+            } else if (error.message.includes('500')) {
+                userFriendlyMessage = 'Server error. Please try again later.';
+            } else if (error.message.includes('Failed to fetch')) {
+                userFriendlyMessage = 'Network connection error. Please check your internet.';
+            }
+            
+            this.showErrorState(userFriendlyMessage);
+        }
+    }
+}
+
+/**
+ * Helper function to get current user ID
+ * Modify this based on how your app stores user data
+ */
+function getCurrentUserId() {
+    // Option 1: From global variable
+    if (window.currentUserId) {
+        return window.currentUserId;
+    }
+    
+    // Option 2: From localStorage
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+        return parseInt(storedUserId);
+    }
+    
+    // Option 3: From meta tag
+    const metaTag = document.querySelector('meta[name="user-id"]');
+    if (metaTag) {
+        return parseInt(metaTag.getAttribute('content'));
+    }
+    
+    // Option 4: Default demo user (replace with actual logic)
+    console.warn('No user ID found, using default (1)');
+    return 1; // Demo user ID
+}
+
+/**
+ * Initialize the dashboard when DOM is ready
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    const userId = getCurrentUserId();
+    const dashboard = new NetworkDashboard(userId);
+    dashboard.init();
+});
+
+// Export for module usage (if using modules)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { NetworkDashboard };
+}
+
+// notifications.js - SINGLE CLEAN VERSION
+
+// Helper function - define once
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Single loadNotifications function
+async function loadNotifications() {
+    // Use the correct container from your HTML
+    const container = document.getElementById('notificationsContent');
+    const countElement = document.getElementById('notificationsCount');
+    
+    // Safety check - exit if elements don't exist
+    if (!container) {
+        console.warn('notificationsContent element not found in DOM');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/notifications', {
+            headers: {
+                'Content-Type': 'application/json'
+                // Remove Authorization if using session auth
+                // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load notifications');
+        
+        const notifications = await response.json();
+        
+        // Update count if element exists
+        if (countElement) {
+            const unreadCount = notifications.filter(n => !n.is_read).length;
+            countElement.textContent = unreadCount;
+        }
+        
+        if (!notifications || notifications.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-bell-slash text-muted mb-2" style="font-size: 24px;"></i>
+                    <p class="text-muted mb-0">No notifications yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Show only last 5 notifications
+        const recent = notifications.slice(0, 5);
+        
+        let html = '<div class="notifications-list">';
+        for (let notif of recent) {
+            const date = notif.created_at ? new Date(notif.created_at).toLocaleDateString() : 'Recent';
+            html += `
+                <div class="notification-item ${notif.is_read ? 'read' : ''}" data-id="${notif.id}">
+                    <div class="notification-icon">
+                        <i class="fas ${notif.is_read ? 'fa-envelope-open' : 'fa-envelope'}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-message">${escapeHtml(notif.message)}</div>
+                        <div class="notification-date">${date}</div>
+                    </div>
+                    ${!notif.is_read ? '<div class="notification-unread-dot"></div>' : ''}
+                </div>
+            `;
+        }
+        html += '</div>';
+        
+        container.innerHTML = html;
+        
+        // Add click handlers to mark as read
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const id = item.dataset.id;
+                if (!item.classList.contains('read')) {
+                    try {
+                        await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+                        item.classList.add('read');
+                        const dot = item.querySelector('.notification-unread-dot');
+                        if (dot) dot.remove();
+                        
+                        // Update unread count
+                        if (countElement) {
+                            const currentCount = parseInt(countElement.textContent) || 0;
+                            countElement.textContent = Math.max(0, currentCount - 1);
+                        }
+                    } catch (err) {
+                        console.error('Failed to mark as read:', err);
+                    }
+                }
+            });
+        });
+        
+    } catch (err) {
+        console.error('Error loading notifications:', err);
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning mb-2" style="font-size: 24px;"></i>
+                <p class="text-muted mb-0">Failed to load notifications</p>
+                <button onclick="loadNotifications()" class="btn btn-sm btn-outline-primary mt-2">
+                    <i class="fas fa-sync-alt"></i> Retry
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById('notificationsContent')) {
+            loadNotifications();
+            // Refresh every 30 seconds
+            setInterval(loadNotifications, 30000);
+        }
+    });
+} else {
+    if (document.getElementById('notificationsContent')) {
+        loadNotifications();
+        setInterval(loadNotifications, 30000);
+    }
+}
+
+
+
+
+// // notifications.js
+// async function loadNotifications() {
+//     const container = document.getElementById('notificationsList');
+    
+//     try {
+//         const response = await fetch('/api/notifications', {
+//             headers: {
+//                 'Authorization': `Bearer ${localStorage.getItem('token')}` // If using token auth
+//             }
+//         });
+        
+//         if (!response.ok) throw new Error('Failed to load');
+        
+//         const notifications = await response.json();
+        
+//         if (!notifications || notifications.length === 0) {
+//             container.innerHTML = `
+//                 <div class="text-center py-4">
+//                     <i class="fas fa-bell-slash text-muted mb-2"></i>
+//                     <p class="text-muted mb-0">No notifications yet</p>
+//                 </div>
+//             `;
+//             return;
+//         }
+        
+//         // Show only last 5
+//         const recent = notifications.slice(0, 5);
+        
+//         let html = '';
+//         for (let notif of recent) {
+//             const date = notif.created_at ? new Date(notif.created_at).toLocaleDateString() : 'Recent';
+//             html += `
+//                 <div class="notification-item" data-id="${notif.id}">
+//                     <div class="notification-icon">
+//                         <i class="fas ${notif.is_read ? 'fa-envelope-open' : 'fa-envelope'}"></i>
+//                     </div>
+//                     <div class="notification-content">
+//                         <div class="notification-message">${escapeHtml(notif.message)}</div>
+//                         <div class="notification-date">${date}</div>
+//                     </div>
+//                     ${!notif.is_read ? '<div class="notification-unread-dot"></div>' : ''}
+//                 </div>
+//             `;
+//         }
+        
+//         container.innerHTML = html;
+        
+//         // Add click handlers to mark as read
+//         document.querySelectorAll('.notification-item').forEach(item => {
+//             item.addEventListener('click', async () => {
+//                 const id = item.dataset.id;
+//                 await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+//                 item.classList.add('read');
+//                 const dot = item.querySelector('.notification-unread-dot');
+//                 if (dot) dot.remove();
+//             });
+//         });
+        
+//     } catch (err) {
+//         console.error('Error loading notifications:', err);
+//         container.innerHTML = `
+//             <div class="alert alert-warning py-2 mb-0">
+//                 <i class="fas fa-exclamation-triangle me-2"></i>
+//                 Could not load notifications
+//             </div>
+//         `;
+//     }
+// }
+
+// // Helper function
+// function escapeHtml(text) {
+//     if (!text) return '';
+//     const div = document.createElement('div');
+//     div.textContent = text;
+//     return div.innerHTML;
+// }
+
+// // Auto-refresh every 30 seconds
+// if (document.getElementById('notificationsList')) {
+//     loadNotifications();
+//     setInterval(loadNotifications, 30000);
+// }
+
+
+//         // Load notifications on page load
+//         async function loadNotifications() {
+//             const container = document.getElementById('notificationsList');
+            
+//             try {
+//                 const response = await fetch('/api/notifications');
+//                 const notifications = await response.json();
+                
+//                 if (!response.ok) throw new Error(notifications.error || 'Failed to load');
+                
+//                 if (!notifications || notifications.length === 0) {
+//                     container.innerHTML = `
+//                         <div class="empty-state">
+//                             <i class="fas fa-bell-slash"></i>
+//                             <div>No notifications yet</div>
+//                         </div>
+//                     `;
+//                     document.getElementById('notifCount').textContent = '0';
+//                     return;
+//                 }
+                
+//                 // Update count of unread
+//                 const unreadCount = notifications.filter(n => !n.is_read).length;
+//                 document.getElementById('notifCount').textContent = unreadCount;
+                
+//                 // Show last 5
+//                 const recent = notifications.slice(0, 5);
+                
+//                 let html = '';
+//                 for (let notif of recent) {
+//                     const date = notif.created_at ? new Date(notif.created_at).toLocaleDateString() : 'Today';
+//                     html += `
+//                         <div class="notification-item ${notif.is_read ? 'read' : ''}" data-id="${notif.id}">
+//                             <div class="notification-icon">
+//                                 <i class="fas ${notif.is_read ? 'fa-envelope-open' : 'fa-envelope'}"></i>
+//                             </div>
+//                             <div class="notification-content">
+//                                 <div class="notification-message">${escapeHtml(notif.message)}</div>
+//                                 <div class="notification-date">${date}</div>
+//                             </div>
+//                             ${!notif.is_read ? '<div class="notification-unread-dot"></div>' : ''}
+//                         </div>
+//                     `;
+//                 }
+                
+//                 container.innerHTML = html;
+                
+//                 // Add click handlers
+//                 document.querySelectorAll('.notification-item').forEach(item => {
+//                     item.addEventListener('click', async () => {
+//                         const id = item.dataset.id;
+//                         if (!item.classList.contains('read')) {
+//                             await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+//                             item.classList.add('read');
+//                             const dot = item.querySelector('.notification-unread-dot');
+//                             if (dot) dot.remove();
+                            
+//                             // Update count
+//                             const newUnread = unreadCount - 1;
+//                             document.getElementById('notifCount').textContent = newUnread;
+//                         }
+//                     });
+//                 });
+                
+//             } catch (err) {
+//                 console.error('Error:', err);
+//                 container.innerHTML = `
+//                     <div class="empty-state">
+//                         <i class="fas fa-exclamation-triangle"></i>
+//                         <div>Failed to load notifications</div>
+//                     </div>
+//                 `;
+//             }
+//         }
+        
+//         function escapeHtml(text) {
+//             if (!text) return '';
+//             const div = document.createElement('div');
+//             div.textContent = text;
+//             return div.innerHTML;
+//         }
+        
+//         // Load on page ready
+//         loadNotifications();
+        
+//         // Refresh every 30 seconds
+//         setInterval(loadNotifications, 30000);
+
+//        async function initDashboard() {
+//         //setupActionButtons();
+//         await Promise.all([
+//            // loadProfileSummary(),
+//             loadVerificationStatus(),
+//          //   loadProfileDetails(),
+//             loadNotifications()
+//         ]);
+//        // initTabs(); // loads matches with pending by default
+//     }

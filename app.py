@@ -102,12 +102,14 @@ def create_app():
         from blueprints.admin import admin_bp as admin_bp
         from blueprints.payments import bp as payment_bp
         from activity import activity_bp as activity_bp
+        from notification.notification import notification_bp
        
         app.register_blueprint(auth_bp)
         app.register_blueprint(profile_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(payment_bp)
         app.register_blueprint(activity_bp)
+        app.register_blueprint(notification_bp)
      
     register_blueprints(app)
     #print(app.url_map)

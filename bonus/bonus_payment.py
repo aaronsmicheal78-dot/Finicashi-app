@@ -97,6 +97,7 @@ class BonusPaymentHelper:
             # Create transaction record
             transaction_ref = f"BONUS_{bonus_id}_{uuid.uuid4().hex[:8].upper()}"
             transaction = Transaction(
+                user_id=user_id,
                 wallet_id=wallet.id,
                 type='referral_bonus',
                 amount=amount_decimal,
@@ -110,7 +111,6 @@ class BonusPaymentHelper:
                 created_at=datetime.now(timezone.utc)
             )
             db.session.add(transaction)
-
             # Commit all changes
             db.session.commit()
             current_app.logger.info(

@@ -266,40 +266,58 @@
         </div>
       </div>
 
-      <!-- Main Content Column -->
-      <div class="main-content">
-        <!-- Main Stat Cards -->
-        <div class="stat-cards">
-          <div class="stat-cards-container">
-            <div class="main-stat-card" id="statNetworkGrowth" data-type="network-growth">
-              <h3>
-                <span>Network Growth</span>
-                <h5 id="network-size"></h5>
-                <h5 id="network-depth"></h5>
-              
-                <div class="card-icon">
-                  <i class="fas fa-users"></i>
-                </div>
-              </h3>
-              <div class="main-stat-value">+1%</div>
-              <div class="main-stat-label">vs. last month</div>
-              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-chart-line" style="font-size: 24px; color: var(--text-light);"></i>
-              </div>
-            </div>
-            <div class="main-stat-card" id="statEarnings" data-type="earnings-overview">
-              <h3>
-                <span>Earnings Overview</span>
-                <div class="card-icon" style="background: var(--secondary-gradient);">
-                  <i class="fas fa-dollar-sign"></i>
-                </div>
-              </h3>
-              <div class="main-stat-value" id="lifetime-total"></div>
-              <div class="main-stat-label" id="earningsMonth">Total earnings to date</div>
-              <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-chart-bar" style="font-size: 24px; color: var(--text-light);"></i>
-              </div>
-            </div>
+  <!-- Main Content Column -->
+<div class="main-content">
+  <!-- Main Stat Cards -->
+  <div class="stat-cards">
+    <div class="stat-cards-container">
+
+
+      <div class="main-stat-card" id="statNetworkGrowth" data-type="network-growth">
+    <h3>
+        <span>Network Growth</span>
+        <div class="card-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="fas fa-users"></i>
+        </div>
+    </h3>
+    
+    <!-- Direct Referrals (uses existing ID) -->
+    <div class="main-stat-value" id="total-direct-referrals">0</div>
+    <div class="main-stat-label">Total Referrals</div>
+    
+    <!-- Referral Bonus (uses existing ID) -->
+    <div class="main-stat-value" id="referral-bonus">0.00</div>
+    <div class="main-stat-label">Referral Bonus</div>
+    
+    <!-- Network Growth Percentage -->
+    <div class="main-stat-value" id="network-growth-value">+0%</div>
+    <div class="main-stat-label">Growth Rate</div>
+    
+    <!-- Mini preview -->
+    <div class="stat-preview-box">
+        <div class="stat-preview-row">
+            <span class="stat-preview-label">Active Network</span>
+            <span class="stat-preview-value" id="network-active-count">—</span>
+        </div>
+        <div class="stat-preview-row">
+            <span class="stat-preview-label">Total Earnings</span>
+            <span class="stat-preview-value" id="earningsMonth">—</span>
+        </div>
+    </div>
+</div>
+      <div class="main-stat-card" id="statEarnings" data-type="earnings-overview">
+  <h3>
+    <span>Earnings Overview</span>
+    <div class="card-icon" style="background: var(--secondary-gradient);">
+      <i class="fas fa-dollar-sign"></i>
+    </div>
+  </h3>
+  <div class="main-stat-value" id="lifetime-total">UGX 0.00</div>
+  <div class="main-stat-label" id="earningsMonth">Total earnings to date</div>
+  <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-top: 8px;">
+    <i class="fas fa-chart-line" style="font-size: 26px; color: #2c7da0;"></i>
+  </div>
+</div>
 
 
             <div class="main-stat-card" id="statLevelPerformance" data-type="level-performance">
@@ -359,19 +377,25 @@
 </div>
 
 
-
-            <div class="main-stat-card" id="statNotifications" data-type="notifications">
-              <h3>
-                <span>Notifications</span>
-                <div class="card-icon" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);">
-                  <i class="fas fa-bell"></i>
-                </div>
-              </h3>
-              <div class="main-stat-value">0</div>
-              <div class="main-stat-label">Unread notifications</div>
-              <!-- Include in your base template or dashboard -->
-              
-
+<div class="main-stat-card" id="statNotifications" data-type="notifications">
+    <h3>
+        <span>Notifications</span>
+        <div class="card-icon" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);">
+            <i class="fas fa-bell"></i>
+        </div>
+    </h3>
+    
+    <div class="main-stat-value" id="notificationsCount">0</div>
+    <div class="main-stat-label">Unread notifications</div>
+    
+    <!-- Notification list container - CORRECT ID -->
+    <div id="notificationsContent" class="notifications-content" style="margin-top: 16px;">
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-sm" role="status"></div>
+            <span class="ms-2">Loading notifications...</span>
+        </div>
+    </div>
+</div>
               <!-- Optional: Bonus history section for dashboard -->
               <div id="bonus-history" class="bonus-history-widget">
                   <!-- Dynamic content will be loaded here -->
@@ -514,6 +538,13 @@
     </div>
   </div>
  
+      <!-- 2. VERIFICATION STATUS CARD -->
+    <div class="card-custom">
+        <div class="card-header-clean"><i class="fas fa-id-card me-2"></i>Verification Status</div>
+        <div class="card-body" id="verificationContainer">
+            <div class="d-flex justify-content-center py-2"><div class="spinner-border text-primary spinner-sm"></div></div>
+        </div>
+    </div>
 </button>
   <div class="referral-trigger-container">
   <button class="referral-modal-trigger referral-queens-trigger" 
@@ -1965,6 +1996,9 @@
         }
     };
 
+
+
+
     const ModalManager = {
         init: function() {
             this.setupEventListeners();
@@ -2040,7 +2074,7 @@
 
     // Social channels
     function openSocialChannels() {
-        window.open('https://wa.me/0756393205', '_blank');
+        window.open('https://wa.me/0768732708', '_blank');
         window.open('https://t.me/your-telegram-channel', '_blank');
         return false;
     }
@@ -2405,6 +2439,109 @@ function testModalVisibility() {
     }
 }
 
+
+    const API_BASE = '';  // relative URLs, using same origin (session cookie auth)
+    async function apiCall(url, options = {}) {
+        const defaultOpts = {
+            credentials: 'same-origin', // include cookies
+            headers: { 'Content-Type': 'application/json' }
+        };
+        const config = { ...defaultOpts, ...options };
+        try {
+            const response = await fetch(url, config);
+            if (!response.ok) {
+                let errMsg = `HTTP ${response.status}`;
+                try {
+                    const errData = await response.json();
+                    errMsg = errData.message || errMsg;
+                } catch(e) {}
+                throw new Error(errMsg);
+            }
+            if (response.status === 204) return null;
+            return await response.json();
+        } catch (error) {
+            console.error(`API Error [${url}]:`, error);
+            throw error;
+        }
+    }
+
+   // ----- 2. Verification Status -----
+    async function loadVerificationStatus() {
+        const container = document.getElementById('verificationContainer');
+        try {
+            const profile = await apiCall('/user/profile');
+            const status = profile?.is_verified || 'unverified';
+            let html = '';
+            if (status === 'unverified') {
+                html = `<div class="verification-badge unverified-state"><i class="fas fa-exclamation-circle fa-fw"></i> <span>Your Phone is not verified. Get verified to access full features.</span>
+                        <button id="requestVerifyBtn" class="btn btn-sm btn-danger ms-auto"><i class="fas fa-paper-plane"></i> Confirm Phone</button></div>`;
+            } else if (status === 'pending') {
+    html = `
+    <div class="verification-badge pending-state d-flex flex-column gap-2">
+        <span>Enter the code sent to your phone:</span>
+        
+        <input type="text" id="otpInput" class="form-control" placeholder="Enter OTP" maxlength="6">
+
+        <div class="d-flex gap-2">
+            <button id="verifyOtpBtn" class="btn btn-success btn-sm">
+                Verify
+            </button>
+            <button id="resendOtpBtn" class="btn btn-secondary btn-sm">
+                Resend
+            </button>
+        </div>
+    </div>`;
+
+            } else if (status === 'verified') {
+                html = `<div class="verification-badge verified-state"><i class="fas fa-check-circle fa-fw"></i> <span>Your identity is verified. Great!</span></div>`;
+            }
+            container.innerHTML = html;
+            const reqBtn = document.getElementById('requestVerifyBtn');
+            if (reqBtn) {
+                reqBtn.addEventListener('click', async () => {
+                    reqBtn.disabled = true;
+                    renderOTPInput(container);
+                   //reqBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                    try {
+                        await apiCall('/api/request-verification', { method: 'POST' });
+                        showAlert('Verification request sent! Status is now pending.');
+                       // loadVerificationStatus(); // refresh card
+                       
+                    } catch (err) {
+                        showAlert(`Request failed: ${err.message}`, true);
+                        reqBtn.disabled = false;
+                        reqBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Request Verification';
+                    }
+                });
+            }
+        } catch (err) {
+            container.innerHTML = `<div class="alert alert-danger">Error loading verification: ${err.message}</div>`;
+        }
+    }
+
+
+ async function renderOTPInput(container) {
+    container.innerHTML = `
+    <div class="verification-badge pending-state d-flex flex-column gap-2">
+        <span>Enter the code sent to your phone:</span>
+
+        <input type="text" id="otpInput" class="form-control" placeholder="Enter OTP" maxlength="6">
+
+        <div class="d-flex gap-2">
+            <button id="verifyOtpBtn" class="btn btn-success btn-sm">Verify</button>
+            <button id="resendOtpBtn" class="btn btn-secondary btn-sm">Resend</button>
+        </div>
+    </div>`;
+    attachOTPEvents(); // attach listeners
+}
+
+    // ----- initial load all data -----
+ 
+    initDashboard();
+document.getElementById("statNotifications").addEventListener("click", () => {
+    const content = document.getElementById("notificationsContent");
+    content.style.display = content.style.display === "none" ? "block" : "none";
+});
   </script>
   <script src="{{url_for('static', filename='js/profile.js')}}"></script>
   <script src="{{url_for('static', filename='js/payments.js')}}"></script>

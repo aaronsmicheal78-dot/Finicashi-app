@@ -3,14 +3,25 @@ from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from flask import current_app
 from extensions import db
-from models import Payment, PackageCatalog, Package, User, ReferralBonus
+from models import Payment, PackageCatalog, Package, User, ReferralBonus, Notification
 from bonus.validation import BonusValidationHelper
 from bonus.bonus_calculation import BonusCalculationHelper
 
-
-
-
-
+def create_notification(user_id: int, message: str, notification_type: str = 'bonus') -> None:
+    """Create notification with error handling - fails silently"""
+    try:
+        notification = Notification(
+            user_id=user_id,
+            message=message,
+            notification_type=notification_type,
+            is_read=False,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(notification)
+        db.session.commit()
+    except Exception as e:
+        print(f"⚠️ Notification creation failed (non-critical): {e}")
+        db.session.rollback()  # Rollback only notification, not main transaction
 def process_package_purchase(payment):
     """
     Process package purchase and bonuses - reusable for both callback and internal purchases
@@ -62,6 +73,11 @@ def process_package_purchase(payment):
     if not existing_package: 
        new_package = existing_package
     print("Using existing package:", package)                                            
+    try:
+        message = f"✅ Your {package} package has been successfully activated! You're now eligible to earn daily bonuses."
+        create_notification(payment.user_id, message, 'purchase_confirmation')
+    except Exception as e:
+        print(f"⚠️ Failed to create purchase notification: {e}")
     
 
     # print("✅ Package created for user")
@@ -101,31 +117,7 @@ def process_package_purchase(payment):
             
             print(f"📊 Calculation complete: {len(bonus_calculations)} bonuses calculated")
             # After calculate_all_bonuses_secure returns, BEFORE validation
-
-
-           # ✅ ADD THIS DEBUG CODE
-            print("\n🔍 DEBUG - Raw bonus_calculations before validation:")
-            for i, bonus in enumerate(bonus_calculations):
-                print(f"\n  Bonus {i+1}:")
-                print(f"    Keys: {list(bonus.keys())}")
-                print(f"    user_id: {bonus.get('user_id')}")
-                print(f"    referrer_id: {bonus.get('referrer_id')}")
-                print(f"    referred_id: {bonus.get('referred_id')}")
-                print(f"    level: {bonus.get('level')}")
-                print(f"    bonus_amount: {bonus.get('bonus_amount')}")
-                print(f"    status: {bonus.get('status')}")
-                print(f"    type: {bonus.get('type')}")
-                print(f"    security_hash: {bonus.get('security_hash', 'MISSING')[:20] if bonus.get('security_hash') else 'MISSING'}")
-                print(f"    payment_id: {bonus.get('payment_id')}")
-                
-                # Check for missing required fields
-                required_fields = ['user_id', 'referrer_id', 'referred_id', 'payment_id', 
-                                'bonus_amount', 'level', 'status', 'type', 'security_hash']
-                missing = [f for f in required_fields if f not in bonus or bonus.get(f) is None]
-                if missing:
-                    print(f"    ❌ MISSING FIELDS: {missing}")
-
-                    # 3. Validate bonuses
+            # 3. Validate bonuses
             valid_bonuses, invalid_bonuses, batch_validation = BonusValidationHelper.validate_bonus_batch(bonus_calculations)
             
             print(f"✅ Valid bonuses: {len(valid_bonuses)}, Invalid: {len(invalid_bonuses)}")
@@ -258,12 +250,33 @@ def process_package_purchase(payment):
                         traceback.print_exc()
 
                 if credited_count > 0:
-                    print(f"🎉 Successfully credited {credited_count} out of {len(bonus_ids)} bonuses")
-                    
+                    print(f"🎉 Successfully credited {credited_count} out of {len(bonus_ids)} bon0uses")
+                        # Create notification for purchasing user (they earned referral bonuses)
+                    try:
+                        purchasing_user = User.query.get(payment.user_id)
+                        if purchasing_user:
+                            message = f"🎉 Congratulations! You've earned bonuses from {credited_count} referral(s) on your {package} package purchase. Amounts have been credited to your wallet."
+                            create_notification(payment.user_id, message, 'bonus_earning')
+                            
+                            # Also notify direct referrer if exists
+                            if purchasing_user.referred_by:
+                                referrer = User.query.get(purchasing_user.referred_by)
+                                if referrer:
+                                    referrer_message = f"📢 Your referral (User #{payment.user_id}) just purchased a {package} package! You've earned a referral bonus."
+                                    create_notification(purchasing_user.referred_by, referrer_message, 'referral_earning')
+                    except Exception as e:
+                        print(f"⚠️ Failed to create notifications: {e}")
                     return True, f"Successfully processed {credited_count} bonuses"
             else:
                 print("ℹ️ No valid bonuses to create")
                 BonusValidationHelper.cleanup_processing_flag(payment.id, success=False)
+                # Notify user that no bonuses were generated
+                try:
+                    message = f"📦 Your {package} package is active, but no referral bonuses were generated. Invite friends to start earning!"
+                    create_notification(payment.user_id, message, 'info')
+                except Exception as e:
+                    print(f"⚠️ Failed to create notification: {e}")
+                # ⬆️⬆️⬆️ END NOTIFICATION BLOCK ⬆️⬆️⬆️
                 return True, "No valid bonuses to create"
 
     except Exception as e:

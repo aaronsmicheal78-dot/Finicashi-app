@@ -273,9 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function makeWithdrawalRequest(data) {
         // Convert phone to 256 format if it's in local format
         let phoneNumber = data.phone_number;
-        // if (phoneNumber.startsWith('0')) {
-        //     phoneNumber = '256' + phoneNumber.substring(1);
-        // }
+      
 
         const payload = {
             phone_number: phoneNumber,
@@ -288,11 +286,13 @@ document.addEventListener('DOMContentLoaded', function() {
             withdrawBtn.disabled = true;
             withdrawBtn.textContent = 'Processing...';
             console.log("Withdrawal payload:", payload);
+            const idempotencyKey = `${Date.now()}-${Math.random()}`;
             const response = await fetch('/payments/withdraw', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Idempotency-Key': idempotencyKey
                 },
                 body: JSON.stringify(payload),
               credentials: "include",
