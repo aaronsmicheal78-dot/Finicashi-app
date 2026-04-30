@@ -10,10 +10,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
 
-
+   <!-- 2. VERIFICATION STATUS CARD -->
+    <div class="card-custom">
+        <div class="card-header-clean"><i class="fas fa-id-card me-2"></i>Verification Status</div>
+        <div class="card-body" id="verificationContainer">
+            <div class="d-flex justify-content-center py-2"><div class="spinner-border text-primary spinner-sm"></div></div>
+        </div>
+    </div>
 
  <div class="container">
     <div class="layout">
+      
+   
       <!-- Profile Column -->
       <div class="profile-column">
         <div class="profile-header">
@@ -54,7 +62,7 @@
             </button>
           </div>
           <div class="share-btns">
-            <button class="share-btn" id="shareWhatsappBtn" onclick="window.open('https://chat.whatsapp.com/', '_blank')" aria-label="share on WhatsApp" >
+            <button class="share-btn" id="share-whatsapp" onclick="window.open('https://chat.whatsapp.com/', '_blank')" aria-label="share on WhatsApp" >
               <i class="fab fa-whatsapp"></i> WhatsApp
             </button>
             <button class="share-btn" id="shareTelegramBtn" onclick="window.open('https://t.me/', '_blank')" aria-label="Share on Telegram">
@@ -124,7 +132,7 @@
               <div class="stat-label">Investment Bonus</div>
             </div>
             <div class="stat-card" data-key="totalEarnings">
-              <div class="stat-value" id="earningsMonth">0.00</div>
+              <div class="stat-value" id="earningsTotal">0.00</div>
               <div class="stat-label">Total Earnings</div>
             </div>
           </div>
@@ -140,15 +148,15 @@
           <h3 class="section-title">Financial Summary</h3>
           <div class="financial-summary">
             <div class="financial-item">
-              <div class="financial-value" id="earningsToday"></div>
+              <div class="financial-value" id="earningsToday">0.00</div>
               <div class="financial-label">Today</div>
             </div>
             <div class="financial-item">
-              <div class="financial-value" id="earningsWeek"></div>
+              <div class="financial-value" id="earningsWeek">0.00</div>
               <div class="financial-label">This Week</div>
             </div>
             <div class="financial-item">
-              <div class="financial-value" id="earningsTotal"></div>
+              <div class="financial-value" id="earningsMonth">0.00</div>
               <div class="financial-label">Total</div>
             </div>
           </div>
@@ -273,7 +281,8 @@
     <div class="stat-cards-container">
 
 
-      <div class="main-stat-card" id="statNetworkGrowth" data-type="network-growth">
+  
+<div class="main-stat-card" id="statNetworkGrowth" data-type="network-growth">
     <h3>
         <span>Network Growth</span>
         <div class="card-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
@@ -281,12 +290,12 @@
         </div>
     </h3>
     
-    <!-- Direct Referrals (uses existing ID) -->
-    <div class="main-stat-value" id="total-direct-referrals">0</div>
+    <!-- Direct Referrals - Display only, no ID needed -->
+    <div class="main-stat-value">0</div>
     <div class="main-stat-label">Total Referrals</div>
     
-    <!-- Referral Bonus (uses existing ID) -->
-    <div class="main-stat-value" id="referral-bonus">0.00</div>
+    <!-- Referral Bonus - Display only, no ID needed -->
+    <div class="main-stat-value">0.00</div>
     <div class="main-stat-label">Referral Bonus</div>
     
     <!-- Network Growth Percentage -->
@@ -301,23 +310,25 @@
         </div>
         <div class="stat-preview-row">
             <span class="stat-preview-label">Total Earnings</span>
-            <span class="stat-preview-value" id="earningsMonth">—</span>
+            <span class="stat-preview-value">—</span>
         </div>
     </div>
 </div>
-      <div class="main-stat-card" id="statEarnings" data-type="earnings-overview">
-  <h3>
-    <span>Earnings Overview</span>
-    <div class="card-icon" style="background: var(--secondary-gradient);">
-      <i class="fas fa-dollar-sign"></i>
+
+<div class="main-stat-card" id="statEarnings" data-type="earnings-overview">
+    <h3>
+        <span>Earnings Overview</span>
+        <div class="card-icon" style="background: var(--secondary-gradient);">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+    </h3>
+    <div class="main-stat-value" id="earningsTotal">UGX 0.00</div>
+    <div class="main-stat-label">Total earnings to date</div>
+    <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-top: 8px;">
+        <i class="fas fa-chart-line" style="font-size: 26px; color: #2c7da0;"></i>
     </div>
-  </h3>
-  <div class="main-stat-value" id="lifetime-total">UGX 0.00</div>
-  <div class="main-stat-label" id="earningsMonth">Total earnings to date</div>
-  <div style="height: 120px; background: rgba(0, 0, 0, 0.03); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-top: 8px;">
-    <i class="fas fa-chart-line" style="font-size: 26px; color: #2c7da0;"></i>
-  </div>
 </div>
+
 
 
             <div class="main-stat-card" id="statLevelPerformance" data-type="level-performance">
@@ -538,13 +549,12 @@
     </div>
   </div>
  
-      <!-- 2. VERIFICATION STATUS CARD -->
-    <div class="card-custom">
-        <div class="card-header-clean"><i class="fas fa-id-card me-2"></i>Verification Status</div>
-        <div class="card-body" id="verificationContainer">
-            <div class="d-flex justify-content-center py-2"><div class="spinner-border text-primary spinner-sm"></div></div>
-        </div>
-    </div>
+
+
+
+
+
+
 </button>
   <div class="referral-trigger-container">
   <button class="referral-modal-trigger referral-queens-trigger" 
@@ -2464,80 +2474,145 @@ function testModalVisibility() {
             throw error;
         }
     }
+// profile.js - Complete version
+function showAlert(message, isError = false) {
+    if (isError) {
+        console.error(message);
+        alert(`❌ ${message}`);
+    } else {
+        console.log(message);
+        alert(`✅ ${message}`);
+    }
+}
+// Track pending state locally
+// Track state
+let isAwaitingOTP = false;
 
-   // ----- 2. Verification Status -----
-    async function loadVerificationStatus() {
-        const container = document.getElementById('verificationContainer');
-        try {
-            const profile = await apiCall('/user/profile');
-            const status = profile?.is_verified || 'unverified';
-            let html = '';
-            if (status === 'unverified') {
-                html = `<div class="verification-badge unverified-state"><i class="fas fa-exclamation-circle fa-fw"></i> <span>Your Phone is not verified. Get verified to access full features.</span>
-                        <button id="requestVerifyBtn" class="btn btn-sm btn-danger ms-auto"><i class="fas fa-paper-plane"></i> Confirm Phone</button></div>`;
-            } else if (status === 'pending') {
-    html = `
-    <div class="verification-badge pending-state d-flex flex-column gap-2">
-        <span>Enter the code sent to your phone:</span>
+async function loadVerificationStatus() {
+    const container = document.getElementById('verificationContainer');
+    if (!container) return;
+    
+    try {
+        const profile = await apiCall('/user/profile');
+        const isVerified = profile?.isVerified === true;
         
-        <input type="text" id="otpInput" class="form-control" placeholder="Enter OTP" maxlength="6">
-
-        <div class="d-flex gap-2">
-            <button id="verifyOtpBtn" class="btn btn-success btn-sm">
-                Verify
-            </button>
-            <button id="resendOtpBtn" class="btn btn-secondary btn-sm">
-                Resend
-            </button>
-        </div>
-    </div>`;
-
-            } else if (status === 'verified') {
-                html = `<div class="verification-badge verified-state"><i class="fas fa-check-circle fa-fw"></i> <span>Your identity is verified. Great!</span></div>`;
+        // If verified - show verified state
+        if (isVerified) {
+            isAwaitingOTP = false;
+            container.innerHTML = `
+                <div class="verification-badge verified-state">
+                    <i class="fas fa-check-circle fa-fw"></i> 
+                    <span>Your identity is verified. Great!</span>
+                </div>
+            `;
+            return;
+        }
+        
+        // If awaiting OTP - show OTP input
+        if (isAwaitingOTP) {
+            container.innerHTML = `
+                <div class="verification-badge pending-state">
+                    <span>Enter the code sent to your phone:</span>
+                    <input type="text" id="otpInput" class="form-control" placeholder="Enter OTP" maxlength="6" style="text-align: center; max-width: 200px; margin: 10px auto;">
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                        <button id="verifyOtpBtn" class="btn btn-success btn-sm">Verify</button>
+                        <button id="resendOtpBtn" class="btn btn-secondary btn-sm">Resend</button>
+                    </div>
+                </div>
+            `;
+            
+            // Attach OTP events
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            const resendBtn = document.getElementById('resendOtpBtn');
+            const otpInput = document.getElementById('otpInput');
+            
+            if (verifyBtn) {
+                verifyBtn.onclick = async () => {
+                    const otp = otpInput.value.trim();
+                    if (!otp) {
+                        showAlert("Enter OTP code", true);
+                        return;
+                    }
+                    
+                    verifyBtn.disabled = true;
+                    verifyBtn.innerHTML = 'Verifying...';
+                    
+                    try {
+                        await apiCall('/api/verify-otp', {
+                            method: 'POST',
+                            body: JSON.stringify({ otp: otp })
+                        });
+                        
+                        showAlert("Phone verified successfully!");
+                        isAwaitingOTP = false;
+                        await loadVerificationStatus(); // Reload to show verified state
+                        
+                    } catch (err) {
+                        showAlert(`Verification failed: ${err.message}`, true);
+                        verifyBtn.disabled = false;
+                        verifyBtn.innerHTML = 'Verify';
+                    }
+                };
             }
-            container.innerHTML = html;
-            const reqBtn = document.getElementById('requestVerifyBtn');
-            if (reqBtn) {
-                reqBtn.addEventListener('click', async () => {
-                    reqBtn.disabled = true;
-                    renderOTPInput(container);
-                   //reqBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            
+            if (resendBtn) {
+                resendBtn.onclick = async () => {
+                    resendBtn.disabled = true;
+                    resendBtn.innerHTML = 'Sending...';
+                    
                     try {
                         await apiCall('/api/request-verification', { method: 'POST' });
-                        showAlert('Verification request sent! Status is now pending.');
-                       // loadVerificationStatus(); // refresh card
-                       
+                        showAlert("New code sent to your phone!");
                     } catch (err) {
-                        showAlert(`Request failed: ${err.message}`, true);
-                        reqBtn.disabled = false;
-                        reqBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Request Verification';
+                        showAlert(`Failed to resend: ${err.message}`, true);
+                    } finally {
+                        resendBtn.disabled = false;
+                        resendBtn.innerHTML = 'Resend';
                     }
-                });
+                };
             }
-        } catch (err) {
-            container.innerHTML = `<div class="alert alert-danger">Error loading verification: ${err.message}</div>`;
+            return;
         }
+        
+        // Default unverified state - show Confirm Phone button
+        container.innerHTML = `
+            <div class="verification-badge unverified-state">
+                <i class="fas fa-exclamation-circle fa-fw"></i> 
+                <span>Confirm your Airtel Phone. For MTN, Whatsapp us for OTP to verify .</span>
+                <button id="requestVerifyBtn" class="btn btn-sm btn-danger">Confirm Phone</button>
+            </div>
+        `;
+        
+        const reqBtn = document.getElementById('requestVerifyBtn');
+        if (reqBtn) {
+            reqBtn.onclick = async () => {
+                reqBtn.disabled = true;
+                reqBtn.innerHTML = 'Sending...';
+                
+                try {
+                    await apiCall('/api/request-verification', { method: 'POST' });
+                    showAlert("Verification code sent to your phone!");
+                    isAwaitingOTP = true;
+                    await loadVerificationStatus(); // Reload to show OTP input
+                    
+                } catch (err) {
+                    showAlert(`Request failed: ${err.message}`, true);
+                    reqBtn.disabled = false;
+                    reqBtn.innerHTML = 'Confirm Phone';
+                }
+            };
+        }
+        
+    } catch (err) {
+        console.error('Error:', err);
+        container.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
     }
-
-
- async function renderOTPInput(container) {
-    container.innerHTML = `
-    <div class="verification-badge pending-state d-flex flex-column gap-2">
-        <span>Enter the code sent to your phone:</span>
-
-        <input type="text" id="otpInput" class="form-control" placeholder="Enter OTP" maxlength="6">
-
-        <div class="d-flex gap-2">
-            <button id="verifyOtpBtn" class="btn btn-success btn-sm">Verify</button>
-            <button id="resendOtpBtn" class="btn btn-secondary btn-sm">Resend</button>
-        </div>
-    </div>`;
-    attachOTPEvents(); // attach listeners
 }
 
-    // ----- initial load all data -----
- 
-    initDashboard();
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadVerificationStatus();
+});
 document.getElementById("statNotifications").addEventListener("click", () => {
     const content = document.getElementById("notificationsContent");
     content.style.display = content.style.display === "none" ? "block" : "none";

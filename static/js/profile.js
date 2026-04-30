@@ -188,6 +188,192 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 // Earnings Dashboard - Updated for referral stats and lifetime earnings
 // Earnings Dashboard - Clean Version
+// class EarningsDashboard {
+//     constructor(options = {}) {
+//         this.apiBaseUrl = options.apiBaseUrl || '';
+//         this.refreshInterval = options.refreshInterval || 300000;
+//         this.elements = {};
+//         console.log("🎯 EarningsDashboard created");
+//         this.init();
+//     }
+
+//     init() {
+//         console.log("🔄 Initializing dashboard...");
+//         this.cacheElements();
+//         this.bindEvents();
+//         this.loadEarnings();
+        
+//         if (this.refreshInterval > 0) {
+//             setInterval(() => this.loadEarnings(), this.refreshInterval);
+//         }
+//     }
+
+//     cacheElements() {
+//         console.log("🔍 Caching HTML elements...");
+        
+//         // Main period elements
+//         this.elements.today = document.getElementById('earningsToday');
+//         this.elements.week = document.getElementById('earningsWeek');
+//         this.elements.month = document.getElementById('earningsMonth');
+        
+//         // Breakdown elements
+//         this.elements.referralBonus = document.getElementById('referral-bonus');
+//         this.elements.signupBonus = document.getElementById('bonus');
+//         this.elements.availableBalance = document.getElementById('available-balance');
+//         this.elements.walletBalance = document.getElementById('wallet-balance');
+//         this.elements.activeReferrals = document.getElementById('total-direct-referrals');
+        
+//         // Log what we found
+//         console.log("📊 Elements found:", {
+//             today: !!this.elements.today,
+//             week: !!this.elements.week,
+//             month: !!this.elements.month,
+//             referralBonus: !!this.elements.referralBonus,
+//             signupBonus: !!this.elements.signupBonus,
+//             availableBalance: !!this.elements.availableBalance,
+//             walletBalance: !!this.elements.walletBalance,
+//             activeReferrals: !!this.elements.activeReferrals
+//         });
+
+//         // Create error container if needed
+//         this.elements.errorContainer = document.getElementById('earnings-error') || this.createErrorContainer();
+//     }
+
+//     createErrorContainer() {
+//         const container = document.createElement('div');
+//         container.id = 'earnings-error';
+//         container.className = 'alert alert-danger';
+//         container.style.display = 'none';
+        
+//         // Try to find a container to put the error in
+//         const mainContainer = document.querySelector('.container, main, body');
+//         if (mainContainer) {
+//             mainContainer.prepend(container);
+//         }
+        
+//         return container;
+//     }
+
+//     bindEvents() {
+//         const refreshBtn = document.getElementById('refresh-earnings');
+//         if (refreshBtn) {
+//             refreshBtn.addEventListener('click', () => this.loadEarnings());
+//         }
+//     }
+
+//     async loadEarnings() {
+//         console.log("📡 Fetching earnings data from API...");
+        
+//         try {
+//             this.setLoadingState(true);
+//             this.hideError();
+
+//             const response = await fetch('/api/user/total-earnings', {
+//                 method: 'GET',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Accept': 'application/json'
+//                 },
+//                 credentials: 'same-origin'
+//             });
+
+//             console.log("📨 API Response status:", response.status);
+            
+//             if (!response.ok) {
+//                 throw new Error(`HTTP error! status: ${response.status}`);
+//             }
+
+//             const data = await response.json();
+//             console.log("✅ API Data received:", data);
+            
+//             if (data.error) {
+//                 throw new Error(data.message || data.error);
+//             }
+
+//             this.updateDisplay(data);
+//             this.setLoadingState(false);
+//             console.log("🎉 Dashboard updated successfully!");
+
+//         } catch (error) {
+//             console.error('❌ Failed to load earnings:', error);
+//             this.showError(error.message);
+//             this.setLoadingState(false);
+//         }
+//     }
+
+//     updateDisplay(data) {
+//         console.log("🖥️ Updating display with data...");
+        
+//         // Update period totals
+//         this.updateElement(this.elements.today, data.today);
+//         this.updateElement(this.elements.week, data.this_week);
+//         this.updateElement(this.elements.month, data.this_month);
+        
+//         // Update breakdown
+//         if (data.breakdown) {
+//             this.updateElement(this.elements.referralBonus, data.breakdown.referral_bonus);
+//             this.updateElement(this.elements.signupBonus, data.breakdown.signup_bonus);
+//             this.updateElement(this.elements.availableBalance, data.breakdown.available_balance);
+//             this.updateElement(this.elements.walletBalance, data.breakdown.wallet_balance);
+//             this.updateElement(this.elements.activeReferrals, data.referral_stats.total_direct_referrals);
+//         }
+//     }
+
+//     updateElement(element, value) {
+//         if (!element) {
+//             console.log("⚠️ Element is null, cannot update");
+//             return;
+//         }
+        
+//         try {
+//             const numericValue = parseFloat(value);
+//             if (isNaN(numericValue)) {
+//                 element.textContent = '0.00';
+//                 return;
+//             }
+            
+//             element.textContent = this.formatCurrency(numericValue);
+//             console.log(`✅ Updated ${element.id} to: ${element.textContent}`);
+//         } catch (error) {
+//             console.error('Error updating element:', error);
+//             element.textContent = '0.00';
+//         }
+//     }
+
+//     formatCurrency(amount) {
+//         return new Intl.NumberFormat('en-US', {
+//             minimumFractionDigits: 2,
+//             maximumFractionDigits: 2
+//         }).format(amount);
+//     }
+
+//     setLoadingState(loading) {
+//         // Simple loading state - you can enhance this later
+//         Object.values(this.elements).forEach(element => {
+//             if (element && element.style) {
+//                 element.style.opacity = loading ? '0.6' : '1';
+//             }
+//         });
+//     }
+
+//     showError(message) {
+//         console.error("💥 Showing error:", message);
+//         if (this.elements.errorContainer) {
+//             this.elements.errorContainer.textContent = `Error: ${message}`;
+//             this.elements.errorContainer.style.display = 'block';
+//         }
+//     }
+
+//     hideError() {
+//         if (this.elements.errorContainer) {
+//             this.elements.errorContainer.style.display = 'none';
+//         }
+//     }
+
+//     refresh() {
+//         this.loadEarnings();
+//     }
+// }
 class EarningsDashboard {
     constructor(options = {}) {
         this.apiBaseUrl = options.apiBaseUrl || '';
@@ -215,6 +401,7 @@ class EarningsDashboard {
         this.elements.today = document.getElementById('earningsToday');
         this.elements.week = document.getElementById('earningsWeek');
         this.elements.month = document.getElementById('earningsMonth');
+        this.elements.total = document.getElementById('earningsTotal'); // Add this to HTML
         
         // Breakdown elements
         this.elements.referralBonus = document.getElementById('referral-bonus');
@@ -228,6 +415,7 @@ class EarningsDashboard {
             today: !!this.elements.today,
             week: !!this.elements.week,
             month: !!this.elements.month,
+            total: !!this.elements.total,
             referralBonus: !!this.elements.referralBonus,
             signupBonus: !!this.elements.signupBonus,
             availableBalance: !!this.elements.availableBalance,
@@ -245,7 +433,6 @@ class EarningsDashboard {
         container.className = 'alert alert-danger';
         container.style.display = 'none';
         
-        // Try to find a container to put the error in
         const mainContainer = document.querySelector('.container, main, body');
         if (mainContainer) {
             mainContainer.prepend(container);
@@ -304,62 +491,80 @@ class EarningsDashboard {
     updateDisplay(data) {
         console.log("🖥️ Updating display with data...");
         
-        // Update period totals
+        // Update period totals (these are at root level)
         this.updateElement(this.elements.today, data.today);
         this.updateElement(this.elements.week, data.this_week);
         this.updateElement(this.elements.month, data.this_month);
         
-        // Update breakdown
+        // Update lifetime total from lifetime_earnings.total
+        if (data.lifetime_earnings && data.lifetime_earnings.total) {
+            this.updateElement(this.elements.total, data.lifetime_earnings.total);
+        }
+        
+        // Update breakdown - FIXED: Use data.breakdown (not data.breakdown inside breakdown)
         if (data.breakdown) {
+            console.log("💰 Updating breakdown values:", data.breakdown);
+            
+            // Referral bonus from current breakdown
             this.updateElement(this.elements.referralBonus, data.breakdown.referral_bonus);
+            
+            // Signup bonus from current breakdown
             this.updateElement(this.elements.signupBonus, data.breakdown.signup_bonus);
+            
+            // Available balance from current breakdown
             this.updateElement(this.elements.availableBalance, data.breakdown.available_balance);
+            
+            // Wallet balance from current breakdown
             this.updateElement(this.elements.walletBalance, data.breakdown.wallet_balance);
+        }
+        
+        // Update referral stats
+        if (data.referral_stats) {
+            console.log("👥 Updating referral stats:", data.referral_stats);
+            
+            // Use total_direct_referrals from referral_stats
             this.updateElement(this.elements.activeReferrals, data.referral_stats.total_direct_referrals);
+        }
+        
+        // If you want to display lifetime referral bonus separately:
+        if (data.lifetime_earnings && data.lifetime_earnings.breakdown) {
+            console.log("📈 Lifetime referral bonus:", data.lifetime_earnings.breakdown.referral_bonus);
+            // You could update a separate element here if needed
         }
     }
 
     updateElement(element, value) {
-        if (!element) {
-            console.log("⚠️ Element is null, cannot update");
-            return;
-        }
-        
-        try {
-            const numericValue = parseFloat(value);
-            if (isNaN(numericValue)) {
-                element.textContent = '0.00';
-                return;
+        if (element) {
+            // Format as currency with 2 decimal places if it's a number
+            let displayValue = value;
+            if (value !== undefined && value !== null && !isNaN(parseFloat(value))) {
+                const numValue = parseFloat(value);
+                displayValue = numValue.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            } else if (value === undefined || value === null) {
+                displayValue = '0.00';
             }
             
-            element.textContent = this.formatCurrency(numericValue);
-            console.log(`✅ Updated ${element.id} to: ${element.textContent}`);
-        } catch (error) {
-            console.error('Error updating element:', error);
-            element.textContent = '0.00';
+            element.textContent = displayValue;
+            console.log(`✅ Updated ${element.id} to:`, displayValue);
+        } else {
+            console.warn("⚠️ Element not found for update");
         }
     }
 
-    formatCurrency(amount) {
-        return new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
-    }
-
-    setLoadingState(loading) {
-        // Simple loading state - you can enhance this later
-        Object.values(this.elements).forEach(element => {
-            if (element && element.style) {
-                element.style.opacity = loading ? '0.6' : '1';
-            }
-        });
+    setLoadingState(isLoading) {
+        // Add loading indicators if needed
+        const loader = document.getElementById('earnings-loader');
+        if (loader) {
+            loader.style.display = isLoading ? 'block' : 'none';
+        }
     }
 
     showError(message) {
-        console.error("💥 Showing error:", message);
         if (this.elements.errorContainer) {
-            this.elements.errorContainer.textContent = `Error: ${message}`;
+            this.elements.errorContainer.textContent = message;
             this.elements.errorContainer.style.display = 'block';
         }
     }
@@ -369,24 +574,25 @@ class EarningsDashboard {
             this.elements.errorContainer.style.display = 'none';
         }
     }
-
-    refresh() {
-        this.loadEarnings();
-    }
 }
 
 // Initialize when DOM is ready
-console.log("🚀 Earnings dashboard script loaded, waiting for DOM...");
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log("📄 DOM Content Loaded - Initializing EarningsDashboard");
-        window.earningsDashboard = new EarningsDashboard();
-    });
-} else {
-    console.log("⚡ DOM already ready - Initializing EarningsDashboard immediately");
+document.addEventListener('DOMContentLoaded', () => {
     window.earningsDashboard = new EarningsDashboard();
-}
+});
+
+// // Initialize when DOM is ready
+// console.log("🚀 Earnings dashboard script loaded, waiting for DOM...");
+
+// if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', () => {
+//         console.log("📄 DOM Content Loaded - Initializing EarningsDashboard");
+//         window.earningsDashboard = new EarningsDashboard();
+//     });
+// } else {
+//     console.log("⚡ DOM already ready - Initializing EarningsDashboard immediately");
+//     window.earningsDashboard = new EarningsDashboard();
+// }
 
 
   // Policy Document Toggle
@@ -1278,106 +1484,106 @@ async function init() {
 init();
 
 
-/*VERIFY OTP */
-const verifyBtn = document.getElementById('verifyOtpBtn');
-if (verifyBtn) {
-    verifyBtn.addEventListener('click', async () => {
-        const otp = document.getElementById('otpInput').value;
+// /*VERIFY OTP */
+// const verifyBtn = document.getElementById('verifyOtpBtn');
+// if (verifyBtn) {
+//     verifyBtn.addEventListener('click', async () => {
+//         const otp = document.getElementById('otpInput').value;
 
-        if (!otp) {
-            showAlert("Enter OTP", true);
-            return;
-        }
+//         if (!otp) {
+//             showAlert("Enter OTP", true);
+//             return;
+//         }
 
-        verifyBtn.disabled = true;
-        verifyBtn.innerHTML = 'Verifying...';
+//         verifyBtn.disabled = true;
+//         verifyBtn.innerHTML = 'Verifying...';
 
-        try {
-            await apiCall('/api/verify-otp', {
-                method: 'POST',
-                body: JSON.stringify({ otp })
-            });
+//         try {
+//             await apiCall('/api/verify-otp', {
+//                 method: 'POST',
+//                 body: JSON.stringify({ otp })
+//             });
 
-            showAlert("Verification successful!");
-            loadVerificationStatus(); // refresh UI
+//             showAlert("Verification successful!");
+//             loadVerificationStatus(); // refresh UI
 
-        } catch (err) {
-            showAlert(`Verification failed: ${err.message}`, true);
-            verifyBtn.disabled = false;
-            verifyBtn.innerHTML = 'Verify';
-        }
-    });
-}
-/* RESEND VERIFICATION OTP */
-const resendBtn = document.getElementById('resendOtpBtn');
-if (resendBtn) {
-    resendBtn.addEventListener('click', async () => {
-        resendBtn.disabled = true;
-        resendBtn.innerHTML = 'Sending...';
+//         } catch (err) {
+//             showAlert(`Verification failed: ${err.message}`, true);
+//             verifyBtn.disabled = false;
+//             verifyBtn.innerHTML = 'Verify';
+//         }
+//     });
+// }
+// /* RESEND VERIFICATION OTP */
+// const resendBtn = document.getElementById('resendOtpBtn');
+// if (resendBtn) {
+//     resendBtn.addEventListener('click', async () => {
+//         resendBtn.disabled = true;
+//         resendBtn.innerHTML = 'Sending...';
 
-        try {
-            await apiCall('/api/request-verification', { method: 'POST' });
-            showAlert("OTP resent!");
-        } catch (err) {
-            showAlert(`Resend failed: ${err.message}`, true);
-        }
+//         try {
+//             await apiCall('/api/request-verification', { method: 'POST' });
+//             showAlert("OTP resent!");
+//         } catch (err) {
+//             showAlert(`Resend failed: ${err.message}`, true);
+//         }
 
-        resendBtn.disabled = false;
-        resendBtn.innerHTML = 'Resend';
-    });
-}
+//         resendBtn.disabled = false;
+//         resendBtn.innerHTML = 'Resend';
+//     });
+// }
 
-function attachOTPEvents() {
-    const verifyBtn = document.getElementById('verifyOtpBtn');
-    const resendBtn = document.getElementById('resendOtpBtn');
+// function attachOTPEvents() {
+//     const verifyBtn = document.getElementById('verifyOtpBtn');
+//     const resendBtn = document.getElementById('resendOtpBtn');
 
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', async () => {
-            const otp = document.getElementById('otpInput').value;
+//     if (verifyBtn) {
+//         verifyBtn.addEventListener('click', async () => {
+//             const otp = document.getElementById('otpInput').value;
 
-            if (!otp) {
-                showAlert("Enter OTP", true);
-                return;
-            }
+//             if (!otp) {
+//                 showAlert("Enter OTP", true);
+//                 return;
+//             }
 
-            verifyBtn.disabled = true;
-            verifyBtn.innerHTML = 'Verifying...';
+//             verifyBtn.disabled = true;
+//             verifyBtn.innerHTML = 'Verifying...';
 
-            try {
-                await apiCall('/api/verify-otp', {
-                    method: 'POST',
-                    body: JSON.stringify({ otp })
-                });
+//             try {
+//                 await apiCall('/api/verify-otp', {
+//                     method: 'POST',
+//                     body: JSON.stringify({ otp })
+//                 });
 
-                showAlert("Verification successful!");
-                loadVerificationStatus(); // refresh final state
+//                 showAlert("Verification successful!");
+//                 loadVerificationStatus(); // refresh final state
 
-            } catch (err) {
-                showAlert(`Verification failed: ${err.message}`, true);
-                verifyBtn.disabled = false;
-                verifyBtn.innerHTML = 'Verify';
-            }
-        });
-    }
+//             } catch (err) {
+//                 showAlert(`Verification failed: ${err.message}`, true);
+//                 verifyBtn.disabled = false;
+//                 verifyBtn.innerHTML = 'Verify';
+//             }
+//         });
+//     }
 
-    if (resendBtn) {
-        resendBtn.addEventListener('click', async () => {
-            resendBtn.disabled = true;
-            resendBtn.innerHTML = 'Sending...';
+//     if (resendBtn) {
+//         resendBtn.addEventListener('click', async () => {
+//             resendBtn.disabled = true;
+//             resendBtn.innerHTML = 'Sending...';
 
-            try {
-                await apiCall('/api/request-verification', { method: 'POST' });
-                showAlert("OTP resent!");
-            } catch (err) {
-                showAlert(`Resend failed: ${err.message}`, true);
-            }
+//             try {
+//                 await apiCall('/api/request-verification', { method: 'POST' });
+//                 showAlert("OTP resent!");
+//             } catch (err) {
+//                 showAlert(`Resend failed: ${err.message}`, true);
+//             }
 
-            resendBtn.disabled = false;
-            resendBtn.innerHTML = 'Resend';
-        });
-    }
-}
-``
+//             resendBtn.disabled = false;
+//             resendBtn.innerHTML = 'Resend';
+//         });
+//     }
+// }
+// ``
 
 
 
@@ -1812,189 +2018,37 @@ if (document.readyState === 'loading') {
         setInterval(loadNotifications, 30000);
     }
 }
-
-
-
-
-// // notifications.js
-// async function loadNotifications() {
-//     const container = document.getElementById('notificationsList');
+// Update function mapping
+function updateDashboardUI(data) {
+    // Wallet balances
+    document.getElementById('wallet-balance').textContent = formatNumber(data.wallet_balance || 0);
+    document.getElementById('available-balance-subnote').textContent = formatNumber(data.available_balance || 0);
+    document.getElementById('available-balance-mini').textContent = formatNumber(data.available_balance || 0);
     
-//     try {
-//         const response = await fetch('/api/notifications', {
-//             headers: {
-//                 'Authorization': `Bearer ${localStorage.getItem('token')}` // If using token auth
-//             }
-//         });
-        
-//         if (!response.ok) throw new Error('Failed to load');
-        
-//         const notifications = await response.json();
-        
-//         if (!notifications || notifications.length === 0) {
-//             container.innerHTML = `
-//                 <div class="text-center py-4">
-//                     <i class="fas fa-bell-slash text-muted mb-2"></i>
-//                     <p class="text-muted mb-0">No notifications yet</p>
-//                 </div>
-//             `;
-//             return;
-//         }
-        
-//         // Show only last 5
-//         const recent = notifications.slice(0, 5);
-        
-//         let html = '';
-//         for (let notif of recent) {
-//             const date = notif.created_at ? new Date(notif.created_at).toLocaleDateString() : 'Recent';
-//             html += `
-//                 <div class="notification-item" data-id="${notif.id}">
-//                     <div class="notification-icon">
-//                         <i class="fas ${notif.is_read ? 'fa-envelope-open' : 'fa-envelope'}"></i>
-//                     </div>
-//                     <div class="notification-content">
-//                         <div class="notification-message">${escapeHtml(notif.message)}</div>
-//                         <div class="notification-date">${date}</div>
-//                     </div>
-//                     ${!notif.is_read ? '<div class="notification-unread-dot"></div>' : ''}
-//                 </div>
-//             `;
-//         }
-        
-//         container.innerHTML = html;
-        
-//         // Add click handlers to mark as read
-//         document.querySelectorAll('.notification-item').forEach(item => {
-//             item.addEventListener('click', async () => {
-//                 const id = item.dataset.id;
-//                 await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
-//                 item.classList.add('read');
-//                 const dot = item.querySelector('.notification-unread-dot');
-//                 if (dot) dot.remove();
-//             });
-//         });
-        
-//     } catch (err) {
-//         console.error('Error loading notifications:', err);
-//         container.innerHTML = `
-//             <div class="alert alert-warning py-2 mb-0">
-//                 <i class="fas fa-exclamation-triangle me-2"></i>
-//                 Could not load notifications
-//             </div>
-//         `;
-//     }
-// }
+    // Mini stats
+    document.getElementById('actual-balance').textContent = formatNumber(data.actual_balance || 0);
+    document.getElementById('referral-bonus-mini').textContent = formatNumber(data.referral_bonus || 0);
+    document.getElementById('bonus-mini').textContent = formatNumber(data.bonus || 0);
+    document.getElementById('earnings-total-mini').textContent = formatNumber(data.lifetime_earnings?.total || 0);
+    
+    // Financial summary
+    document.getElementById('earnings-today').textContent = formatNumber(data.today || 0);
+    document.getElementById('earnings-week').textContent = formatNumber(data.this_week || 0);
+    document.getElementById('earnings-total').textContent = formatNumber(data.lifetime_earnings?.total || 0);
+    
+    // Main section
+    document.getElementById('main-direct-referrals').textContent = data.referral_stats?.direct_referrals_count || 0;
+    document.getElementById('main-referral-bonus').textContent = formatNumber(data.referral_bonus || 0);
+    
+    // Profile
+    document.getElementById('profile-email').textContent = data.email || 'Not set';
+    document.getElementById('profile-phone').textContent = data.phone || 'Not set';
+    document.getElementById('profile-verified').textContent = data.is_verified ? 'Yes' : 'No';
+    document.getElementById('profile-join-date').textContent = formatDate(data.memberSince);
+    
+    // Direct referrals
+    const referralCount = data.referral_stats?.direct_referrals_count || 0;
+    document.getElementById('total-direct-referrals-mini').textContent = referralCount;
+    document.getElementById('main-direct-referrals').textContent = referralCount;
+}
 
-// // Helper function
-// function escapeHtml(text) {
-//     if (!text) return '';
-//     const div = document.createElement('div');
-//     div.textContent = text;
-//     return div.innerHTML;
-// }
-
-// // Auto-refresh every 30 seconds
-// if (document.getElementById('notificationsList')) {
-//     loadNotifications();
-//     setInterval(loadNotifications, 30000);
-// }
-
-
-//         // Load notifications on page load
-//         async function loadNotifications() {
-//             const container = document.getElementById('notificationsList');
-            
-//             try {
-//                 const response = await fetch('/api/notifications');
-//                 const notifications = await response.json();
-                
-//                 if (!response.ok) throw new Error(notifications.error || 'Failed to load');
-                
-//                 if (!notifications || notifications.length === 0) {
-//                     container.innerHTML = `
-//                         <div class="empty-state">
-//                             <i class="fas fa-bell-slash"></i>
-//                             <div>No notifications yet</div>
-//                         </div>
-//                     `;
-//                     document.getElementById('notifCount').textContent = '0';
-//                     return;
-//                 }
-                
-//                 // Update count of unread
-//                 const unreadCount = notifications.filter(n => !n.is_read).length;
-//                 document.getElementById('notifCount').textContent = unreadCount;
-                
-//                 // Show last 5
-//                 const recent = notifications.slice(0, 5);
-                
-//                 let html = '';
-//                 for (let notif of recent) {
-//                     const date = notif.created_at ? new Date(notif.created_at).toLocaleDateString() : 'Today';
-//                     html += `
-//                         <div class="notification-item ${notif.is_read ? 'read' : ''}" data-id="${notif.id}">
-//                             <div class="notification-icon">
-//                                 <i class="fas ${notif.is_read ? 'fa-envelope-open' : 'fa-envelope'}"></i>
-//                             </div>
-//                             <div class="notification-content">
-//                                 <div class="notification-message">${escapeHtml(notif.message)}</div>
-//                                 <div class="notification-date">${date}</div>
-//                             </div>
-//                             ${!notif.is_read ? '<div class="notification-unread-dot"></div>' : ''}
-//                         </div>
-//                     `;
-//                 }
-                
-//                 container.innerHTML = html;
-                
-//                 // Add click handlers
-//                 document.querySelectorAll('.notification-item').forEach(item => {
-//                     item.addEventListener('click', async () => {
-//                         const id = item.dataset.id;
-//                         if (!item.classList.contains('read')) {
-//                             await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
-//                             item.classList.add('read');
-//                             const dot = item.querySelector('.notification-unread-dot');
-//                             if (dot) dot.remove();
-                            
-//                             // Update count
-//                             const newUnread = unreadCount - 1;
-//                             document.getElementById('notifCount').textContent = newUnread;
-//                         }
-//                     });
-//                 });
-                
-//             } catch (err) {
-//                 console.error('Error:', err);
-//                 container.innerHTML = `
-//                     <div class="empty-state">
-//                         <i class="fas fa-exclamation-triangle"></i>
-//                         <div>Failed to load notifications</div>
-//                     </div>
-//                 `;
-//             }
-//         }
-        
-//         function escapeHtml(text) {
-//             if (!text) return '';
-//             const div = document.createElement('div');
-//             div.textContent = text;
-//             return div.innerHTML;
-//         }
-        
-//         // Load on page ready
-//         loadNotifications();
-        
-//         // Refresh every 30 seconds
-//         setInterval(loadNotifications, 30000);
-
-//        async function initDashboard() {
-//         //setupActionButtons();
-//         await Promise.all([
-//            // loadProfileSummary(),
-//             loadVerificationStatus(),
-//          //   loadProfileDetails(),
-//             loadNotifications()
-//         ]);
-//        // initTabs(); // loads matches with pending by default
-//     }

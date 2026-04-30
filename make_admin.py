@@ -8,8 +8,8 @@ from sqlalchemy.exc import IntegrityError
 from app import create_app
 from models import db, User
 
-PHONE = "0789621299"
-DEFAULT_EMAIL = "aaronssamara@gmail.com"
+PHONE = "0756393205"
+DEFAULT_EMAIL = "aaronsmwesigye@gmail.com"
 DEFAULT_PASSWORD = "admin123"  # only used if you create the user — change after creation
 
 def make_admin():

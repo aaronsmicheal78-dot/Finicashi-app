@@ -2863,69 +2863,275 @@ M/*obile-First Referral Modal Styles*/
   }
 
 
-  
+/* Verification Card - Modern Professional Layout */
+.card-custom {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 24px;
+}
 
-     -------------------------------------------- */
-.verification-badge {
-    border-radius: var(--radius-md);
-    padding: var(--space-md) var(--space-lg);
+.card-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.card-header-clean {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 16px 24px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--space-md);
-    font-weight: 600;
-    width: 100%;
+    gap: 10px;
+    border-bottom: none;
 }
 
-.verified-state {
-    background: var(--color-success-light);
-    color: var(--color-success);
-    border-left: 4px solid var(--color-success);
+.card-header-clean i {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
-.pending-state {
-    background: var(--color-warning-light);
-    color: var(--color-warning);
-    border-left: 4px solid var(--color-warning);
+.card-body {
+    padding: 24px;
 }
 
-.unverified-state {
-    background: var(--color-danger-light);
-    color: var(--color-danger);
-    border-left: 4px solid var(--color-danger);
-}
-
-.verification-badge i {
-    font-size: 1.5rem;
-}
-
-/* OTP Input Area */
-.pending-state input {
-    border-radius: var(--radius-full);
-    border: 2px solid var(--color-warning);
-    background: white;
-    font-size: 1.125rem;
+/* Verification Badge - Modern Styles */
+.verification-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    letter-spacing: 4px;
-    font-weight: 700;
-    padding: var(--space-sm) var(--space-md);
-    min-height: var(--touch-min);
+    padding: 24px 20px;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    gap: 16px;
 }
 
+/* Verified State */
+.verification-badge.verified-state {
+    background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+    color: #0a5c2e;
+    border: 1px solid rgba(10, 92, 46, 0.2);
+    box-shadow: 0 4px 15px rgba(150, 230, 161, 0.3);
+}
 
+.verification-badge.verified-state i {
+    font-size: 3rem;
+    color: #0a5c2e;
+    margin-bottom: 8px;
+}
 
+.verification-badge.verified-state span {
+    font-size: 1rem;
+    font-weight: 600;
+}
 
+/* Unverified State */
+.verification-badge.unverified-state {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    color: #9b4d2e;
+    border: 1px solid rgba(155, 77, 46, 0.2);
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    text-align: left;
+}
 
+.verification-badge.unverified-state i {
+    font-size: 1.5rem;
+    color: #dc3545;
+}
 
+.verification-badge.unverified-state span {
+    flex: 1;
+    font-weight: 500;
+    text-align: left;
+}
 
+/* Pending State (OTP Input) */
+.verification-badge.pending-state {
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    color: #2c3e50;
+    border: 1px solid rgba(44, 62, 80, 0.2);
+}
 
+.verification-badge.pending-state > span {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
 
+/* OTP Input Styling */
+.verification-badge input {
+    text-align: center;
+    max-width: 240px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 6px;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    background: white;
+    transition: all 0.3s ease;
+}
 
+.verification-badge input:focus {
+    outline: none;
+    border-color: #764ba2;
+    box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+    transform: scale(1.02);
+}
 
+/* Button Container */
+.verification-badge .d-flex,
+.verification-badge .btn-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+}
 
+/* Button Styles */
+.verification-badge .btn {
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
 
+.verification-badge .btn-sm {
+    min-width: 100px;
+}
 
+.verification-badge .btn-danger {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.verification-badge .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(245, 87, 108, 0.4);
+}
+
+.verification-badge .btn-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.verification-badge .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 172, 254, 0.4);
+}
+
+.verification-badge .btn-secondary {
+    background: linear-gradient(135deg, #757f9a 0%, #d7dde8 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(117, 127, 154, 0.3);
+}
+
+.verification-badge .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(117, 127, 154, 0.4);
+}
+
+/* Button disabled state */
+.verification-badge .btn:disabled {
+    opacity: 0.6;
+    transform: none;
+    cursor: not-allowed;
+}
+
+/* Spinner animation */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .card-custom {
+        border-radius: 16px;
+    }
+    
+    .card-header-clean {
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
+    
+    .card-body {
+        padding: 16px;
+    }
+    
+    .verification-badge {
+        padding: 20px 16px;
+    }
+    
+    .verification-badge.unverified-state {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .verification-badge.unverified-state span {
+        text-align: center;
+    }
+    
+    .verification-badge .btn {
+        width: 100%;
+        padding: 10px 20px;
+    }
+    
+    .verification-badge .d-flex {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .verification-badge input {
+        max-width: 100%;
+        font-size: 1rem;
+        letter-spacing: 4px;
+    }
+}
+
+/* Loading State */
+.verification-container-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 120px;
+}
+
+/* Icon animations */
+.verification-badge i {
+    transition: transform 0.3s ease;
+}
+
+.verification-badge:hover i {
+    transform: scale(1.1);
+}
+
+/* Smooth transitions */
+.verification-badge,
+.verification-badge .btn,
+.verification-badge input {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 
 

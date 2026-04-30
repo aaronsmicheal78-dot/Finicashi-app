@@ -465,7 +465,7 @@ class DailyBonusProcessor:
                     if total_bonus > 0:
                         notification = Notification(
                             user_id=user_id,
-                            message=f"🎉 You've earned ${float(total_bonus):.2f} in daily bonuses from {len(successful_packages)} active package(s)!",
+                            message=f"🎉 You've earned UGX{float(total_bonus):.2f} in daily bonuses from {len(successful_packages)} active package(s)!",
                             notification_type='bonus',
                             is_read=False,
                             created_at=self.make_naive_if_needed(self.current_time)
@@ -505,117 +505,7 @@ class DailyBonusProcessor:
             logger.error(f"Unexpected error processing bonus for user {user_id}: {e}", exc_info=True)
         
         return response
-    # def process_user_bonus(self, user_id: int) -> Dict:
-    #     """Main method to process daily bonus for a user"""
-    #     response = {
-    #         "success": False,
-    #         "user_id": user_id,
-    #         "total_bonus": 0.0,
-    #         "wallet_balance": 0.0,
-    #         "packages_processed": 0,
-    #         "packages_successful": 0,
-    #         "packages_failed": 0,
-    #         "processed_packages": [],
-    #         "timestamp": self.current_time.isoformat(),
-    #         "error": None
-    #     }
-        
-    #     db_session = db.session
-        
-    #     try:
-    #         # Validate user
-    #         user = User.query.get(user_id)
-    #         self.validate_user(user)
-            
-    #         # Get wallet
-    #         wallet = self.get_user_wallet(user_id)
-    #         initial_balance = self.safe_decimal(wallet.balance, "wallet_balance")
-            
-    #         # Get eligible packages with row locking
-    #         packages = (
-    #             Package.query
-    #             .filter_by(user_id=user_id, status='active')
-    #             .with_for_update()
-    #             .all()
-    #         )
-            
-    #         if not packages:
-    #             response.update({
-    #                 "success": True,
-    #                 "wallet_balance": float(initial_balance),
-    #                 "message": "No active packages found"
-    #             })
-        
-    #         try:
-    #             pending_packages = self.get_pending_packages_with_time(packages)
-    #             if pending_packages:
-    #                 self.create_pending_bonus_notifications(user_id, pending_packages)
-    #         except Exception as e:
-    #             logger.warning(f"Failed to process pending notifications: {e}")
-        
-    #         if pending_packages:
-    #             self.create_pending_bonus_notifications(user_id, pending_packages)
-                
-    #         total_bonus = Decimal("0.00")
-    #         processed_packages = []
-            
-    #         # Process each package
-    #         for package in packages:
-    #             result = self.process_single_package(package, wallet)
-    #             processed_packages.append(result)
-                
-    #             if result["success"]:
-    #                 total_bonus += self.safe_decimal(result["bonus_amount"], "bonus_amount")
-            
-    #         # Commit only if we have successful processing
-    #         if any(p["success"] for p in processed_packages):
-                
-    #             try:
-    #                 if total_bonus > 0:
-    #                     notification = Notification(
-    #                         user_id=user_id,
-    #                         message=f"🎉 You've earned ${float(total_bonus):.2f} in daily bonuses from {len(successful_packages)} active package(s)!",
-    #                         notification_type='bonus',
-    #                         is_read=False,
-    #                         created_at=self.make_naive_if_needed(self.current_time)
-    #                     )
-    #                     db.session.add(notification)
-    #             except Exception as e:
-    #                 logger.warning(f"Failed to prepare notification: {e}")
-    #             db_session.commit()
-    #         else:
-    #             db_session.rollback()
-            
-    #         # Prepare response
-    #         successful_packages = [p for p in processed_packages if p["success"]]
-    #         failed_packages = [p for p in processed_packages if not p["success"]]
-            
-    #         response.update({
-    #             "success": True,
-    #             "total_bonus": float(total_bonus),
-    #             "wallet_balance": float(wallet.balance),
-    #             "packages_processed": len(processed_packages),
-    #             "packages_successful": len(successful_packages),
-    #             "packages_failed": len(failed_packages),
-    #             "processed_packages": processed_packages
-    #         })
-            
-    #     except (BonusSecurityError, BonusValidationError) as e:
-    #         db_session.rollback()
-    #         response["error"] = str(e)
-    #         logger.error(f"Bonus processing failed for user {user_id}: {e}")
-            
-    #     except SQLAlchemyError as e:
-    #         db_session.rollback()
-    #         response["error"] = f"Database error: {str(e)}"
-    #         logger.error(f"Database error processing bonus for user {user_id}: {e}")
-            
-    #     except Exception as e:
-    #         db_session.rollback()
-    #         response["error"] = f"Unexpected error: {str(e)}"
-    #         logger.error(f"Unexpected error processing bonus for user {user_id}: {e}", exc_info=True)
-        
-    #     return response 
+
    
 def create_bonus_notification(self, user_id: int, total_bonus: Decimal, successful_count: int) -> None:
     """Create notification for bonus earnings"""
@@ -623,7 +513,7 @@ def create_bonus_notification(self, user_id: int, total_bonus: Decimal, successf
         naive_current = self.make_naive_if_needed(self.current_time)
         
         if successful_count > 0:
-            message = f"🎉 You've earned ${float(total_bonus):.2f} in daily bonuses from {successful_count} active package(s)!"
+            message = f"🎉 You've earned UGX{float(total_bonus):.2f} in daily bonuses from {successful_count} active package(s)!"
         else:
             message = "📋 No bonuses were processed today. Check your active packages for bonus eligibility."
         
