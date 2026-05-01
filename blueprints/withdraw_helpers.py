@@ -13,6 +13,7 @@ from sqlalchemy.exc import OperationalError
 from models import User, Withdrawal, ReferralBonus, Transaction, Wallet
 from extensions import db
 from models import IdempotencyKey
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -44,13 +45,22 @@ class ValidationError(WithdrawalException):
 # ==========================================================
 #                  LOCK MANAGER (POSTGRES ROW-LEVEL)
 # ==========================================================
-def get_user_with_lock(user_id: int):
-    """Lock user row for update - prevents concurrent withdrawals"""
-    try:
-        return db.session.query(User).filter(User.id == user_id).with_for_update(nowait=True).first()
-    except OperationalError:
-        raise WithdrawalException("Another withdrawal in progress. Please try again.")
-
+# def get_user_with_lock(user_id: int):
+#     """Lock user row for update - prevents concurrent withdrawals"""
+#     try:
+#         return db.session.query(User).filter(User.id == user_id).with_for_update(nowait=True).first()
+#     except OperationalError:
+#         raise WithdrawalException("Another withdrawal in progress. Please try again.")
+def get_user_with_lock(user_id: int, retries: int = 3):
+    """Lock with retry logic"""
+    for attempt in range(retries):
+        try:
+            return db.session.query(User).filter(User.id == user_id).with_for_update(nowait=True).first()
+        except OperationalError as e:
+            if attempt < retries - 1:
+                time.sleep(0.1 * (attempt + 1))  # Exponential backoff
+                continue
+            raise WithdrawalException("System busy. Please try again in a few seconds.")
 def get_wallet_with_lock(user_id: int):
     """Lock wallet row for update"""
     try:
@@ -343,38 +353,7 @@ class WithdrawalRecordManager:
         except Exception as e:
             logger.error(f"Record creation error: {e}")
             return None
-# class WithdrawalRecordManager:
-#     @staticmethod
-#     def create_record(user_id: int, amount: Decimal, phone: str, balance_details: Dict) -> Optional[Withdrawal]:
-#         try:
-#             amount_dec = Decimal(str(amount))
-#             fee = WithdrawalConfig.calculate_fee(amount_dec)
-#             net_amount = amount_dec - fee
-            
-#             reference = f"WD-{user_id}-{uuid.uuid4().hex[:8].upper()}"
-            
-#             withdrawal = Withdrawal(
-#                 user_id=user_id,
-#                 amount=float(amount_dec),
-#                 net_amount=float(net_amount),
-#                 fee=float(fee),
-#                 phone=phone,
-#                 status="pending",
-#                 reference=reference,
-#                 actual_balance_deducted=float(Decimal(str(balance_details.get('actual_deducted', '0')))),
-#                 wallet_balance_deducted=float(Decimal(str(balance_details.get('wallet_deducted', '0'))))
-#             )
-            
-#             db.session.add(withdrawal)
-#             db.session.flush()
-            
-#             logger.info(f"Withdrawal record created: {reference}")
-#             return withdrawal
-            
-#         except Exception as e:
-#             logger.error(f"Record creation error: {e}")
-#             return None
-    
+
     @staticmethod
     def update_status(withdrawal_id: int, status: str, external_ref: str = None) -> bool:
         try:
@@ -398,7 +377,6 @@ class WithdrawalRecordManager:
 class WithdrawalProcessor:
     @staticmethod
     def process_withdrawal_request(user_id: int, amount: Decimal, phone: str, idempotency_key: str = None) -> Tuple[bool, str, Optional[Dict]]:
-        """Process withdrawal with simple idempotency"""
         withdrawal = None
         details = None
         
@@ -406,29 +384,43 @@ class WithdrawalProcessor:
             # Validate
             ok, msg, user = WithdrawalValidator.validate_withdrawal(user_id, amount, phone)
             if not ok:
+                # ❌ Clean up idempotency key on validation failure
+                if idempotency_key:
+                    WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
                 return False, msg, None
             
-            # 🔥 Check idempotency BEFORE any deduction
-            if idempotency_key:  
+            # ✅ Check idempotency with status validation
+            if idempotency_key:
                 existing_key = IdempotencyKey.query.filter_by(
                     key=idempotency_key, 
                     user_id=user_id
                 ).first()
                 
                 if existing_key and existing_key.withdrawal_id:
-                    # Already processed, return existing withdrawal
+                    # Check if the withdrawal actually exists and is valid
                     existing_withdrawal = db.session.get(Withdrawal, existing_key.withdrawal_id)
+                    
                     if existing_withdrawal:
-                        logger.info(f"Returning existing withdrawal for key: {idempotency_key}")
-                        return True, "Withdrawal already processed", {
-                            "withdrawal_id": existing_withdrawal.id,
-                            "reference": existing_withdrawal.reference,
-                            "net_amount": str(existing_withdrawal.net_amount),
-                            "fee": str(existing_withdrawal.fee),
-                            "already_processed": True
-                        }
+                        # If withdrawal failed, clean up and allow retry
+                        if existing_withdrawal.status in ['failed', 'cancelled']:
+                            logger.warning(f"Cleaning up failed withdrawal {existing_withdrawal.id} for retry")
+                            WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
+                            # Don't return - continue with new withdrawal
+                        else:
+                            # Only return if it's actually processing/completed
+                            logger.info(f"Returning existing withdrawal for key: {idempotency_key}")
+                            return True, "Withdrawal already processed", {
+                                "withdrawal_id": existing_withdrawal.id,
+                                "reference": existing_withdrawal.reference,
+                                "net_amount": str(existing_withdrawal.net_amount),
+                                "fee": str(existing_withdrawal.fee),
+                                "already_processed": True
+                            }
+                    else:
+                        # Withdrawal doesn't exist - clean up orphaned key
+                        WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
             
-            # Lock and deduct (only if not idempotent)
+            # Lock and deduct
             user_locked = get_user_with_lock(user_id)
             wallet_locked = get_wallet_with_lock(user_id)
             
@@ -437,9 +429,12 @@ class WithdrawalProcessor:
             
             success, msg, details = BalanceManager.deduct_balance(user, Decimal(str(amount)))
             if not success:
+                # ✅ Clean up on balance deduction failure
+                if idempotency_key:
+                    WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
                 return False, msg, None
             
-            # Create record WITH IDEMPOTENCY KEY
+            # Create record
             withdrawal = WithdrawalRecordManager.create_record(
                 user_id, amount, phone, details, idempotency_key
             )
@@ -447,9 +442,12 @@ class WithdrawalProcessor:
             if not withdrawal:
                 BalanceManager.refund_withdrawal(user, details)
                 db.session.flush()
+                # ✅ Clean up on record creation failure
+                if idempotency_key:
+                    WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
                 return False, "Failed to create withdrawal record", None
             
-            # 🔥 Update idempotency key with withdrawal_id if not already set
+            # Update idempotency key
             if idempotency_key and withdrawal:
                 idem_key = IdempotencyKey.query.filter_by(key=idempotency_key).first()
                 if idem_key and not idem_key.withdrawal_id:
@@ -459,44 +457,151 @@ class WithdrawalProcessor:
             # Commit
             db.session.commit()
             
-            # Return success
             return True, "Withdrawal successful", {
-                "withdrawal_id": withdrawal.id,
-                "reference": withdrawal.reference,
-                "net_amount": str(withdrawal.net_amount),
-                "fee": str(withdrawal.fee),
-                "balances": {
-                    "actual_deducted": details.get("actual_deducted", "0"),
-                    "wallet_deducted": details.get("wallet_deducted", "0"),
-                    "new_actual_balance": details.get("new_actual_balance", "0"),
-                    "new_wallet_balance": details.get("new_wallet_balance", "0")
+                    "withdrawal_id": withdrawal.id,
+                    "reference": withdrawal.reference,
+                    "net_amount": str(withdrawal.net_amount),
+                    "fee": str(withdrawal.fee),
+                    "balances": {
+                        "actual_deducted": details.get("actual_deducted", "0"),
+                        "wallet_deducted": details.get("wallet_deducted", "0"),
+                        "new_actual_balance": details.get("new_actual_balance", "0"),
+                        "new_wallet_balance": details.get("new_wallet_balance", "0")
+                    }
                 }
-            }
             
         except WithdrawalException as e:
             db.session.rollback()
+            # ✅ ALWAYS clean up on exception
+            if idempotency_key:
+                WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
             return False, str(e), None
         except Exception as e:
             db.session.rollback()
             logger.error(f"Withdrawal failed: {e}", exc_info=True)
             
-            # Clean up idempotency key on failure
-            if idempotency_key and withdrawal is None:
-                try:
-                    IdempotencyKey.query.filter_by(key=idempotency_key).delete()
-                    db.session.commit()
-                except:
-                    pass
+            # ✅ ALWAYS clean up on any exception
+            if idempotency_key:
+                WithdrawalProcessor._cleanup_idempotency_key(idempotency_key, user_id)
             
             return False, "Withdrawal failed", None
 
-        except WithdrawalException as e:
-            db.session.rollback()
-            return False, str(e), None
+    @staticmethod
+    def _cleanup_idempotency_key(idempotency_key: str, user_id: int):
+        """Force cleanup of idempotency key"""
+        try:
+            deleted = IdempotencyKey.query.filter_by(
+                key=idempotency_key, 
+                user_id=user_id
+            ).delete()
+            if deleted:
+                db.session.commit()
+                logger.info(f"Cleaned up idempotency key: {idempotency_key}")
         except Exception as e:
+            logger.error(f"Failed to cleanup idempotency key: {e}")
             db.session.rollback()
-            logger.error(f"Withdrawal failed: {e}", exc_info=True)
-            return False, "Withdrawal failed", None
+    # 
+#     @staticmethod
+#     def process_withdrawal_request(user_id: int, amount: Decimal, phone: str, idempotency_key: str = None) -> Tuple[bool, str, Optional[Dict]]:
+#         """Process withdrawal with simple idempotency"""
+#         withdrawal = None
+#         details = None
+        
+#         try:
+#             # Validate
+#             ok, msg, user = WithdrawalValidator.validate_withdrawal(user_id, amount, phone)
+#             if not ok:
+#                 return False, msg, None
+            
+#             # 🔥 Check idempotency BEFORE any deduction
+#             if idempotency_key:  
+#                 existing_key = IdempotencyKey.query.filter_by(
+#                     key=idempotency_key, 
+#                     user_id=user_id
+#                 ).first()
+                
+#                 if existing_key and existing_key.withdrawal_id:
+#                     # Already processed, return existing withdrawal
+#                     existing_withdrawal = db.session.get(Withdrawal, existing_key.withdrawal_id)
+#                     if existing_withdrawal:
+#                         logger.info(f"Returning existing withdrawal for key: {idempotency_key}")
+#                         return True, "Withdrawal already processed", {
+#                             "withdrawal_id": existing_withdrawal.id,
+#                             "reference": existing_withdrawal.reference,
+#                             "net_amount": str(existing_withdrawal.net_amount),
+#                             "fee": str(existing_withdrawal.fee),
+#                             "already_processed": True
+#                         }
+            
+#             # Lock and deduct (only if not idempotent)
+#             user_locked = get_user_with_lock(user_id)
+#             wallet_locked = get_wallet_with_lock(user_id)
+            
+#             if not user_locked or not wallet_locked:
+#                 return False, "Another transaction in progress", None
+            
+#             success, msg, details = BalanceManager.deduct_balance(user, Decimal(str(amount)))
+#             if not success:
+#                 return False, msg, None
+            
+#             # Create record WITH IDEMPOTENCY KEY
+#             withdrawal = WithdrawalRecordManager.create_record(
+#                 user_id, amount, phone, details, idempotency_key
+#             )
+            
+#             if not withdrawal:
+#                 BalanceManager.refund_withdrawal(user, details)
+#                 db.session.flush()
+#                 return False, "Failed to create withdrawal record", None
+            
+#             # 🔥 Update idempotency key with withdrawal_id if not already set
+#             if idempotency_key and withdrawal:
+#                 idem_key = IdempotencyKey.query.filter_by(key=idempotency_key).first()
+#                 if idem_key and not idem_key.withdrawal_id:
+#                     idem_key.withdrawal_id = withdrawal.id
+#                     db.session.add(idem_key)
+            
+#             # Commit
+#             db.session.commit()
+            
+#             # Return success
+#             return True, "Withdrawal successful", {
+#                 "withdrawal_id": withdrawal.id,
+#                 "reference": withdrawal.reference,
+#                 "net_amount": str(withdrawal.net_amount),
+#                 "fee": str(withdrawal.fee),
+#                 "balances": {
+#                     "actual_deducted": details.get("actual_deducted", "0"),
+#                     "wallet_deducted": details.get("wallet_deducted", "0"),
+#                     "new_actual_balance": details.get("new_actual_balance", "0"),
+#                     "new_wallet_balance": details.get("new_wallet_balance", "0")
+#                 }
+#             }
+            
+#         except WithdrawalException as e:
+#             db.session.rollback()
+#             return False, str(e), None
+#         except Exception as e:
+#             db.session.rollback()
+#             logger.error(f"Withdrawal failed: {e}", exc_info=True)
+            
+#             # Clean up idempotency key on failure
+#             if idempotency_key and withdrawal is None:
+#                 try:
+#                     IdempotencyKey.query.filter_by(key=idempotency_key).delete()
+#                     db.session.commit()
+#                 except:
+#                     pass
+            
+#             return False, "Withdrawal failed", None
+
+#         except WithdrawalException as e:
+#             db.session.rollback()
+#             return False, str(e), None
+#         except Exception as e:
+#             db.session.rollback()
+#             logger.error(f"Withdrawal failed: {e}", exc_info=True)
+#             return False, "Withdrawal failed", None
     
     @staticmethod
     def complete_withdrawal(withdrawal_id: int, external_ref: str = None) -> bool:

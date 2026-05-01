@@ -112,7 +112,7 @@ def create_app():
         app.register_blueprint(notification_bp)
      
     register_blueprints(app)
-    #print(app.url_map)
+   
 
 
     
@@ -169,11 +169,6 @@ if __name__ == "__main__":
         PROPAGATE_EXCEPTIONS=True
     )
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
-
-# if __name__ == "__main__":
-#     port = int(os.environ.get("PORT", 5000)) 
-#     debug_mode = app.config.get("DEBUG", True)
-#     app.run(debug=debug_mode, host="0.0.0.0")
 
 #=======================================================================================================
 #------------------------THE END OF APP----------------------------------------------------------------
