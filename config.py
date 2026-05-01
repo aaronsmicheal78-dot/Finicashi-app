@@ -1,6 +1,7 @@
 
 import os
 from dotenv import load_dotenv
+from extensions import db
 
 
 if os.environ.get("FLASK_ENV") != "production":
@@ -28,13 +29,15 @@ class Config:
     
     SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    db.session.expire_on_commit = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_size": 10,
         "max_overflow": 20,
         "pool_pre_ping": True,
         "pool_recycle": 300,
+        "pool_timeout": 30,
     }
-    
+
 
     MARZ_API_KEY = os.getenv("MARZ_API_KEY")
     MARZ_API_SECRET = os.getenv("MARZ_API_SECRET")
@@ -43,3 +46,16 @@ class Config:
     
 
     APP_BASE_URL = os.getenv("APP_BASE_URL", "https://finicashi-app.onrender.com")
+
+    from sqlalchemy import event
+
+    # @event.listens_for(db.engine, 'checkout')
+    # def receive_checkout(dbapi_connection, connection_record, connection_proxy):
+    #     """Rollback any open transactions when connection is checked out"""
+    #     cursor = dbapi_connection.cursor()
+    #     try:
+    #         cursor.execute('SELECT 1')
+    #     except:
+    #         dbapi_connection.rollback()
+    #     finally:
+    #         cursor.close()

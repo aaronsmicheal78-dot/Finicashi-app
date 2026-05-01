@@ -45,28 +45,28 @@ class ValidationError(WithdrawalException):
 # ==========================================================
 #                  LOCK MANAGER (POSTGRES ROW-LEVEL)
 # ==========================================================
-# def get_user_with_lock(user_id: int):
-#     """Lock user row for update - prevents concurrent withdrawals"""
-#     try:
-#         return db.session.query(User).filter(User.id == user_id).with_for_update(nowait=True).first()
-#     except OperationalError:
-#         raise WithdrawalException("Another withdrawal in progress. Please try again.")
-def get_user_with_lock(user_id: int, retries: int = 3):
-    """Lock with retry logic"""
-    for attempt in range(retries):
-        try:
-            return db.session.query(User).filter(User.id == user_id).with_for_update(nowait=True).first()
-        except OperationalError as e:
-            if attempt < retries - 1:
-                time.sleep(0.1 * (attempt + 1))  # Exponential backoff
-                continue
-            raise WithdrawalException("System busy. Please try again in a few seconds.")
-def get_wallet_with_lock(user_id: int):
-    """Lock wallet row for update"""
+def get_user_with_lock(user_id: int, timeout_seconds: int = 5):
+    """Lock user row with timeout to prevent stuck locks"""
     try:
-        return db.session.query(Wallet).filter(Wallet.user_id == user_id).with_for_update(nowait=True).first()
-    except OperationalError:
-        raise WithdrawalException("Another withdrawal in progress. Please try again.")
+        # Use NOWAIT or timeout
+        return db.session.query(User).filter(User.id == user_id)\
+            .with_for_update(nowait=True, skip_locked=False)\
+            .first()
+    except OperationalError as e:
+        if "could not obtain lock" in str(e):
+            raise WithdrawalException("System busy. Please try again in a few seconds.")
+        raise
+
+def get_wallet_with_lock(user_id: int, timeout_seconds: int = 5):
+    """Lock wallet row with timeout"""
+    try:
+        return db.session.query(Wallet).filter(Wallet.user_id == user_id)\
+            .with_for_update(nowait=True)\
+            .first()
+    except OperationalError as e:
+        if "could not obtain lock" in str(e):
+            raise WithdrawalException("System busy. Please try again.")
+        raise
 
 def with_row_lock(func):
     """Decorator for PostgreSQL row-level locking"""

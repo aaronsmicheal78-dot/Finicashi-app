@@ -1,7 +1,7 @@
 
 import gevent.monkey
 gevent.monkey.patch_all()
-
+from blueprints.payments import logger
 import os
 from flask import Flask, render_template, session, g, jsonify
 from config import Config
@@ -111,18 +111,13 @@ def create_app():
         app.register_blueprint(activity_bp)
         app.register_blueprint(notification_bp)
      
-    register_blueprints(app)
-   
-
-
-    
+    register_blueprints(app) 
     # ------------------------------------------------------------------------------------------------------------------------
     # Flask-Login user_loader - MOVED INSIDE create_app to avoid circular imports
     # ------------------------------------------------------------------------------------------------------------------------
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
-    
+        return User.query.get(int(user_id)) 
     # ----------------------
     # Global before_request
     # ----------------------
@@ -151,6 +146,25 @@ def create_app():
     @app.route("/healthz")
     def healthz():
         return {"status": "ok"}, 200
+    
+    @app.after_request
+    def cleanup_transactions(response):
+        """Ensure no open transactions after each request"""
+        try:
+            if db.session.is_active:
+                # Rollback any uncommitted transactions
+                db.session.rollback()
+                # Or commit if you want to persist
+                # db.session.commit()
+        except Exception as e:
+            logger.error(f"Session cleanup error: {e}")
+            db.session.rollback()
+        return response
+
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        """Always remove session at the end of request"""
+        db.session.remove()
  
     return app
 
