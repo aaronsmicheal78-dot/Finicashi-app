@@ -1397,7 +1397,7 @@
   Withdraw with the verified account number only(OTP verified)
 </p>
             </div>
-            
+             <div id="withdraw-message-container" class="withdraw-message-container"></div>
             <div class="modal-details">
                 <div class="modal-detail">
                     <div class="modal-detail-label">Rate Free</div>
@@ -1411,10 +1411,13 @@
                 <div class="form-group">
                     <label class="form-label" for="phone-3">Phone Number</label>
                     <input type="tel" class="form-input phone-input" id="withdraw-phone" placeholder="Enter your phone number" required>
-                </div>
+                 <span class="field-error" id="error-amount"></span>
+                  </div>
                  <div class="form-group">
                     <label class="form-label" for="withdraw-amount">Withdraw Amount</label>
                     <input type="amount" min="5000" class="form-input" id="withdraw-amount" placeholder="Enter Amount(UGX)" required>
+                     <span class="field-error" id="error-amount"></span>
+                    <small class="input-hint">Min: 5,000 UGX | Max: 100,000 UGX</small>
                 </div>
                 
                 <div class="form-actions">

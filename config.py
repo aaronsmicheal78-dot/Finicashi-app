@@ -48,14 +48,3 @@ class Config:
     APP_BASE_URL = os.getenv("APP_BASE_URL", "https://finicashi-app.onrender.com")
 
     from sqlalchemy import event
-
-    # @event.listens_for(db.engine, 'checkout')
-    # def receive_checkout(dbapi_connection, connection_record, connection_proxy):
-    #     """Rollback any open transactions when connection is checked out"""
-    #     cursor = dbapi_connection.cursor()
-    #     try:
-    #         cursor.execute('SELECT 1')
-    #     except:
-    #         dbapi_connection.rollback()
-    #     finally:
-    #         cursor.close()
