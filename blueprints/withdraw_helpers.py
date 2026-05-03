@@ -127,6 +127,7 @@ class WithdrawalValidator:
             raise ValidationError("Phone number must be a valid Uganda number")
         
         return phone
+
     
     @staticmethod
     def validate_withdrawal(user_id: int, amount: Decimal, phone: str) -> Tuple[bool, str, Optional[User]]:
@@ -146,7 +147,7 @@ class WithdrawalValidator:
             user = db.session.get(User, user_id)
             if not user:
                 return False, "User not found", None
-            if user.phone != phone and user.phone != phone.replace('256', '0'):
+            if user.phone != phone and user.phone != phone.replace('256', '0', 1):
                 return False, "Phone number does not match your account", None
             
             if not user.is_verified:
