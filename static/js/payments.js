@@ -792,7 +792,7 @@ class WithdrawalHandler {
         // Auto close after 5 seconds
         setTimeout(() => {
             this.closeModal();
-        }, 5000);
+        }, 20000);
     }
 
     showModal(content) {

@@ -98,7 +98,7 @@ function handleRegister(event) {
     const submitButton = event.target.querySelector('button[type="submit"]');
 
     // Validate required fields
-    if (!fullName || !email || !phone || !password || !confirmPassword) {
+    if (!fullName || !phone || !password || !confirmPassword) {
         showAlert("Please fill in all required fields.", "error");
         return;
     }
